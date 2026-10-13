@@ -2,25 +2,24 @@
 
 /*
   Turns website form submissions waiting at /api/website-form into leads.
-  Runs while someone is signed in: on load, every 30 seconds and when the tab
-  regains focus. submitWebsiteForm is idempotent by reference, so two open
+  Runs while someone is signed in: on load, every 8 seconds and when the tab
+  regains focus. Each submission is recorded once per reference, so two open
   browsers draining the same inbox still create one lead.
+
+  CRM Part 1: leads are made by useFormLeadIntake (form link source and
+  starting stage, thank-you email, match check). Older /website-form
+  submissions go the same way.
 */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCollection } from '@/lib/store';
-import type { LeadSourceDef } from '@/lib/types';
-import { leadSourceFor } from '@/features/lib/rules/lead-sources';
-import { act, useStore } from '@/features/lib/store';
-import { submitWebsiteForm } from '@/features/lib/store/actions/marketing';
-import { toast } from '@/features/lib/toast';
 import { getSession } from '@/features/lib/auth/client-session';
+import { useStore } from '@/features/lib/store';
 import type { InboxSubmission } from '@/lib/website-form';
+import { useFormLeadIntake, type IntakeOutcome } from '@/components/leads/useFormLeadIntake';
 
 // Spec 02: a new lead shows within 10 seconds.
 const POLL_MS = 8_000;
 let draining = false;
-/** D6: the organisation's lead sources, so a link tag resolves against its own list. */
-let orgSources: LeadSourceDef[] | undefined;
 
 /*
   References this browser has already recorded. The inbox keeps submissions
@@ -43,11 +42,11 @@ function markSeen(seen: string[], ref: string) {
   try {
     localStorage.setItem(SEEN_KEY, JSON.stringify(seen.slice(-SEEN_MAX)));
   } catch {
-    /* storage blocked: the reference check in submitWebsiteForm still prevents a second lead */
+    /* storage blocked: the reference check in the intake still prevents a second lead */
   }
 }
 
-async function drain() {
+async function drain(intake: (s: InboxSubmission) => IntakeOutcome) {
   if (draining || !getSession() || !useStore.getState().currentUserId) return;
   draining = true;
   try {
@@ -57,16 +56,8 @@ async function drain() {
     const seen = readSeen();
     for (const s of submissions ?? []) {
       if (seen.includes(s.ref)) continue;
-      const r = act(submitWebsiteForm, {
-        ref: s.ref, name: s.name, phone: s.phone, email: s.email, town: s.town, address: s.address, paintType: s.paintType, message: s.message,
-        sourceLabel: (s.srcTag || s.referrer) && orgSources ? leadSourceFor({ src: s.srcTag, referrer: s.referrer }, orgSources) : s.source,
-        trackedLinkId: s.trackedLinkId,
-      });
-      if (!r.ok) continue;
+      intake(s);
       markSeen(seen, s.ref);
-      if (r.value!.outcome !== 'duplicate') {
-        toast.success('New website enquiry', r.value!.outcome === 'possible_duplicate' ? `${s.name} — lead ${r.value!.leadId}, possible duplicate` : `${s.name} — lead ${r.value!.leadId}`);
-      }
       await fetch(`/api/website-form?ref=${encodeURIComponent(s.ref)}`, { method: 'DELETE' });
     }
   } catch {
@@ -77,25 +68,28 @@ async function drain() {
 }
 
 export function WebsiteInboxSync() {
-  const { items: sources } = useCollection('leadSources');
   const { items: links } = useCollection('trackedLinks');
-  // QA C-04: without shared data the server learns the paused links from signed-in browsers.
-  const pausedIds = links.filter((l) => l.status === 'paused').map((l) => l.id).join(',');
+  const intake = useFormLeadIntake();
+  const intakeRef = useRef(intake);
+  intakeRef.current = intake;
+  // QA C-04 and CRM Part 1: without shared data the server learns the paused and deleted links, and every link id, from signed-in browsers.
+  const report = JSON.stringify({
+    paused: links.filter((l) => l.status === 'paused' && !l.deletedAt).map((l) => l.id),
+    deleted: links.filter((l) => l.deletedAt).map((l) => l.id),
+    known: links.map((l) => l.id),
+  });
   useEffect(() => {
     if (!getSession()) return;
-    void fetch('/api/website-form/links', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paused: pausedIds ? pausedIds.split(',') : [] }) }).catch(() => {});
-  }, [pausedIds]);
+    void fetch('/api/website-form/links', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: report }).catch(() => {});
+  }, [report]);
   useEffect(() => {
-    orgSources = sources;
-  }, [sources]);
-  useEffect(() => {
-    void drain();
-    const t = setInterval(() => void drain(), POLL_MS);
-    const onFocus = () => void drain();
-    window.addEventListener('focus', onFocus);
+    const run = () => void drain((s) => intakeRef.current(s));
+    run();
+    const t = setInterval(run, POLL_MS);
+    window.addEventListener('focus', run);
     return () => {
       clearInterval(t);
-      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('focus', run);
     };
   }, []);
   return null;

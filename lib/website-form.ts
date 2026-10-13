@@ -16,8 +16,13 @@
     Other (optional), stored on the lead.
   - Message: optional, up to 1,000 characters.
   Rate limit (D4): 5 submissions per hour per address.
+
+  CRM Part 1 (2): the form-link form (/f/[linkId]) sends form: 'lead' with
+  the manual lead form's fields, checked by formLeadErrors (lib/lead-capture.ts).
+  The submission then carries them as `lead`.
 */
 import { leadSourceFor } from '@/features/lib/rules/lead-sources';
+import { EMPTY_FORM_LEAD, formLeadErrors, type FormLeadInput } from './lead-capture';
 
 export const DEMO_SITE_KEY = 'emts-demo-site-key';
 export const HONEYPOT_FIELD = 'company_website';
@@ -51,6 +56,8 @@ export interface InboxSubmission {
   referrer?: string;
   /** CRM-M5: the tracked link (?l=) the form was opened from. */
   trackedLinkId?: string;
+  /** CRM Part 1 (2): the form-link form's fields (manual lead form fields). */
+  lead?: FormLeadInput;
 }
 
 export type FormCheck =
@@ -93,6 +100,8 @@ export function checkSubmission(body: unknown, opts: { siteKey: string; now: num
   const startedAt = Number(b.startedAt);
   if (Number.isFinite(startedAt) && startedAt > 0 && opts.now - startedAt < MIN_FILL_MS) return { ok: true, spam: true };
 
+  if (b.form === 'lead') return checkLeadForm(b, opts.now, opts.newRef);
+
   const name = raw(b.name).replace(/\s+/g, ' ');
   const phone = str(b.phone, MAX.phone);
   const email = str(b.email, MAX.email);
@@ -124,6 +133,25 @@ export function checkSubmission(body: unknown, opts: { siteKey: string; now: num
       ...(srcTag ? { srcTag } : {}),
       ...(referrer ? { referrer } : {}),
       ...(str(b.l, 40) ? { trackedLinkId: str(b.l, 40).replace(/[^A-Za-z0-9_-]/g, '') } : {}),
+    },
+  };
+}
+
+/** CRM Part 1 (2): the form-link form. Same rules the browser shows inline. */
+function checkLeadForm(b: Record<string, unknown>, now: number, newRef: () => string): FormCheck {
+  const lead = Object.fromEntries(Object.keys(EMPTY_FORM_LEAD).map((k) => [k, str(b[k], k === 'notes' ? MESSAGE_MAX : 200)])) as unknown as FormLeadInput;
+  const errors = formLeadErrors(lead);
+  const field = Object.keys(errors)[0] as keyof FormLeadInput | undefined;
+  if (field) return { ok: false, status: 422, error: errors[field]!, field };
+  const linkId = str(b.l, 40).replace(/[^A-Za-z0-9_-]/g, '');
+  const given = str(b.ref, MAX.ref).replace(/[^A-Za-z0-9_.:-]/g, '');
+  return {
+    ok: true,
+    submission: {
+      ref: given ? `WEB-${given}` : newRef(),
+      name: `${lead.firstName} ${lead.lastName}`.trim(), phone: lead.phone, email: lead.email,
+      address: lead.street, town: lead.city, message: lead.notes, receivedAt: new Date(now).toISOString(),
+      ...(linkId ? { trackedLinkId: linkId } : {}), lead,
     },
   };
 }

@@ -71,6 +71,8 @@ export function isPublicPath(pathname: string): boolean {
   if (p === "/paint-record/view" || p.startsWith("/paint-record/view/")) return true;
   if (p === "/estimates/view" || p.startsWith("/estimates/view/")) return true;
   if (p === "/website-form") return true;
+  // CRM Part 1: the public lead form of a form link.
+  if (/^\/f\/[^/]+$/.test(p)) return true;
   if (/\/client-view$/.test(p)) return true;
   return false;
 }

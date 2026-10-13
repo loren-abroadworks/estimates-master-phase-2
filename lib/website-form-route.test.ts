@@ -1,7 +1,7 @@
 /** QA C-01, C-02, C-04: the public website form API (memory mode, as the demo runs without Supabase). */
 import { describe, expect, it } from 'vitest';
 import { DELETE, GET, POST } from '@/app/api/website-form/route';
-import { PUT as putLinks } from '@/app/api/website-form/links/route';
+import { GET as getLink, PUT as putLinks } from '@/app/api/website-form/links/route';
 import { sessionCookie } from '@/lib/auth/server';
 import { DEMO_SITE_KEY } from '@/lib/website-form';
 
@@ -39,5 +39,27 @@ describe('website form API', () => {
     expect(res.status).toBe(403);
     expect((await post({ name: 'Live Visitor', l: 'tl_live' })).status).toBe(201);
     await pause([]);
+  });
+
+  it('CRM Part 1: the form-link form checks the manual lead form fields', async () => {
+    const lead = { form: 'lead', firstName: 'Ann', phone: '(214) 555-0101', email: 'ann@example.com', street: '1 Elm St', city: 'Dallas', state: 'TX', zip: '75201' };
+    const missing = await post({ ...lead, city: '' });
+    expect(missing.status).toBe(422);
+    expect(await missing.json()).toMatchObject({ field: 'city', error: 'City is required' });
+    expect((await post({ ...lead, ref: 'T-LEAD' })).status).toBe(201);
+    const waiting = (await inbox()).find((s) => s.ref === 'WEB-T-LEAD') as unknown as { name: string; lead?: { street: string } };
+    expect(waiting).toMatchObject({ name: 'Ann', lead: { street: '1 Elm St' } });
+  });
+
+  it('CRM Part 1: a deleted or unknown link is gone; a known open link takes requests', async () => {
+    const report = (body: object) => putLinks(new Request('http://local/api/website-form/links', { method: 'PUT', headers: { ...staff, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }));
+    const status = async (l: string) => (await getLink(new Request(`http://local/api/website-form/links?l=${l}`))).json();
+    await report({ paused: ['tl_p'], deleted: ['tl_gone'], known: ['tl_open', 'tl_p', 'tl_gone'] });
+    expect(await status('tl_open')).toEqual({ paused: false, gone: false, known: true });
+    expect(await status('tl_p')).toMatchObject({ paused: true, gone: false });
+    expect(await status('tl_gone')).toMatchObject({ gone: true });
+    expect(await status('tl_never')).toMatchObject({ gone: true });
+    expect((await post({ name: 'Late Visitor', l: 'tl_gone' })).status).toBe(410);
+    await report({ paused: [], deleted: [], known: [] });
   });
 });

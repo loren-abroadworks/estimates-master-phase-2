@@ -33,6 +33,11 @@ export default function Page() {
   useEffect(() => {
     setStartedAt(Date.now());
     const q = new URLSearchParams(window.location.search);
+    // CRM Part 1: links shared before form links moved to /f/{linkId} open the new form.
+    if (q.get('l')) {
+      window.location.replace(`/f/${encodeURIComponent(q.get('l')!)}`);
+      return;
+    }
     setTrack({ src: q.get('src') ?? '', l: q.get('l') ?? '', referrer: document.referrer });
   }, []);
   // The server knows a link was paused in any staff browser; this browser's own copy may not (QA C-04).

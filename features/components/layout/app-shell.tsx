@@ -13,7 +13,7 @@ import { QboSyncTicker } from "@/features/components/features/finance/qbo-sync-p
 import { AutomationsSync } from "@/components/automations/AutomationsSync";
 
 /** Customer-facing pages and the sign-in page: no Prototype bar or tour on top of them. */
-const PUBLIC_PATHS = ["/estimates/view", "/paint-record/view", "/website-form", "/login", "/r"];
+const PUBLIC_PATHS = ["/estimates/view", "/paint-record/view", "/website-form", "/login", "/r", "/f"];
 
 /**
  * Feature layer mounted inside the replica providers (app/providers.tsx):

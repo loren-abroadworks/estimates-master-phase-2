@@ -18,7 +18,8 @@
 import { randomUUID } from 'node:crypto';
 import { appStateConfig } from '@/lib/app-state-server';
 import { sessionFrom } from '@/lib/auth/server';
-import { isLinkPaused } from '@/lib/tracked-link-status';
+import { linkStatus } from '@/lib/tracked-link-status';
+import { GONE_COPY, PAUSED_COPY } from '@/lib/lead-capture';
 import { checkSubmission, DEMO_SITE_KEY, INBOX_PREFIX, RATE_LIMIT, RateLimiter, type InboxSubmission } from '@/lib/website-form';
 
 const SITE_KEY = process.env.WEBSITE_FORM_SITE_KEY || DEMO_SITE_KEY;
@@ -66,9 +67,10 @@ export async function POST(req: Request) {
 
   const sub = check.submission;
   // QA C-04: a paused tracked link takes no requests, whatever the visitor's browser shows.
-  if (await isLinkPaused(sub.trackedLinkId)) {
-    return Response.json({ error: 'This form is not accepting requests right now.', paused: true }, { status: 403, headers: CORS });
-  }
+  // CRM Part 1: nor does a deleted one.
+  const link = await linkStatus(sub.trackedLinkId);
+  if (link.status === 'paused') return Response.json({ error: PAUSED_COPY, paused: true }, { status: 403, headers: CORS });
+  if (link.status === 'gone') return Response.json({ error: GONE_COPY, gone: true }, { status: 410, headers: CORS });
   const cfg = appStateConfig();
   if (!cfg) {
     // Same reference again keeps the waiting copy: still one lead, and nobody can overwrite it.
