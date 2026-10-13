@@ -14,7 +14,10 @@
   - Board: a Sales / Production switch (?pipeline=), CRM-M1. Production shows
     one card per sale (CRM-M3). Leaving Sold asks whether to keep the
     Production card. A Source filter, remembered per user (CRM-M6).
-  - Complete: Group by Stage / Source (CRM-C1) and "+ Add pipeline" (CRM-C2).
+  - Complete: Group by Stage / Source (CRM-C1).
+  - CRM Part 2 (9): the Pipeline selector lists every pipeline in Settings order;
+    columns follow its stages and colours. Custom pipelines and "+ Add pipeline"
+    show only with dynamicPipelines on (Option B).
   - Website view: Tracked links (CRM-M5) and Connect Facebook Lead Ads (CRM-C6).
 */
 import React, { Suspense, useMemo, useState } from 'react';
@@ -26,8 +29,9 @@ import { Button } from '@/components/ui/button';
 import { SourceChips, useSourceFilter } from '@/components/leads/SourceFilter';
 import { SearchInput, Skeleton } from '@/components/ui/display';
 import { ConfirmDialog, Modal } from '@/components/Modals/Modal';
-import { useCollection, useCurrentUser } from '@/lib/store';
-import { cn, uid } from '@/lib/utils';
+import { useCollection, useCurrentUser, useLogActivity } from '@/lib/store';
+import { cn, fullName, uid } from '@/lib/utils';
+import { useVisiblePipelines } from '@/components/leads/usePipelines';
 import { createPipeline } from '@/lib/crm';
 import { resolveSource } from '@/features/lib/rules/lead-sources';
 import { KanbanBoard } from '@/components/leads/KanbanBoard';
@@ -40,7 +44,7 @@ import { TrackedLinksCard } from '@/components/leads/TrackedLinksCard';
 import { FacebookLeadAdsCard } from '@/components/leads/FacebookLeadAdsCard';
 import { AddPipelineModal } from '@/components/settings/config/PipelineStagesView';
 import { NewBadge, VersionBadge, FeatureGate } from '@/features/components/ui';
-import { useIsOn } from '@/features/lib/feature-visibility';
+import { useDynamicPipelines, useIsOn } from '@/features/lib/feature-visibility';
 import { leavesSold, pipelineColumns } from '@/features/lib/rules/lead-pipeline';
 import { LeadReviewPanel, useOpenReviews } from '@/components/leads/LeadReviewPanel';
 
@@ -75,6 +79,7 @@ function LeadPipeline() {
   const pipelinesCol = useCollection('pipelines');
   const cards = useCollection('productionCards');
   const user = useCurrentUser();
+  const log = useLogActivity();
   const actions = useLeadActions();
 
   const [search, setSearch] = useState('');
@@ -88,10 +93,8 @@ function LeadPipeline() {
   const [leaving, setLeaving] = useState<{ lead: Lead; status: LeadStatus } | null>(null);
   const [addingPipeline, setAddingPipeline] = useState(false);
 
-  const pipelines = useMemo(
-    () => [...pipelinesCol.items].filter((p) => p.kind === 'sales' || (crmOn && (p.kind !== 'custom' || complete))).sort((a, b) => a.sortOrder - b.sortOrder),
-    [pipelinesCol.items, complete, crmOn],
-  );
+  const pipelines = useVisiblePipelines();
+  const dynamic = useDynamicPipelines();
   const pipelineId = pipelines.some((p) => p.id === params.get('pipeline')) ? params.get('pipeline')! : 'sales';
   const pipeline = pipelines.find((p) => p.id === pipelineId);
 
@@ -162,9 +165,10 @@ function LeadPipeline() {
   };
 
   const addPipeline = (name: string) => {
-    const made = createPipeline(name, pipelinesCol.items.length + 1, uid);
+    const made = createPipeline(name, Math.max(0, ...pipelinesCol.items.map((p) => p.sortOrder)) + 1, uid);
     pipelinesCol.setAll([...pipelinesCol.items, made.pipeline]);
     stagesCol.setAll([...stagesCol.items, ...made.stages]);
+    log(`Pipeline ${made.pipeline.name} created by ${fullName(user)}.`);
     setAddingPipeline(false);
     setParam('pipeline', made.pipeline.id);
   };
@@ -250,11 +254,11 @@ function LeadPipeline() {
                 {p.name}
               </button>
             ))}
-            <FeatureGate item="CRM-C2">
-              <button type="button" onClick={() => setAddingPipeline(true)} className={seg(false)} title="Add a pipeline, e.g. Marketing">
-                <Plus className="h-3.5 w-3.5" /> Add pipeline <VersionBadge item="CRM-C2" />
+            {dynamic && (
+              <button type="button" onClick={() => setAddingPipeline(true)} className={seg(false)} title="Add a pipeline, e.g. Training">
+                <Plus className="h-3.5 w-3.5" /> Add pipeline
               </button>
-            </FeatureGate>
+            )}
           </div>
           <VersionBadge item="CRM-M1" />
           {pipeline?.kind === 'sales' && (

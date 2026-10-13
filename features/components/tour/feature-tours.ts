@@ -866,7 +866,7 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
           },
           {
             target: "crm-source", kind: "view", version: "minimal", title: "Filter by source",
-            body: "Each card shows its source as a badge. Filter the board to one source, for example Facebook.",
+            body: "Each card shows its source as a badge. Pick one or more sources, for example Instagram; every column and count follows.",
           },
           {
             target: "crm-groupby", kind: "view", version: "complete", title: "Group by source",
@@ -874,7 +874,7 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
           },
           {
             target: "crm-pipelines", kind: "add", version: "complete", title: "Add a pipeline",
-            body: "Add pipeline creates another board, for example Marketing. It starts with a New stage and a Done stage.",
+            body: "With dynamic pipelines on, Add pipeline creates another board, for example Training. It starts with a Not Started stage and a Done stage.",
             shows: "As a new tab beside Sales and Production, and in Settings › Pipeline Stages.",
           },
         ],
