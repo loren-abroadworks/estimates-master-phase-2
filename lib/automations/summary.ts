@@ -110,6 +110,7 @@ export function stepPhrase(step: Pick<AutomationStep, 'type' | 'config'>, names:
     case 'ADD_NOTE': return 'add a note';
     case 'SEND_EMAIL': { const n = names.message(String(c.messageId ?? '')); return n ? `send the "${n}" email` : 'send an email'; }
     case 'SEND_TEXT': { const n = names.message(String(c.messageId ?? '')); return n ? `send the "${n}" text` : 'send a text'; }
+    case 'END_WORKFLOW': return 'end the workflow';
     case 'WAIT': return `wait ${plural(Number(c.amount ?? 0), unitWord(c.unit))}`;
     case 'WAIT_UNTIL_DATE': {
       const pipeline = (String(c.module ?? 'JOB') as PipelineModule);
@@ -144,8 +145,9 @@ export function conditionPhrase(c: AutomationCondition, names: NameLookup = NO_N
 }
 
 /** The whole sentence. */
-export function summarize(a: { trigger: AutomationTrigger; conditions: AutomationCondition[]; steps: AutomationStep[] }, names: NameLookup = NO_NAMES): string {
-  const when = triggerPhrase(a.trigger);
+export function summarize(a: { trigger: AutomationTrigger; extraTriggers?: AutomationTrigger[]; conditions: AutomationCondition[]; steps: AutomationStep[] }, names: NameLookup = NO_NAMES): string {
+  const triggers = [a.trigger, ...(a.extraTriggers ?? [])].filter((t) => t?.type);
+  const when = triggers.length ? triggers.map((t, i) => (i ? triggerPhrase(t).replace(/^When /, 'when ') : triggerPhrase(t))).join(', or ') : 'When something happens';
   const only = a.conditions.length ? `, if ${joinAnd(a.conditions.map((c) => conditionPhrase(c, names)))}` : '';
   const steps = [...a.steps].sort((x, y) => x.order - y.order).map((s, i) => {
     const phrase = stepPhrase(s, names);

@@ -543,7 +543,7 @@ function AddWherePopover({ item, pipeline, journeyId, onClose, onChoose }: { ite
 
 /* ---------- Stuck alert editor ---------- */
 
-function StuckAlertModal({ pipeline, stage, onClose }: { pipeline: PipelineModule; stage?: string; onClose: () => void }) {
+export function StuckAlertModal({ pipeline, stage, onClose }: { pipeline: PipelineModule; stage?: string; onClose: () => void }) {
   const s = useAuto((x) => x);
   const current = stage ? stuckSettingFor(s, pipeline, stage) : undefined;
   const def = stage ? STUCK_ALERT_DEFAULTS[pipeline]?.[stage] : undefined;

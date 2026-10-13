@@ -52,23 +52,23 @@ export function DeployModal({ open, ids, journeyId, onClose, onDone }: { open: b
   const close = () => { setTicked(false); setPreview(undefined); onClose(); };
   const go = () => {
     const r = deployAutomations(ids, ticked);
-    if (!r.ok) return toast.error('Not deployed', r.error);
-    toast.success(reapprove ? 'Changes approved' : list.length > 1 ? `${list.length} automations deployed` : `${list[0]?.name} deployed`, reapprove ? 'The new version runs from now on.' : 'It runs on its own from now on.');
+    if (!r.ok) return toast.error('Not published', r.error);
+    toast.success(reapprove ? 'Changes approved' : list.length > 1 ? `${list.length} workflows published` : `${list[0]?.name} published`, reapprove ? 'The new version runs from now on.' : 'It runs on its own from now on.');
     close();
     onDone?.();
   };
   return (
-    <Modal open={open} onOpenChange={(o) => !o && close()} size="lg" title={reapprove ? 'Approve changes' : 'Deploy automation'}
-      description={reapprove ? 'A customer-facing step or message changed. Until you approve, the old version keeps running.' : 'Deploying approves every step below to run on its own. You can mark any step "Ask me first" instead.'}
+    <Modal open={open} onOpenChange={(o) => !o && close()} size="lg" title={reapprove ? 'Approve changes' : 'Publish workflow'}
+      description={reapprove ? 'A customer-facing step or message changed. Until you approve, the published version keeps running.' : 'Publishing approves every step below to run on its own. You can mark any step "Ask me first" instead.'}
       footer={<>
         <Button onClick={close}>Cancel</Button>
-        <Button variant="primary" onClick={go} disabled={!readiness.ok || !ticked || !deploy}><Rocket className="h-4 w-4" /> {reapprove ? 'Approve' : 'Deploy'}</Button>
+        <Button variant="primary" onClick={go} disabled={!readiness.ok || !ticked || !deploy}><Rocket className="h-4 w-4" /> {reapprove ? 'Approve' : 'Publish'}</Button>
       </>}>
       <div className="space-y-5">
         <section>
           <h3 className="mb-2 font-bold text-gray-900 dark:text-white">Readiness check</h3>
           <ReadinessList items={readiness.items} />
-          {!readiness.ok && <p className="mt-2 text-sm text-red-700">Fix the items marked with a cross before deploying.</p>}
+          {!readiness.ok && <p className="mt-2 text-sm text-red-700">Fix the items marked with a cross before publishing.</p>}
         </section>
         <section>
           <h3 className="mb-2 font-bold text-gray-900 dark:text-white">Sent to customers without asking</h3>
@@ -103,7 +103,7 @@ export function DeployModal({ open, ids, journeyId, onClose, onDone }: { open: b
             {others.map(({ a, st }) => <li key={`${a.id}:${st.id}`}>{stepPhrase(st, names).replace(/^./, (x) => x.toUpperCase())}{st.mode === 'ASK' ? ' (asks first)' : ''} <span className="text-gray-500">· {a.name}</span></li>)}
           </ul>
         </section>
-        {!deploy && <Banner tone="warn" title="You can't deploy">Only people with "Deploy automations" can approve steps that run on their own.</Banner>}
+        {!deploy && <Banner tone="warn" title="You can't publish">Only people who can publish workflows can approve steps that run on their own.</Banner>}
         <Checkbox checked={ticked} onCheckedChange={setTicked} disabled={!deploy} label={<span className="font-semibold">I approve these steps running automatically</span>} />
         <p className="text-xs text-gray-500">Your approval is saved with your name, the time and a copy of every customer-facing step and message as they are now.</p>
       </div>
@@ -124,7 +124,7 @@ export function TurnOffModal({ open, ids, journeyId, onClose }: { open: boolean;
     onClose();
   };
   return (
-    <Modal open={open} onOpenChange={(o) => !o && onClose()} title={journeyId ? 'Turn off this journey?' : 'Turn off?'} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="danger-solid" onClick={go}>Turn off</Button></>}>
+    <Modal open={open} onOpenChange={(o) => !o && onClose()} title={journeyId ? 'Unpublish this folder?' : 'Unpublish?'} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="danger-solid" onClick={go}>Unpublish</Button></>}>
       {n === 0 ? <p className="text-sm text-gray-700">Nothing is waiting. It stops starting new runs. You can turn it on again later.</p> : (
         <div className="space-y-3 text-sm">
           <p>{n} {n === 1 ? 'run is' : 'runs are'} waiting. Stop {n === 1 ? 'it' : 'them'}, or let {n === 1 ? 'it' : 'them'} finish?</p>
@@ -201,7 +201,7 @@ export function TestRunModal({ open, ids, onClose }: { open: boolean; ids: strin
   const tone = { WOULD_RUN: 'green', WOULD_WAIT: 'blue', WOULD_FAIL: 'red', WOULD_SKIP: 'gray' } as const;
   const label = { WOULD_RUN: 'Would run', WOULD_WAIT: 'Would wait', WOULD_FAIL: 'Would fail', WOULD_SKIP: 'Would skip' } as const;
   return (
-    <Modal open={open} onOpenChange={(o) => !o && close()} size="lg" title="Test run" description="Plays these automations against a past record's real history. Nothing is created and nothing is sent."
+    <Modal open={open} onOpenChange={(o) => !o && close()} size="lg" title="Test workflow" description="Plays this workflow against a past record's real history. Nothing is created and nothing is sent."
       footer={<><Button onClick={close}>Close</Button><Button variant="primary" disabled={!recordId} onClick={run}><FlaskConical className="h-4 w-4" /> Run test</Button></>}>
       <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
         <Field label="Record type" htmlFor="tr-type">
@@ -244,18 +244,18 @@ export function JourneyModal({ open, journeyId, onClose, onSaved }: { open: bool
   const j = journeys.find((x) => x.id === journeyId);
   const [name, setName] = useState(j?.name ?? '');
   const [description, setDescription] = useState(j?.description ?? '');
-  const err = name.trim().length < 3 ? 'The name needs at least 3 characters.' : name.trim().length > 80 ? 'At most 80 characters.' : journeys.some((x) => x.id !== journeyId && x.name.toLowerCase() === name.trim().toLowerCase()) ? 'Another journey already uses this name.' : undefined;
+  const err = name.trim().length < 3 ? 'The name needs at least 3 characters.' : name.trim().length > 80 ? 'At most 80 characters.' : journeys.some((x) => x.id !== journeyId && x.name.toLowerCase() === name.trim().toLowerCase()) ? 'Another folder already uses this name.' : undefined;
   const [touched, setTouched] = useState(false);
   const save = () => {
     setTouched(true);
     if (err) return;
     if (journeyId) { const r = updateJourney(journeyId, { name: name.trim(), description }); if (!r.ok) return toast.error('Not saved', r.error); onSaved?.(journeyId); }
     else { const r = createJourney(name, description); if (!r.ok) return toast.error('Not created', r.error); onSaved?.(r.value!); }
-    toast.success(journeyId ? 'Journey renamed' : 'Journey created');
+    toast.success(journeyId ? 'Folder renamed' : 'Folder created');
     onClose();
   };
   return (
-    <Modal open={open} onOpenChange={(o) => !o && onClose()} title={journeyId ? 'Rename journey' : 'New journey'} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={save}>Save</Button></>}>
+    <Modal open={open} onOpenChange={(o) => !o && onClose()} title={journeyId ? 'Rename folder' : 'Create folder'} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" onClick={save}>Save</Button></>}>
       <div className="space-y-3">
         <Field label="Name" htmlFor="jn-name" required error={touched ? err : undefined}><Input id="jn-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Standard Interior Repaint" /></Field>
         <Field label="Description" htmlFor="jn-desc"><Input id="jn-desc" value={description} onChange={(e) => setDescription(e.target.value)} /></Field>
@@ -268,7 +268,8 @@ export function JourneyModal({ open, journeyId, onClose, onSaved }: { open: bool
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function ModuleSettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** Sending plan, texting release, working days, job scheduling (Global Workflow Settings › General). */
+export function ModuleSettingsForm() {
   const settings = useAuto((s) => s.settings);
   const { manage, user } = usePerms();
   const [draft, setDraft] = useState(settings);
@@ -277,13 +278,10 @@ export function ModuleSettingsModal({ open, onClose }: { open: boolean; onClose:
   const save = () => {
     const r = setSettings(draft);
     if (!r.ok) return toast.error('Not saved', r.error);
-    toast.success('Automation settings saved');
-    onClose();
+    toast.success('Workflow settings saved');
   };
   return (
-    <Modal open={open} onOpenChange={(o) => { if (!o) onClose(); else setDraft(settings); }} size="lg" title="Automation settings"
-      footer={<><Button onClick={onClose}>Cancel</Button>{manage && <Button variant="primary" onClick={save}>Save</Button>}</>}>
-      <div className="space-y-5 text-sm">
+    <div className="space-y-5 text-sm">
         <section>
           <h3 className="mb-1 font-bold">Sending provider plan</h3>
           <p className="mb-2 text-xs text-gray-500">From configuration: the plan limits of the email and text provider. Messages over a limit wait in the queue; none are dropped. Leave blank for no limit.</p>
@@ -320,8 +318,8 @@ export function ModuleSettingsModal({ open, onClose }: { open: boolean; onClose:
           <h3 className="mb-1 font-bold">Job scheduling</h3>
           <Checkbox checked={!!draft.flags['new-job-scheduling']} disabled={!manage} onCheckedChange={(v) => setDraft((d) => ({ ...d, flags: { ...d.flags, 'new-job-scheduling': v } }))} label="This business uses the new job scheduling ('Book the schedule' step)" />
         </section>
-      </div>
-    </Modal>
+      {manage && <div className="flex justify-end gap-2 border-t border-gray-100 pt-4"><Button onClick={() => setDraft(settings)}>Discard</Button><Button variant="primary" onClick={save}>Save settings</Button></div>}
+    </div>
   );
 }
 

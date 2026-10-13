@@ -125,7 +125,12 @@ export interface AutomationDraft {
   templateVersion?: number;
   templateIndex?: number;
   keepGoingIfStageChanges?: boolean;
+  extraTriggers?: AutomationTrigger[];
+  notes?: { id: string; text: string }[];
 }
+
+/** The part of an automation an approval covers and runs follow. */
+export const definitionOf = (a: Automation) => ({ trigger: a.trigger, extraTriggers: a.extraTriggers, conditions: a.conditions, steps: a.steps, keepGoingIfStageChanges: a.keepGoingIfStageChanges });
 
 export const liveAutomations = (s: EngineState) => s.automations.filter((a) => !a.isDeleted);
 
@@ -138,7 +143,7 @@ function addAutomation(s: EngineState, d: AutomationDraft, me: User, names: Name
   const at = new Date().toISOString();
   const a: Automation = {
     id: nextId(s, 'auto_'), name: d.name.trim(), summary: summarize(d, names), journeyId: d.journeyId, templateId: d.templateId, templateVersion: d.templateVersion,
-    templateIndex: d.templateIndex, trigger: d.trigger, conditions: d.conditions, steps: d.steps.map((st, i) => ({ ...st, order: i })), runOrder: nextRunOrder(s, d.trigger),
+    templateIndex: d.templateIndex, trigger: d.trigger, extraTriggers: d.extraTriggers, notes: d.notes, conditions: d.conditions, steps: d.steps.map((st, i) => ({ ...st, order: i })), runOrder: nextRunOrder(s, d.trigger),
     isEnabled: false, needsReapproval: false, isArchived: false, isDeleted: false, keepGoingIfStageChanges: d.keepGoingIfStageChanges, runsLast7Days: 0, problemCount: 0,
     createdBy: me.id, updatedBy: me.id, createdAt: at, updatedAt: at,
   };
@@ -199,6 +204,8 @@ export function updateAutomation(id: string, patch: Partial<AutomationDraft> & {
       ...(patch.steps ? { steps: patch.steps.map((st, i) => ({ ...st, order: i })) } : {}),
       ...(patch.journeyId !== undefined ? { journeyId: patch.journeyId || undefined } : {}),
       ...(patch.keepGoingIfStageChanges !== undefined ? { keepGoingIfStageChanges: patch.keepGoingIfStageChanges } : {}),
+      ...(patch.extraTriggers !== undefined ? { extraTriggers: patch.extraTriggers } : {}),
+      ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
       updatedBy: me.id, updatedAt: new Date().toISOString(),
     });
     if (p && (p.pipeline !== old.pipeline || p.stage !== old.stage)) a.runOrder = nextRunOrder(s, a.trigger) - 1;
@@ -211,7 +218,7 @@ export function updateAutomation(id: string, patch: Partial<AutomationDraft> & {
         needsApproval = true;
       } else if (ap) {
         // Business-only changes apply to new runs straight away.
-        ap.snapshot = { trigger: a.trigger, conditions: a.conditions, steps: a.steps, keepGoingIfStageChanges: a.keepGoingIfStageChanges };
+        ap.snapshot = definitionOf(a);
       }
     }
     return ok({ needsApproval });
@@ -232,7 +239,7 @@ export function deployAutomations(ids: string[], approved: boolean): Result {
       if (!a.steps.length) return fail(`${a.name} has no steps yet.`);
       const ap: DeployApproval = {
         id: nextId(s, 'APR-'), automationId: a.id, approvedBy: me.id, approvedAt: at, customerFacingSteps: customerFacing(s, a.steps),
-        snapshot: JSON.parse(JSON.stringify({ trigger: a.trigger, conditions: a.conditions, steps: a.steps, keepGoingIfStageChanges: a.keepGoingIfStageChanges })),
+        snapshot: JSON.parse(JSON.stringify(definitionOf(a))),
       };
       s.approvals.push(ap);
       a.approvalId = ap.id;
@@ -246,7 +253,7 @@ export function deployAutomations(ids: string[], approved: boolean): Result {
     for (const j of s.journeys) if (journeyIds.has(j.id) && j.automationIds.some((x) => s.automations.find((a) => a.id === x)?.isEnabled)) j.isEnabled = true;
     if (facingByOther) {
       const names = ids.map((id) => s.automations.find((a) => a.id === id)?.name).filter(Boolean).join(', ');
-      tell(db, ownerIds(db), { title: `${me.name} deployed an automation that messages customers`, body: names, href: '/automations?tab=all', automationKind: 'DEPLOYED_BY_OTHER' });
+      tell(db, ownerIds(db), { title: `${me.name} published a workflow that messages customers`, body: names, href: '/automations', automationKind: 'DEPLOYED_BY_OTHER' });
     }
     return ok();
   });
@@ -327,7 +334,7 @@ export function duplicateAutomation(id: string): Result<string> {
   return mutate((s, _db, me) => {
     const a = s.automations.find((x) => x.id === id);
     if (!a) return fail('This automation is gone.');
-    const copy = addAutomation(s, { name: copyName(s, a.name), trigger: JSON.parse(JSON.stringify(a.trigger)), conditions: JSON.parse(JSON.stringify(a.conditions)), steps: freshSteps(s, a.steps), journeyId: a.journeyId, keepGoingIfStageChanges: a.keepGoingIfStageChanges }, me, names);
+    const copy = addAutomation(s, { name: copyName(s, a.name), trigger: JSON.parse(JSON.stringify(a.trigger)), extraTriggers: a.extraTriggers && JSON.parse(JSON.stringify(a.extraTriggers)), notes: a.notes && JSON.parse(JSON.stringify(a.notes)), conditions: JSON.parse(JSON.stringify(a.conditions)), steps: freshSteps(s, a.steps), journeyId: a.journeyId, keepGoingIfStageChanges: a.keepGoingIfStageChanges }, me, names);
     return ok(copy.id);
   });
 }
@@ -394,7 +401,7 @@ function saveSteps(a: Automation, steps: AutomationStep[], me: User, names: Name
   if (a.deployedAt && a.approvalId) {
     if (changesCustomerFacing(before, a) || a.needsReapproval) { a.needsReapproval = true; return true; }
     const ap = s.approvals.find((x) => x.id === a.approvalId);
-    if (ap) ap.snapshot = { trigger: a.trigger, conditions: a.conditions, steps: a.steps, keepGoingIfStageChanges: a.keepGoingIfStageChanges };
+    if (ap) ap.snapshot = definitionOf(a);
   }
   return false;
 }
@@ -548,7 +555,7 @@ function toTemplateAutomation(a: Automation, keepPeople: boolean): TemplateAutom
     if (!keepPeople) for (const k of PERSON_KEYS) if (k in st.config) st.config[k] = '';
     return st;
   });
-  return { name: a.name, trigger: JSON.parse(JSON.stringify(a.trigger)), conditions: JSON.parse(JSON.stringify(a.conditions)), steps, keepGoingIfStageChanges: a.keepGoingIfStageChanges };
+  return { name: a.name, trigger: JSON.parse(JSON.stringify(a.trigger)), extraTriggers: a.extraTriggers && JSON.parse(JSON.stringify(a.extraTriggers)), conditions: JSON.parse(JSON.stringify(a.conditions)), steps, keepGoingIfStageChanges: a.keepGoingIfStageChanges };
 }
 
 function blanksFor(list: TemplateAutomation[]): AutomationTemplate['blanks'] {
@@ -673,7 +680,7 @@ export function applyTemplate(input: ApplyInput): Result<{ journeyId?: string; a
         if (p.pipeline !== input.placeAt.pipeline || p.stage !== input.placeAt.stage) trigger = { type: 'STAGE_ENTERED', module: input.placeAt.pipeline, config: { stage: input.placeAt.stage } };
       }
       const name = t.kind === 'JOURNEY' ? ta.name : input.name.trim();
-      const a = addAutomation(s, { name: uniqueName(s, name), trigger, conditions: JSON.parse(JSON.stringify(ta.conditions)), steps, journeyId, templateId: t.id, templateVersion: t.version, templateIndex: i, keepGoingIfStageChanges: ta.keepGoingIfStageChanges }, me, names);
+      const a = addAutomation(s, { name: uniqueName(s, name), trigger, extraTriggers: ta.extraTriggers && JSON.parse(JSON.stringify(ta.extraTriggers)), conditions: JSON.parse(JSON.stringify(ta.conditions)), steps, journeyId, templateId: t.id, templateVersion: t.version, templateIndex: i, keepGoingIfStageChanges: ta.keepGoingIfStageChanges }, me, names);
       ids.push(a.id);
     });
     return ok({ journeyId, automationIds: ids });
@@ -737,7 +744,7 @@ export function recordMessageSaved(id: string, content: { name: string; subject?
     if (users.length) {
       tell(db, db.users.filter((u) => can(u, 'automation.deploy')).map((u) => u.id), {
         title: `"${content.name}" changed and needs approval`, body: `Used in ${users.length} deployed ${users.length === 1 ? 'automation' : 'automations'}. They keep sending the old version until approved.`,
-        href: '/automations?tab=messages', automationKind: 'MESSAGE_NEEDS_APPROVAL',
+        href: '/automations?view=settings&section=messages', automationKind: 'MESSAGE_NEEDS_APPROVAL',
       });
     }
     return { needsApproval: users.map((a) => a.id) };

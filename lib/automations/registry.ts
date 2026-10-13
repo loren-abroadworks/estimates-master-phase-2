@@ -458,6 +458,12 @@ export const STEPS: StepDefinition[] = [
   },
 ];
 
+/* Flow control: end here (the builder's "End" action). */
+STEPS.push({
+  type: 'END_WORKFLOW', module: 'TIMING', title: 'End workflow', description: 'Stops the workflow here for this record', icon: 'OctagonX',
+  worksOn: ['TIMING'], prerequisites: [], mode: 'AUTO_ONLY', customerFacing: false, oncePerRecord: false, fields: [],
+});
+
 /* ---------- Built-in steps (shown locked on the board) ---------- */
 
 export const BUILT_INS: BuiltInStep[] = [

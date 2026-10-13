@@ -89,7 +89,7 @@ export function NotificationBell() {
           )}
           {canReview && (
             <div className="border-t border-gray-100 px-4 py-2 text-right">
-              <button onClick={() => { setOpen(false); router.push('/automations?tab=review'); }} className="text-xs font-semibold text-primary-600 hover:underline">See all</button>
+              <button onClick={() => { setOpen(false); router.push('/automations?view=workflows&tab=review'); }} className="text-xs font-semibold text-primary-600 hover:underline">See all</button>
             </div>
           )}
         </Popover.Content>

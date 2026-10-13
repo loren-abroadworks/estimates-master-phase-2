@@ -123,6 +123,7 @@ export function validateAutomation(a: Pick<Automation, 'name' | 'trigger' | 'con
   const nameMsg = validateName(a.name, ctx.otherNames);
   if (nameMsg) out.push({ where: 'name', message: nameMsg });
   out.push(...validateTrigger(a.trigger));
+  for (const t of (a as { extraTriggers?: AutomationTrigger[] }).extraTriggers ?? []) out.push(...validateTrigger(t));
   if (a.conditions.length > LIMITS.conditions) out.push({ where: 'conditions', message: `Up to ${LIMITS.conditions} conditions.` });
   for (const c of a.conditions) if (!c.field) out.push({ where: 'conditions', message: 'Pick a field for each condition.' });
   if (a.steps.length > LIMITS.steps) out.push({ where: 'steps', message: `An automation can have up to ${LIMITS.steps} steps.` });

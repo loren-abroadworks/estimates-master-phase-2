@@ -131,3 +131,22 @@ describe('system templates', () => {
     }
   });
 });
+
+describe('builder menus', () => {
+  it('every unlocked trigger and action maps to the registry, and every icon exists', async () => {
+    const { TRIGGER_PRESETS, ACTION_PRESETS } = await import('./menu');
+    const { triggerDef } = await import('./registry');
+    const icons = (await import('lucide-react')) as unknown as Record<string, unknown>;
+    for (const t of TRIGGER_PRESETS) {
+      expect(icons[t.icon], t.icon).toBeTruthy();
+      if (t.locked) continue;
+      const d = triggerDef(t.type!);
+      expect(d, t.id).toBeTruthy();
+      expect(d!.modules.includes(t.module), t.id).toBe(true);
+    }
+    for (const a of ACTION_PRESETS) {
+      expect(icons[a.icon], a.icon).toBeTruthy();
+      if (!a.locked) expect(stepDef(a.type!), a.id).toBeTruthy();
+    }
+  });
+});

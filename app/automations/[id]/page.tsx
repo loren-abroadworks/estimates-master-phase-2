@@ -2,22 +2,17 @@
 
 import { Suspense } from 'react';
 import { useParams } from 'next/navigation';
-import { Screen } from '@/features/components/layout/screen';
-import { AutomationEditorPage } from '@/components/automations/AutomationEditor';
-import { useParam } from '@/features/lib/navigation';
+import { BuilderPage } from '@/components/automations/workflows/BuilderPage';
 
-function Editor() {
+function Builder() {
   const { id } = useParams<{ id: string }>();
-  const tab = useParam('tab');
-  return <AutomationEditorPage id={id} tab={tab} />;
+  return <BuilderPage key={id} id={id} />;
 }
 
 export default function Page() {
   return (
-    <Screen crumbs={[{ label: 'Automations', href: '/automations?tab=all' }, { label: 'Edit automation' }]}>
-      <Suspense fallback={null}>
-        <Editor />
-      </Suspense>
-    </Screen>
+    <Suspense fallback={null}>
+      <Builder />
+    </Suspense>
   );
 }

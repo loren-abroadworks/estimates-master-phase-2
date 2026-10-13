@@ -75,7 +75,7 @@ export function JourneyCard({ type, id, className }: { type: PipelineModule; id:
           )}
           {j.next ? (
             <p className="text-sm"><span className="font-bold">Next: {j.next.title.replace(/^./, (x) => x.toLowerCase())}.</span> <span className="text-gray-600 dark:text-gray-300">{j.next.waitingFor}</span>
-              {j.next.reviewId && perms.review && <AppLink href={`/automations?tab=review&item=${j.next.reviewId}`} className="ml-1 font-semibold text-primary-700 hover:underline">Review</AppLink>}
+              {j.next.reviewId && perms.review && <AppLink href={`/automations?view=workflows&tab=review&item=${j.next.reviewId}`} className="ml-1 font-semibold text-primary-700 hover:underline">Review</AppLink>}
             </p>
           ) : <p className="text-sm text-gray-500">Nothing is waiting.</p>}
           {j.problems.map((p) => (

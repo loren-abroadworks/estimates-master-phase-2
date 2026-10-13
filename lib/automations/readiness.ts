@@ -36,9 +36,11 @@ export function checkAutomation(a: Automation, s: EngineState, ctx: ReadinessCon
   const place = boardPlacement(a.trigger);
   const vars = variablesFor(place.pipeline, place.stage);
 
-  for (const p of validateTrigger(a.trigger)) block(`${a.name}: ${p.message}`);
-  const tdef = triggerDef(a.trigger.type);
-  if (tdef?.backendGap) warn(`${a.name}: ${tdef.backendGap}`);
+  for (const t of [a.trigger, ...(a.extraTriggers ?? [])]) {
+    for (const p of validateTrigger(t)) block(`${a.name}: ${p.message}`);
+    const tdef = triggerDef(t.type);
+    if (tdef?.backendGap) warn(`${a.name}: ${tdef.backendGap}`);
+  }
   if (!a.steps.length) block(`${a.name} has no steps yet.`);
   const loop = loopProblem(a);
   if (loop) block(`${stepLabel(a, loop.where)}: ${loop.message}`, loop.where);

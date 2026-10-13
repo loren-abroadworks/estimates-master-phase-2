@@ -58,7 +58,7 @@ export function isLive(a: Automation): boolean {
 export function liveDefinition(s: EngineState, a: Automation): AutomationDefinition {
   const ap = s.approvals.find((x) => x.id === a.approvalId);
   if (a.needsReapproval && ap) return ap.snapshot;
-  return { trigger: a.trigger, conditions: a.conditions, steps: a.steps, keepGoingIfStageChanges: a.keepGoingIfStageChanges };
+  return { trigger: a.trigger, extraTriggers: a.extraTriggers, conditions: a.conditions, steps: a.steps, keepGoingIfStageChanges: a.keepGoingIfStageChanges };
 }
 
 function actorFor(s: EngineState, db: FDb, a: Automation): User {
@@ -136,8 +136,16 @@ export function detectEvents(s: EngineState, db: FDb, now: Date): EngineEvent[] 
   return events;
 }
 
+/** Every trigger of a definition (the first plus any added with "Add new trigger"). Empty ones are ignored. */
+export function allTriggers(def: Pick<AutomationDefinition, 'trigger' | 'extraTriggers'>) {
+  return [def.trigger, ...(def.extraTriggers ?? [])].filter((t) => !!t?.type);
+}
+
 function triggerMatches(def: AutomationDefinition, e: EngineEvent): boolean {
-  const t = def.trigger;
+  return allTriggers(def).some((t) => triggerMatchesOne(t, e));
+}
+
+function triggerMatchesOne(t: AutomationDefinition['trigger'], e: EngineEvent): boolean {
   if (pipelineOf(t.module) !== e.record.type) return false;
   if (t.type !== e.type) return false;
   const c = t.config;
@@ -151,43 +159,46 @@ function triggerMatches(def: AutomationDefinition, e: EngineEvent): boolean {
 }
 
 /** Time-based triggers: a record has been in a stage for a set time, a date is near, years since completion. */
+const TIMED = ['STAGE_DURATION', 'DATE_RELATIVE', 'TIME_SINCE_COMPLETION'];
+
 function timeEvents(s: EngineState, db: FDb, now: Date): { automation: Automation; event: EngineEvent }[] {
   const out: { automation: Automation; event: EngineEvent }[] = [];
-  const timed = s.automations.filter((a) => isLive(a) && ['STAGE_DURATION', 'DATE_RELATIVE', 'TIME_SINCE_COMPLETION'].includes(liveDefinition(s, a).trigger.type));
+  const timed = s.automations.filter((a) => isLive(a) && allTriggers(liveDefinition(s, a)).some((t) => TIMED.includes(t.type)));
   if (!timed.length) return out;
   const records = allRecords(db, now);
   for (const a of timed) {
-    const def = liveDefinition(s, a);
-    const pipeline = pipelineOf(def.trigger.module);
     const deployed = Date.parse(a.deployedAt!);
-    const c = def.trigger.config;
-    for (const r of records) {
-      if (r.type !== pipeline) continue;
-      const t = s.tracks[recordKey(r.type, r.id)];
-      if (!t) continue;
-      let due: number | undefined;
-      let key = '';
-      if (def.trigger.type === 'STAGE_DURATION') {
-        if (r.stage !== c.stage) continue;
-        due = Date.parse(t.enteredAt) + Number(c.days ?? 0) * 24 * HOUR;
-        key = `dur:${t.entryNo}`;
-      } else if (def.trigger.type === 'DATE_RELATIVE') {
-        const date = r.dates[String(c.dateField)];
-        if (!date) continue;
-        const ms = Number(c.amount ?? 0) * (c.unit === 'HOURS' ? HOUR : 24 * HOUR);
-        due = Date.parse(date) + (c.direction === 'AFTER' ? ms : -ms);
-        key = `date:${String(c.dateField)}:${date}`;
-      } else {
-        const date = r.dates.completedAt;
-        if (!date || r.stage !== 'COMPLETED') continue;
-        const d = new Date(date);
-        d.setMonth(d.getMonth() + Number(c.months ?? 0));
-        due = d.getTime();
-        key = `done:${date}`;
+    for (const trig of allTriggers(liveDefinition(s, a)).filter((t) => TIMED.includes(t.type))) {
+      const pipeline = pipelineOf(trig.module);
+      const c = trig.config;
+      for (const r of records) {
+        if (r.type !== pipeline) continue;
+        const t = s.tracks[recordKey(r.type, r.id)];
+        if (!t) continue;
+        let due: number | undefined;
+        let key = '';
+        if (trig.type === 'STAGE_DURATION') {
+          if (r.stage !== c.stage) continue;
+          due = Date.parse(t.enteredAt) + Number(c.days ?? 0) * 24 * HOUR;
+          key = `dur:${String(c.stage)}:${t.entryNo}`;
+        } else if (trig.type === 'DATE_RELATIVE') {
+          const date = r.dates[String(c.dateField)];
+          if (!date) continue;
+          const ms = Number(c.amount ?? 0) * (c.unit === 'HOURS' ? HOUR : 24 * HOUR);
+          due = Date.parse(date) + (c.direction === 'AFTER' ? ms : -ms);
+          key = `date:${String(c.dateField)}:${date}`;
+        } else {
+          const date = r.dates.completedAt;
+          if (!date || r.stage !== 'COMPLETED') continue;
+          const d = new Date(date);
+          d.setMonth(d.getMonth() + Number(c.months ?? 0));
+          due = d.getTime();
+          key = `done:${date}`;
+        }
+        // Only moments after deploy: switching an automation on never floods old records.
+        if (due === undefined || due > now.getTime() || due < deployed) continue;
+        out.push({ automation: a, event: { type: trig.type, record: r, entryNo: t.entryNo, stage: r.stage, key } });
       }
-      // Only moments after deploy: switching an automation on never floods old records.
-      if (due === undefined || due > now.getTime() || due < deployed) continue;
-      out.push({ automation: a, event: { type: def.trigger.type, record: r, entryNo: t.entryNo, stage: r.stage, key } });
     }
   }
   return out;
@@ -214,7 +225,7 @@ export function startRun(s: EngineState, db: FDb, a: Automation, e: EngineEvent,
   const run: AutomationRun = {
     id: nextId(s, 'RUN-'), automationId: a.id, automationName: a.name, journeyName: journey?.name, journeyId: journey?.id, recordType: e.record.type,
     recordId: e.record.id, recordLabel: e.record.label, status: 'WAITING', startedAt: at, updatedAt: at, cursor: 0, entryNo: e.entryNo,
-    stage: STAGE_TRIGGERS.includes(def.trigger.type) ? e.stage : undefined, keepGoingIfStageChanges: def.keepGoingIfStageChanges, eventKey: e.key,
+    stage: STAGE_TRIGGERS.includes(e.type) ? e.stage : undefined, keepGoingIfStageChanges: def.keepGoingIfStageChanges, eventKey: e.key,
     definition: steps, stepStartedAt: at,
     steps: steps.map((st) => ({ stepId: st.id, title: stepDef(st.type)?.title ?? st.type, status: 'PENDING' as RunStepStatus, message: '' })),
   };
@@ -242,7 +253,7 @@ function notifyFailure(s: EngineState, db: FDb, a: Automation, run: AutomationRu
   if (s.failureNotices[key]) return;
   s.failureNotices[key] = new Date().toISOString();
   tell(db, [...ownerIds(db), a.createdBy, r.assignedUserId], {
-    title: `Automation step failed: ${step?.title ?? a.name}`, body: `${r.label} · ${message.replace(/^Failed: /, '')}`, href: `/automations?tab=activity&run=${run.id}`, automationKind: 'STEP_FAILED',
+    title: `Workflow step failed: ${step?.title ?? a.name}`, body: `${r.label} · ${message.replace(/^Failed: /, '')}`, href: `/automations/${a.id}?tab=logs`, automationKind: 'STEP_FAILED',
   });
 }
 
@@ -358,7 +369,7 @@ export function advanceRun(s: EngineState, db: FDb, run: AutomationRun, env: Eng
           createdAt: at, status: 'WAITING',
         };
         s.reviews.unshift(item);
-        tell(db, reviewerIds(db, a), { title: `Waiting for review: ${item.title}`, body: `${r.label} · ${a.name}`, href: `/automations?tab=review&item=${item.id}`, automationKind: 'REVIEW_WAITING', reviewItemId: item.id });
+        tell(db, reviewerIds(db, a), { title: `Waiting for review: ${item.title}`, body: `${r.label} · ${a.name}`, href: `/automations?view=workflows&tab=review&item=${item.id}`, automationKind: 'REVIEW_WAITING', reviewItemId: item.id });
       }
       rs.status = 'WAITING_FOR_REVIEW';
       rs.message = 'Waiting for review.';
@@ -392,6 +403,12 @@ export function advanceRun(s: EngineState, db: FDb, run: AutomationRun, env: Eng
       finishRun(run, 'FAILED', at);
       a.problemCount = (a.problemCount ?? 0) + 1;
       if (!env.dryRun) notifyFailure(s, db, a, run, current, res.message);
+      return;
+    }
+    if (res.status === 'END') {
+      rs.status = 'DONE';
+      stopRest(run, run.cursor + 1, 'Not run: the workflow ended.');
+      finishRun(run, 'DONE', at);
       return;
     }
     if (res.status === 'STOP') {
@@ -459,7 +476,7 @@ function capacityNotices(s: EngineState, db: FDb, now: Date) {
       if (s.capacityNotices[key] || cap.usedThisMonth < (cap.limit * pct) / 100) continue;
       s.capacityNotices[key] = now.toISOString();
       const word = channel === 'email' ? 'emails' : 'texts';
-      tell(db, ownerIds(db), { title: `You've used ${pct}% of this month's ${word} (${cap.usedThisMonth.toLocaleString()} of ${cap.limit.toLocaleString()})`, body: pct === 100 ? 'New messages wait in the send queue until next month or a bigger plan.' : 'Messages over the limit will wait in the queue.', href: '/automations?tab=activity', automationKind: 'SENDING_CAPACITY' });
+      tell(db, ownerIds(db), { title: `You've used ${pct}% of this month's ${word} (${cap.usedThisMonth.toLocaleString()} of ${cap.limit.toLocaleString()})`, body: pct === 100 ? 'New messages wait in the send queue until next month or a bigger plan.' : 'Messages over the limit will wait in the queue.', href: '/automations?view=overview', automationKind: 'SENDING_CAPACITY' });
     }
   }
 }

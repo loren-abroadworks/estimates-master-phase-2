@@ -106,8 +106,8 @@ export function useAutomationActions() {
       list.push({ label: 'Duplicate', icon: <Copy />, onSelect: () => { const r = duplicateAutomation(a.id); if (r.ok) toast.success('Duplicated', 'The copy is Off.'); else toast.error('Not duplicated', r.error); } });
       list.push({ label: 'Save as template', icon: <LayoutTemplate />, onSelect: () => setTpl({ ids: [a.id] }) });
     }
-    list.push({ label: 'View activity', icon: <History />, onSelect: () => nav.push(`/automations?tab=activity&automation=${a.id}`) });
-    list.push({ label: 'Test run', icon: <FlaskConical />, onSelect: () => setTest([a.id]) });
+    list.push({ label: 'Execution logs', icon: <History />, onSelect: () => nav.push(`/automations/${a.id}?tab=logs`) });
+    list.push({ label: 'Test workflow', icon: <FlaskConical />, onSelect: () => setTest([a.id]) });
     if (perms.manage && !a.isArchived) list.push({ label: 'Archive', icon: <Archive />, onSelect: () => { const r = archiveAutomations([a.id]); if (r.ok) toast.success('Archived', 'Find it again with "Show archived".'); else toast.error('Not archived', r.error); } });
     if (perms.manage && a.isArchived) list.push({ label: 'Restore', icon: <ArchiveRestore />, onSelect: () => { const r = restoreAutomations([a.id]); if (r.ok) toast.success('Restored', 'It is Off.'); } });
     if (perms.del) list.push({ label: 'Delete', icon: <Trash2 />, danger: true, onSelect: () => setDel([a.id]) });
@@ -118,7 +118,7 @@ export function useAutomationActions() {
     <>
       <DeployModal open={!!deploy} ids={deploy?.ids ?? []} journeyId={deploy?.journeyId} onClose={() => setDeploy(undefined)} />
       <TurnOffModal open={!!off} ids={off?.ids ?? []} journeyId={off?.journeyId} onClose={() => setOff(undefined)} />
-      <DeleteModal open={!!del} ids={del ?? []} onClose={() => setDel(undefined)} onDone={() => { if (location.pathname !== '/automations') nav.push('/automations?tab=all'); }} />
+      <DeleteModal open={!!del} ids={del ?? []} onClose={() => setDel(undefined)} onDone={() => { if (location.pathname !== '/automations') nav.push('/automations'); }} />
       <TestRunModal open={!!test} ids={test ?? []} onClose={() => setTest(undefined)} />
       <RenameModal key={rename?.id ?? 'none'} automation={rename} onClose={() => setRename(undefined)} />
       {tpl && <SaveAsTemplateModal ids={tpl.ids} journeyId={tpl.journeyId} onClose={() => setTpl(undefined)} />}

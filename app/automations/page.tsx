@@ -1,12 +1,12 @@
 'use client';
 
 import { Suspense } from 'react';
-import { AutomationsHome } from '@/components/automations/AutomationsHome';
+import { WorkflowsPage } from '@/components/automations/workflows/WorkflowsPage';
 
 export default function Page() {
   return (
     <Suspense fallback={null}>
-      <AutomationsHome />
+      <WorkflowsPage />
     </Suspense>
   );
 }

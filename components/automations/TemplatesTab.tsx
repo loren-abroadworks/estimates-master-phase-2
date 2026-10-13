@@ -66,7 +66,7 @@ export function UseTemplateModal({ templateId, placeAt, onClose }: { templateId:
     if (!r.ok) return toast.error('Not created', r.error);
     toast.success(t.kind === 'JOURNEY' ? `${name} created` : 'Automation created', 'Everything starts Off. Turn it on when you are ready.');
     onClose();
-    if (t.kind === 'JOURNEY') nav.push(`/automations?tab=board&journey=${r.value!.journeyId}`);
+    if (t.kind === 'JOURNEY') nav.push(`/automations?view=workflows&folder=${r.value!.journeyId}`);
   };
   const steps = ['Name', 'Fill in the blanks', 'Check'];
   return (

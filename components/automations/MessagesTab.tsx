@@ -57,7 +57,7 @@ export function MessagesTab() {
                 <p className="truncate text-sm text-gray-600 dark:text-gray-300">{m.body.split('\n').find((l) => l.trim())}</p>
                 <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-gray-500">
                   {m.usedInAutomationIds.length ? (
-                    <span role="link" tabIndex={0} className="font-semibold text-primary-700 hover:underline" onClick={(e) => { e.stopPropagation(); nav.push('/automations?tab=all'); }}>
+                    <span role="link" tabIndex={0} className="font-semibold text-primary-700 hover:underline" onClick={(e) => { e.stopPropagation(); nav.push('/automations'); }}>
                       {m.usedInAutomationIds.length} {m.usedInAutomationIds.length === 1 ? 'automation' : 'automations'}
                     </span>
                   ) : <span>Not used yet</span>}

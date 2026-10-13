@@ -51,7 +51,7 @@ export interface ExecCtx {
   record: RecordView;
 }
 
-export type ExecStatus = 'DONE' | 'SKIPPED' | 'FAILED' | 'WAIT' | 'STOP';
+export type ExecStatus = 'DONE' | 'SKIPPED' | 'FAILED' | 'WAIT' | 'STOP' | 'END';
 
 export interface ExecResult {
   status: ExecStatus;
@@ -349,6 +349,7 @@ function needEstimate(ctx: ExecCtx) {
 const userName = (db: FDb, id?: string) => db.users.find((u) => u.id === id)?.name ?? 'someone';
 
 const EXECUTORS: Record<string, Executor> = {
+  END_WORKFLOW: () => ({ status: 'END', message: 'The workflow ended here.' }),
   MOVE_LEAD_STAGE: (ctx, c) => {
     const lead = needLead(ctx);
     if (!lead) return failed('this record has no lead.');

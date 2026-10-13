@@ -171,8 +171,12 @@ export interface Automation {
   templateIndex?: number;
   templateUpdated?: boolean;
   trigger: AutomationTrigger;
+  /** More triggers: any of them starts the workflow (the builder's "Add new trigger"). */
+  extraTriggers?: AutomationTrigger[];
   conditions: AutomationCondition[];
   steps: AutomationStep[];
+  /** Sticky notes on the builder canvas. */
+  notes?: { id: string; text: string }[];
   /** Order within its stage. */
   runOrder: number;
   isEnabled: boolean;
@@ -197,6 +201,7 @@ export interface Automation {
 /** The parts of an automation a run follows: what was approved at deploy. */
 export interface AutomationDefinition {
   trigger: AutomationTrigger;
+  extraTriggers?: AutomationTrigger[];
   conditions: AutomationCondition[];
   steps: AutomationStep[];
   keepGoingIfStageChanges?: boolean;
@@ -260,6 +265,7 @@ export interface Journey {
 export interface TemplateAutomation {
   name: string;
   trigger: AutomationTrigger;
+  extraTriggers?: AutomationTrigger[];
   conditions: AutomationCondition[];
   steps: AutomationStep[];
   keepGoingIfStageChanges?: boolean;

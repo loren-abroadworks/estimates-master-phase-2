@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { usePerms } from './hooks';
 import { CARD, EmptyNote, RunBadge, relTime } from './shared';
 
-function SendingCard() {
+export function SendingCard() {
   const s = useAuto((x) => x);
   const now = new Date();
   const queue = (ch: 'email' | 'sms') => s.runs.filter((r) => r.status === 'WAITING' && r.waitingFor?.startsWith('Waiting in the send queue') && (ch === 'sms') === (r.definition[r.cursor]?.type === 'SEND_TEXT')).length;
