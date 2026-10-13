@@ -5,8 +5,8 @@
   - Search by name, email or city (applies to every view).
   - BOARD view (default): drag-and-drop kanban. TABLE view (?view=table): sortable, filterable list.
   - View Archived switches to a grid of archived leads with Restore buttons.
-  - NEW (34): WEBSITE view (?view=website), the Website Lead Review panel (website-form
-    leads, the review list and the simulated website form) from the feature prototype.
+  - WEBSITE view (?view=website): Form links and Lead Review (CRM Part 1). The
+    separate Website Leads table is gone: those leads are on the board and in Lead Review.
   - NEW (29): the Repaint alert source and the follow-up lock on the board and table.
   Live source: features/(main)/leads/listings/templates/grid.tsx
 
@@ -39,11 +39,10 @@ import { useLeadActions } from '@/components/leads/useLeadActions';
 import { TrackedLinksCard } from '@/components/leads/TrackedLinksCard';
 import { FacebookLeadAdsCard } from '@/components/leads/FacebookLeadAdsCard';
 import { AddPipelineModal } from '@/components/settings/config/PipelineStagesView';
-import { useDb as useFeatureDb } from '@/features/lib/store';
 import { NewBadge, VersionBadge, FeatureGate } from '@/features/components/ui';
 import { useIsOn } from '@/features/lib/feature-visibility';
 import { leavesSold, pipelineColumns } from '@/features/lib/rules/lead-pipeline';
-import { WebsiteLeadsPanel } from '@/features/components/features/leads/listings/website-leads-panel';
+import { LeadReviewPanel, useOpenReviews } from '@/components/leads/LeadReviewPanel';
 
 export default function LeadsPage() {
   return (
@@ -66,8 +65,8 @@ function LeadPipeline() {
   const websiteReviewOn = useIsOn({ feature: 34 });
   const websiteOn = websiteReviewOn || crmOn;
   const view = viewParam === 'table' ? 'table' : viewParam === 'website' && websiteOn ? 'website' : 'kanban';
-  const featureDb = useFeatureDb((d) => d);
-  const openReviews = featureDb.leads.filter((l) => l.review?.status === 'open').length;
+  // CRM Part 1 (5): the Website tab shows how many leads wait on Lead Review.
+  const openReviews = useOpenReviews().length;
   // CRM Complete (New Features panel): added pipelines and Group by Source.
   const complete = useIsOn({ featureKey: 'crm', part: 'complete' });
 
@@ -226,7 +225,7 @@ function LeadPipeline() {
           ))}
           {websiteOn && <button
             type="button"
-            title="Website Lead Review"
+            title="Form links and Lead Review"
             data-tour="leads-website"
             onClick={() => setView('website')}
             className={cn(
@@ -288,9 +287,9 @@ function LeadPipeline() {
 
       {view === 'website' ? (
         <div className="space-y-6">
-          <FeatureGate item="CRM-M5"><div data-tour="crm-links"><TrackedLinksCard /></div></FeatureGate>
+          <div data-tour="crm-links"><TrackedLinksCard /></div>
+          <LeadReviewPanel />
           <FeatureGate item="CRM-C6"><div data-tour="crm-fb-ads"><FacebookLeadAdsCard /></div></FeatureGate>
-          {websiteReviewOn && <WebsiteLeadsPanel />}
         </div>
       ) : viewArchived ? (
         <ArchivedView leads={archived} onRestore={actions.restore} />

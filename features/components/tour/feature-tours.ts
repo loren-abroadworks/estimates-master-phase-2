@@ -756,14 +756,14 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
         href: "/leads?view=website",
         steps: [
           {
-            target: "marketing-website-form", kind: "add", title: "One lead per website event",
-            body: "Each event has a stable reference, so a retry never duplicates a lead. Matching is phone first, then email, within 90 days of the lead's last activity.",
-            shows: "On the Lead Pipeline as a new lead, or on the matching lead.",
-            tryIt: "Send each scenario, then Retry last event.",
+            target: "crm-links", kind: "add", title: "One lead per form submission",
+            body: "Each form link opens the request form. A submission becomes one lead in the link's starting stage, with the link's source. A double click within 10 minutes is ignored.",
+            shows: "On the Lead Pipeline board, in the link's starting stage.",
+            tryIt: "Copy a link and open it in a new tab.",
           },
           {
-            target: "marketing-leads", kind: "view", title: "Gaps stay visible",
-            body: "A missing phone number is shown as Missing, never filled in. When the phone matches one lead and the email another, the new lead goes to Lead review for a person; there's no merge button.",
+            target: "crm-review", kind: "view", title: "Likely duplicates wait for a person",
+            body: "Same phone or email: Likely the same person. Same name only: Possible match. Compare side by side, then Merge, Retain or Remove. Nothing is merged automatically.",
           },
         ],
       },
@@ -883,10 +883,10 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
         href: "/leads?view=website",
         steps: [
           {
-            target: "crm-links", kind: "add", version: "minimal", title: "Make a tracked link",
+            target: "crm-links", kind: "add", version: "minimal", title: "Make a form link",
             before: "The customer was asked where they heard about you, or the source was picked by hand.",
-            body: "Add a link per place you share the request-an-estimate form (Facebook page, Instagram bio, website), each with its source. Copy the link or print its QR code.",
-            shows: "Leads from that link arrive on the Sales board in New, with the source already set.",
+            body: "Create a link per place you share the request-an-estimate form (Facebook page, Instagram bio, website), each with its source and starting stage. Copy the link or download its QR code.",
+            shows: "Leads from that link arrive on the Sales board in its starting stage, with the source already set.",
           },
           {
             target: "crm-fb-ads", kind: "add", version: "complete", title: "Connect Facebook Lead Ads",

@@ -78,6 +78,12 @@ describe('match check', () => {
     expect(findMatch(fresh, [fresh, other], [], [])).toMatchObject({ matchId: 'L3', level: 'possible', on: 'name' });
   });
 
+  it('prefers the phone match when one record shares the email and another the phone', () => {
+    const byEmail = lead('L1', { email: 'js@example.com' });
+    const byPhone = lead('L2', { phone: '2145550188' });
+    expect(findMatch(fresh, [fresh, byEmail, byPhone], [], [])).toMatchObject({ matchId: 'L2', on: 'phone' });
+  });
+
   it('prefers a Strong match and checks contacts with no lead', () => {
     const name = lead('L3', { firstName: 'John', lastName: 'Smith' });
     const contact = customer('C-9', { phone: '2145550188' });

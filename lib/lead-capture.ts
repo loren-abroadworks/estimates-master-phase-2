@@ -137,8 +137,9 @@ function compare(a: Person, b: Person): Pick<Match, 'level' | 'on'> | undefined 
 }
 
 /**
- * The best match for a new form lead, or undefined. Leads are checked before
- * contacts (a lead shows the last estimate or job), Strong before Possible.
+ * The best match for a new form lead, or undefined. Same phone first, then
+ * same email, then same name; leads before contacts (a lead shows the last
+ * estimate or job).
  * Skipped: the lead's own contact, pairs marked "not a duplicate", and leads
  * that are themselves waiting on review.
  */
@@ -164,7 +165,8 @@ export function findMatch(
     const m = compare(lead, c);
     if (m) found.push({ matchKind: 'contact', matchId: c.id, ...m });
   }
-  return found.find((m) => m.level === 'strong') ?? found[0];
+  // A phone match is the surest sign of the same person, then email, then name.
+  return found.find((m) => m.on === 'phone') ?? found.find((m) => m.level === 'strong') ?? found[0];
 }
 
 export const MATCH_LABEL: Record<LeadReview['level'], string> = {

@@ -22,7 +22,7 @@ import { pipelineColumns } from '@/features/lib/rules/lead-pipeline';
 import { useCurrentUser as useFeatureUser } from '@/features/lib/store';
 import { can } from '@/features/lib/permissions';
 import type { TrackedLink } from '@/lib/types';
-import { Badge, Button, Card, CardTitle, Field, Input, Modal, Select, Table, TD, TH, THead, TR, VersionBadge } from '@/features/components/ui';
+import { Badge, Button, Card, CardTitle, Field, Input, Modal, RowMenu, Select, Table, TD, TH, THead, TR, VersionBadge } from '@/features/components/ui';
 import { toast } from '@/features/lib/toast';
 
 export function TrackedLinksCard() {
@@ -100,15 +100,20 @@ export function TrackedLinksCard() {
                       <Button size="sm" variant="secondary" onClick={() => setConfirming(undefined)}>Cancel</Button>
                     </span>
                   ) : (
-                    <span className="inline-flex flex-wrap justify-end gap-1">
+                    <span className="inline-flex flex-wrap items-center justify-end gap-1 lg:flex-nowrap">
                       <Button size="sm" variant="secondary" onClick={() => void copy(l)} aria-label={`Copy link for ${l.name}`}><Copy className="h-3.5 w-3.5" /> Copy Link</Button>
                       <Button size="sm" variant="secondary" onClick={() => setQr(l)} aria-label={`QR code for ${l.name}`}><QrCode className="h-3.5 w-3.5" /> QR Code</Button>
                       {admin && <>
-                        <Button size="sm" variant="secondary" onClick={() => togglePause(l)}>
+                        <Button size="sm" variant="secondary" onClick={() => togglePause(l)} className="min-w-[5.5rem]">
                           {l.status === 'active' ? <><Pause className="h-3.5 w-3.5" /> Pause</> : <><Play className="h-3.5 w-3.5" /> Resume</>}
                         </Button>
-                        <Button size="sm" variant="secondary" onClick={() => setEditing(l)} aria-label={`Edit ${l.name}`}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
-                        <Button size="sm" variant="secondary" onClick={() => setConfirming(l.id)} aria-label={`Delete ${l.name}`}><Trash2 className="h-3.5 w-3.5" /> Delete</Button>
+                        <RowMenu
+                          label={`More actions for ${l.name}`}
+                          items={[
+                            { label: 'Edit', icon: <Pencil />, onSelect: () => setEditing(l) },
+                            { label: 'Delete', icon: <Trash2 />, danger: true, onSelect: () => setConfirming(l.id) },
+                          ]}
+                        />
                       </>}
                     </span>
                   )}
