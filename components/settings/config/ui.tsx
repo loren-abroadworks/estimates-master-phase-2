@@ -49,7 +49,8 @@ export function NoteBox({ children, className }: { children: React.ReactNode; cl
 }
 
 /** Blue box listing template variables. Clicking a chip inserts it (onInsert) or copies it. */
-export function VariablesBox({ variables, onInsert, hint }: { variables: string[]; onInsert?: (v: string) => void; hint: string }) {
+/** `format` writes a variable as its chip and inserted text; the default is {{name}}. */
+export function VariablesBox({ variables, onInsert, hint, format = (v) => `{{${v}}}` }: { variables: string[]; onInsert?: (v: string) => void; hint: string; format?: (v: string) => string }) {
   return (
     <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
       <div className="mb-2 flex items-center gap-2 text-sm font-bold text-blue-800">
@@ -61,10 +62,10 @@ export function VariablesBox({ variables, onInsert, hint }: { variables: string[
             key={v}
             type="button"
             title="Click to insert"
-            onClick={() => onInsert?.(`{{${v}}}`)}
+            onClick={() => onInsert?.(format(v))}
             className="rounded border border-blue-200 bg-white px-2 py-1 font-mono text-xs text-blue-700 hover:bg-blue-100"
           >
-            {`{{${v}}}`}
+            {format(v)}
           </button>
         ))}
       </div>

@@ -34,6 +34,7 @@ import { formatPhone, TemplateListItem, VariablesBox } from './ui';
 import { cn } from '@/lib/utils';
 import { NewBadge, VersionBadge, FeatureGate } from '@/features/components/ui';
 import { useIsOn } from '@/features/lib/feature-visibility';
+import { WEB_THANKS_ID } from '@/lib/lead-capture';
 
 /** Inserts text at the cursor of an input/textarea and returns the new value. */
 export function insertAt(el: HTMLInputElement | HTMLTextAreaElement | null, value: string, text: string) {
@@ -52,7 +53,8 @@ export function AutomatedMessagesView() {
   const { items: all, update } = useCollection('automatedMessages');
   // The crew schedule email (JS-M4) shows while Job scheduling emails is on (New Features).
   const jsOn = useIsOn({ item: 'JS-M4' });
-  const items = all.filter((t) => t.id !== 'am_crew_schedule' || jsOn);
+  // CRM Part 1 (3): the website thank-you email has its own card above the list.
+  const items = all.filter((t) => (t.id !== 'am_crew_schedule' || jsOn) && t.id !== WEB_THANKS_ID);
   const { toast } = useToast();
   const [activeState, setActiveId] = useState(items[0]?.id ?? '');
   const activeId = items.some((t) => t.id === activeState) ? activeState : items[0]?.id ?? '';
@@ -96,6 +98,7 @@ export function AutomatedMessagesView() {
 
   return (
     <SettingsPage wide title="Automated Messages" subtitle="Customize the default email and SMS templates sent to clients.">
+      <WebsiteThanksCard />
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="space-y-3 lg:col-span-4 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto lg:pr-2">
           {items.length === 0 && <p className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">No email templates.</p>}
@@ -230,6 +233,67 @@ export function AutomatedMessagesView() {
         />
       )}
     </SettingsPage>
+  );
+}
+
+/**
+ * CRM Part 1 (3): "Thank-you email for new website leads". On by default.
+ * When a form link creates a lead and this is On, the email is sent
+ * (simulated) and logged on the lead; when Off, nothing is sent or logged.
+ */
+function WebsiteThanksCard() {
+  const { items, update } = useCollection('automatedMessages');
+  const t = items.find((x) => x.id === WEB_THANKS_ID);
+  const { toast } = useToast();
+  const [subject, setSubject] = useState(t?.subject ?? '');
+  const [body, setBody] = useState(t?.body ?? '');
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const lastFocus = useRef<'subject' | 'body'>('body');
+  if (!t) return null;
+  const dirty = subject !== (t.subject ?? '') || body !== t.body;
+  const save = () => {
+    if (!subject.trim()) return toast('Email subject is required', 'error');
+    if (!body.trim()) return toast('Message body is required', 'error');
+    update(t.id, { subject, body });
+    toast('Thank-you email saved');
+  };
+  const insert = (v: string) => {
+    if (lastFocus.current === 'subject') setSubject((s) => insertAt(subjectRef.current, s, v));
+    else setBody((b) => insertAt(bodyRef.current, b, v));
+  };
+  return (
+    <section className="mb-8 rounded-2xl bg-white p-6 shadow-lg md:p-7" aria-labelledby="web-thanks-title">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 pb-4">
+        <div className="min-w-0">
+          <h3 id="web-thanks-title" className="font-heading text-lg font-bold text-gray-900">{t.name}</h3>
+          <p className="text-sm text-gray-500">Sent when a form link creates a new lead.</p>
+        </div>
+        <span className="flex items-center gap-2 text-xs font-medium text-gray-500">
+          {t.isActive ? 'On' : 'Off'}
+          <Switch
+            checked={t.isActive}
+            onChange={(v) => {
+              update(t.id, { isActive: v });
+              toast(v ? 'Thank-you email is on' : 'Thank-you email is off');
+            }}
+            label="Send the thank-you email"
+          />
+        </span>
+      </div>
+      <div className="space-y-5">
+        <Field label="Subject">
+          <Input ref={subjectRef} value={subject} onFocus={() => (lastFocus.current = 'subject')} onChange={(e) => setSubject(e.target.value)} onClear={() => setSubject('')} aria-label="Thank-you email subject" />
+        </Field>
+        <Field label="Body">
+          <Textarea ref={bodyRef} rows={4} value={body} onFocus={() => (lastFocus.current = 'body')} onChange={(e) => setBody(e.target.value)} aria-label="Thank-you email body" />
+        </Field>
+        <VariablesBox variables={t.availableVariables ?? []} onInsert={insert} format={(v) => `{${v}}`} hint="Click a placeholder to add it where the cursor is. It is replaced with the lead's or your business's details when sent." />
+      </div>
+      <div className="mt-5 flex justify-end border-t border-gray-100 pt-4">
+        <Button onClick={save} disabled={!dirty} icon={<Save className="h-4 w-4" />}>Save Changes</Button>
+      </div>
+    </section>
   );
 }
 
