@@ -34,7 +34,7 @@ export function StageTracker({ steps, current, onSelect, disabled, label, classN
   const at = steps.findIndex((s) => s.id === current);
   const clickable = !!onSelect && !disabled;
   return (
-    <div className={cn('overflow-x-auto pb-1', className)}>
+    <div className={cn('overflow-x-auto px-1 pb-1 pt-1.5', className)}>
       <ol className="flex min-w-max" aria-label={label}>
         {steps.map((s, i) => {
           const done = at >= 0 && i < at;

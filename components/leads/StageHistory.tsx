@@ -5,14 +5,12 @@
   - StageHistoryCard (CRM-M7): every stage the lead was in: stage, pipeline,
     who moved it, and when. Newest first. Production moves come from the
     lead's Production card.
-  - JourneyBar (CRM-C7, Complete): where the lead is in each pipeline.
+  The Journey bar (CRM-C7) became the stacked trackers (PipelineTrackers.tsx).
 */
-import { History, Route } from 'lucide-react';
+import { History } from 'lucide-react';
 import type { Lead } from '@/lib/types';
 import { useCollection } from '@/lib/store';
-import { cn } from '@/lib/utils';
-import { customColumnFor, pipelineColumns, salesColumnFor } from '@/features/lib/rules/lead-pipeline';
-import { NewBadge, VersionBadge } from '@/features/components/ui';
+import { VersionBadge } from '@/features/components/ui';
 
 const card = 'rounded-3xl border border-gray-200 bg-white p-6 shadow-sm';
 
@@ -56,42 +54,6 @@ export function StageHistoryCard({ lead }: { lead: Lead }) {
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-export function JourneyBar({ lead }: { lead: Lead }) {
-  const { items: pipelines } = useCollection('pipelines');
-  const { items: stages } = useCollection('pipelineStages');
-  const prod = useLeadCard(lead);
-  const steps = [...pipelines].sort((a, b) => a.sortOrder - b.sortOrder).map((p) => {
-    const cols = pipelineColumns(stages, p.id);
-    const at = p.kind === 'sales' ? salesColumnFor(lead, cols) : p.kind === 'production' ? cols.find((s) => s.id === prod?.stageId) : customColumnFor(lead, cols, p.id);
-    return { p, cols, at };
-  });
-  return (
-    <div className={cn(card, 'p-5')} data-tour="crm-journey">
-      <div className="mb-4 flex items-center gap-2 text-gray-500">
-        <Route className="h-4 w-4" />
-        <span className="text-xs font-bold uppercase tracking-widest">Journey</span>
-        <VersionBadge item="CRM-C7" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {steps.map(({ p, cols, at }) => (
-          <div key={p.id}>
-            <div className="mb-1.5 flex items-center justify-between text-xs">
-              <span className="font-bold text-gray-900">{p.name}</span>
-              <span className="text-gray-500">{at ? at.displayName : p.kind === 'production' ? 'Not sold yet' : '—'}</span>
-            </div>
-            <div className="flex gap-1" aria-label={`${p.name}: ${at?.displayName ?? 'not started'}`}>
-              {cols.map((s) => {
-                const reached = at ? s.sortOrder <= at.sortOrder : false;
-                return <span key={s.id} title={s.displayName} className="h-2 flex-1 rounded-full" style={{ backgroundColor: reached ? s.color : '#E5E7EB' }} />;
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

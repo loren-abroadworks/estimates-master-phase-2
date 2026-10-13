@@ -24,6 +24,7 @@ import { useCollection, useDb } from '@/lib/store';
 import { cn, fullName, shortDate } from '@/lib/utils';
 import { appendNote, formatPhone } from '@/components/leads/leadHelpers';
 import { NotesSection } from '@/components/leads/NotesSection';
+import { ContactPipelineTrackers } from '@/components/leads/PipelineTrackers';
 import { ContactFormModal } from '@/components/contacts/ContactFormModal';
 import { ContactScheduleModal } from '@/components/contacts/ContactScheduleModal';
 import { CONTACT_TYPE_COLORS, statsFor } from '@/components/contacts/contactStats';
@@ -189,6 +190,9 @@ function ContactDetail() {
           </div>
         </div>
       </div>
+
+      {/* CRM Part 2 (10): where the contact's lead is in each pipeline, stacked. */}
+      <ContactPipelineTrackers leads={related.leads} className="mb-8" />
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-3">
         {/* Left column */}

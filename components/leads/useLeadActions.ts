@@ -14,12 +14,14 @@
     stands for no lifecycle status; moveInPipeline moves it on an added
     pipeline (CRM-C2). In the Complete version a stage email that is not
     approved waits in the approval queue instead of sending (CRM-C3).
+  - CRM Part 2 (10): moveProduction moves the lead's Production card. Every
+    move is logged as "Lead {No} moved from {From} to {To} in {Pipeline} by {User}."
 */
 import { useCallback, useRef } from 'react';
-import type { Lead, LeadStatus, PipelineStage, PreparedMessage } from '@/lib/types';
+import type { Lead, LeadStatus, PipelineStage, PreparedMessage, ProductionCard } from '@/lib/types';
 import { useCollection, useCurrentUser, useLogActivity, useSingleton } from '@/lib/store';
 import { move } from '@/lib/crm';
-import { pipelineColumns, salesColumnFor } from '@/features/lib/rules/lead-pipeline';
+import { customColumnFor, pipelineColumns, salesColumnFor } from '@/features/lib/rules/lead-pipeline';
 import { useIsOn } from '@/features/lib/feature-visibility';
 import { cancelForStageChange, deliver, leadVars, planStageSends, splitByDelay } from '@/lib/lead-messages';
 import { useToast } from '@/components/ui/toast';
@@ -34,6 +36,12 @@ export function useLeadActions() {
   const messages = useCollection('automatedMessages');
   const stages = useCollection('pipelineStages');
   const prepared = useCollection('preparedMessages');
+  const pipelines = useCollection('pipelines');
+  const cards = useCollection('productionCards');
+  const pipelineName = (id: string) => pipelines.items.find((p) => p.id === id)?.name ?? id;
+  /** CRM Part 2: one line per move, in every pipeline. */
+  const logMove = (lead: Lead, pipelineId: string, from: string | undefined, to: string) =>
+    log(`Lead ${lead.leadNumber} moved from ${from ?? 'Not started'} to ${to} in ${pipelineName(pipelineId)} by ${me}.`, 'lead', lead.id);
   const me = fullName(useCurrentUser());
   const complete = useIsOn({ featureKey: 'crm', part: 'complete' });
   const [bp] = useSingleton('businessProfile');
@@ -97,7 +105,9 @@ export function useLeadActions() {
       const scheduledMessages = cancelForStageChange(lead.scheduledMessages, status, at);
       const cancelled = (scheduledMessages ?? []).filter((m) => m.cancelledAt === at).length;
       // CRM-M7: record the stage it lands on, and who moved it.
-      const col = salesColumnFor({ status, stageId: undefined, stageStatus: undefined }, pipelineColumns(stages.items, 'sales'));
+      const salesCols = pipelineColumns(stages.items, 'sales');
+      const from = salesColumnFor(lead, salesCols);
+      const col = salesColumnFor({ status, stageId: undefined, stageStatus: undefined }, salesCols);
       const stageHistory = col ? [...(lead.stageHistory ?? []), move('sales', col, me, at)] : lead.stageHistory;
       leads.update(lead.id, { status, contactType, updatedAt: at, stageId: undefined, stageStatus: undefined, stageHistory, ...(cancelled ? { scheduledMessages } : {}) });
       if (cancelled) log(`${cancelled} scheduled message${cancelled === 1 ? '' : 's'} cancelled for ${fullName(lead)}: lead moved to ${status}`, 'lead', lead.id);
@@ -106,32 +116,52 @@ export function useLeadActions() {
         const type = customerTypeFor(status, customer.type);
         if (type !== customer.type) customers.update(customer.id, { type });
       }
-      log(`${fullName(lead)} (${lead.leadNumber}) moved to ${status}`, 'lead', lead.id);
+      logMove(lead, 'sales', from?.displayName, col?.displayName ?? status);
       if (!opts.silent) toast(opts.message ?? 'Lead status updated successfully');
       sendStageMessages({ ...lead, status, scheduledMessages }, status);
     },
-    [leads, customers, log, toast, sendStageMessages, stages.items, me],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [leads, customers, log, toast, sendStageMessages, stages.items, me, pipelines.items],
   );
 
   /** CRM-M2: onto a Sales stage that stands for no lifecycle status (the lead keeps its status). */
   const moveToStage = useCallback(
     (lead: Lead, stage: PipelineStage) => {
       const at = new Date().toISOString();
+      const from = salesColumnFor(lead, pipelineColumns(stages.items, 'sales'));
       leads.update(lead.id, { stageId: stage.id, stageStatus: lead.status, updatedAt: at, stageHistory: [...(lead.stageHistory ?? []), move('sales', stage, me, at)] });
-      log(`${fullName(lead)} (${lead.leadNumber}) moved to ${stage.displayName}`, 'lead', lead.id);
-      toast(`Moved to ${stage.displayName}`);
+      logMove(lead, 'sales', from?.displayName, stage.displayName);
+      toast(`${fullName(lead)} moved to ${stage.displayName}`);
     },
-    [leads, log, toast, me],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [leads, log, toast, me, stages.items, pipelines.items],
   );
 
   /** CRM-C2: a stage on an added pipeline. */
   const moveInPipeline = useCallback(
     (lead: Lead, pipelineId: string, stage: PipelineStage) => {
       const at = new Date().toISOString();
+      const from = customColumnFor(lead, pipelineColumns(stages.items, pipelineId), pipelineId);
       leads.update(lead.id, { pipelineStages: { ...lead.pipelineStages, [pipelineId]: stage.id }, stageHistory: [...(lead.stageHistory ?? []), move(pipelineId, stage, me, at)] });
-      toast(`Moved to ${stage.displayName}`);
+      logMove(lead, pipelineId, from?.displayName, stage.displayName);
+      toast(`${fullName(lead)} moved to ${stage.displayName}`);
     },
-    [leads, toast, me],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [leads, toast, me, stages.items, pipelines.items],
+  );
+
+  /** CRM Part 2 (10): the lead's Production card onto another Production stage. */
+  const moveProduction = useCallback(
+    (lead: Lead, card: ProductionCard, stage: PipelineStage) => {
+      if (card.stageId === stage.id) return;
+      const at = new Date().toISOString();
+      const from = stages.items.find((s) => s.id === card.stageId);
+      cards.update(card.id, { stageId: stage.id, history: [...card.history, move('production', stage, me, at)] });
+      logMove(lead, 'production', from?.displayName, stage.displayName);
+      toast(`${fullName(lead)} moved to ${stage.displayName}`);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cards, toast, me, stages.items, pipelines.items],
   );
 
   const cancelScheduled = useCallback(
@@ -186,5 +216,5 @@ export function useLeadActions() {
     [customers, leads, log, toast],
   );
 
-  return { changeStatus, moveToStage, moveInPipeline, archive, restore, remove, addNote, convert, sendStageMessages, cancelScheduled };
+  return { changeStatus, moveToStage, moveInPipeline, moveProduction, archive, restore, remove, addNote, convert, sendStageMessages, cancelScheduled };
 }

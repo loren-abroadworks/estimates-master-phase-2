@@ -27,7 +27,7 @@ import { remoteSave } from '@/lib/remote-state';
 import { randomRef, nextNumber } from '@/features/lib/store/helpers';
 import { sourceFromLabel } from '@/features/lib/rules/lead-pipeline';
 import { acceptEstimateByToken, amendEstimate, deleteEstimate, markEstimateApproved, sendEstimate } from '@/features/lib/store/actions/estimates';
-import { scheduleLeadEstimate, setLeadStage } from '@/features/lib/store/actions/leads';
+import { scheduleLeadEstimate, setLeadStageByHand } from '@/features/lib/store/actions/leads';
 import { setJobStage } from '@/features/lib/store/actions/jobs';
 import { markUnscheduled, scheduleWorkOrder, setWorkOrderStatus } from '@/features/lib/store/actions/work-orders';
 import { invoiceBalance, invoicePaid, reconcileInvoicePayments, sendInvoice } from '@/features/lib/store/actions/invoices';
@@ -336,7 +336,7 @@ const leads: Entity<Lead> = {
           else pWrite((d) => { const x = byId(d.leads, id); if (x) x.stage = 'estimate_scheduled'; });
           return;
         }
-        act(setLeadStage, id, M.LEAD_STAGE_P[v as Lead['status']]);
+        act(setLeadStageByHand, id, M.LEAD_STAGE_P[v as Lead['status']]);
       },
     },
   ],

@@ -5,7 +5,9 @@
   Header: avatar, name, LEAD/CONTACT/CLIENT badge, location, source, created date,
   appointment chip and actions (Schedule/Reschedule, Convert, estimate link or
   Create New Estimate, and a menu with Edit / Archive / Delete).
-  Below: the stage bar, contact info, job location, lead details and notes.
+  Below: the stacked stage trackers (CRM Part 2, 10: one card per pipeline,
+  replacing the stage bar and the Journey bar), contact info, job location,
+  lead details and notes.
   NEW (29): the Repaint alert source, the Repaint Follow-Up card (with New Estimate
   from History, 28, booked on this same lead), and the follow-up lock: while an
   open follow-up drives the lead, the stage bar and Archive are locked with the reason.
@@ -30,10 +32,10 @@ import { LEAD_LIFECYCLE, formatPhone, time12 } from '@/components/leads/leadHelp
 import { useLeadActions } from '@/components/leads/useLeadActions';
 import { LeadFormModal } from '@/components/leads/LeadFormModal';
 import { ScheduleEstimateModal } from '@/components/leads/ScheduleEstimateModal';
-import { PipelineStatusBar } from '@/components/leads/PipelineStatusBar';
+import { PipelineTrackers } from '@/components/leads/PipelineTrackers';
 import { NotesSection } from '@/components/leads/NotesSection';
 import { LeadMessagesCard } from '@/components/leads/LeadMessagesCard';
-import { JourneyBar, StageHistoryCard } from '@/components/leads/StageHistory';
+import { StageHistoryCard } from '@/components/leads/StageHistory';
 import { FeatureGate } from '@/features/components/ui';
 import { FollowUpLockNote, LeadSourceChip, PossibleDuplicateChip, RepaintFollowUpHost, useFollowUpLocks } from '@/components/leads/leadFeatures';
 import { PropertyMapCard, ServiceLocationModal, useAddServiceLocation } from '@/components/contacts/ServiceLocations';
@@ -160,18 +162,11 @@ export default function LeadDetailPage() {
             This lead is archived and hidden from the pipeline.
             {!lock && <Button variant="secondary" size="sm" icon={<RotateCcw className="h-4 w-4" />} onClick={() => actions.restore(lead)}>Unarchive</Button>}
           </div>
-        ) : (
-          <PipelineStatusBar
-            current={lead.status}
-            onChange={(s) => actions.changeStatus(lead, s)}
-            lockedBy={lock?.id}
-            lockNote={lock && <FollowUpLockNote fu={lock} className="mb-3" />}
-          />
-        )}
+        ) : lock ? <FollowUpLockNote fu={lock} className="mt-6" /> : null}
       </div>
 
-      {/* CRM-C7 (Complete): where the lead is in each pipeline. */}
-      <FeatureGate item="CRM-C7"><div className="mb-8"><JourneyBar lead={lead} /></div></FeatureGate>
+      {/* CRM Part 2 (10): one tracker card per pipeline, stacked in Settings order. */}
+      <PipelineTrackers lead={lead} locked={!!lock} className="mb-8" />
 
       {/* Main grid */}
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-3">

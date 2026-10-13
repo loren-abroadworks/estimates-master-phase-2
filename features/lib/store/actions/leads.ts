@@ -78,7 +78,17 @@ export function drivingFollowUp(db: Database, lead: Pick<Lead, "id">) {
   return db.followUps.find((f) => f.leadId === lead.id && !isClosedFollowUp(f));
 }
 
-export function setLeadStage(db: Database, actor: User, leadId: string, to: PipelineStage) {
+/**
+ * CRM Part 2 (10): a stage picked on the lead's stage tracker. Any Sales
+ * stage can be picked by hand (Pending, Sold and Lost included); access,
+ * repaint follow-up and archive rules still apply. The replica sends status
+ * changes here (lib/bridge/sync.ts); the board keeps the live drag rules itself.
+ */
+export function setLeadStageByHand(db: Database, actor: User, leadId: string, to: PipelineStage) {
+  return setLeadStage(db, actor, leadId, to, { anyStage: true });
+}
+
+export function setLeadStage(db: Database, actor: User, leadId: string, to: PipelineStage, opts: { anyStage?: boolean } = {}) {
   if (!can(actor, "lead.update")) return denied(db, actor, MODULE, "change a lead's status", whoCan("lead.update"));
   const lead = byId(db.leads, leadId);
   if (!lead) return fail("Lead not found.");
@@ -89,7 +99,7 @@ export function setLeadStage(db: Database, actor: User, leadId: string, to: Pipe
     if (to !== "contacted") return fail("Restore an archived lead to Contacted first.");
   } else if (to === "archived") {
     if (!canArchiveStage(lead.stage)) return fail("Only Scheduled, Pending and Lost leads can be archived.");
-  } else if (!canManuallySetStage(lead.stage, to)) {
+  } else if (!opts.anyStage && !canManuallySetStage(lead.stage, to)) {
     return fail(refusedMoveMessage(to));
   }
   const from = lead.stage;
