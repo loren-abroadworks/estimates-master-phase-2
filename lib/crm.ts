@@ -10,7 +10,8 @@
     marked as handled so no automation fires for old records.
 */
 import { estimateTotals } from './calculations';
-import type { Database, Job, Lead, PipelineStage, ProductionCard, StageMove } from './types';
+import type { Database, Job, Lead, LeadReview, PipelineStage, ProductionCard, StageMove } from './types';
+import { findMatch } from './lead-capture';
 import { automationEventKeys } from './automation';
 import { pipelineColumns, productionCardsToCreate, salesColumnFor, stagePipeline } from '@/features/lib/rules/lead-pipeline';
 
@@ -19,8 +20,28 @@ const SALES_STATUS: Record<string, PipelineStage['leadStatus']> = {
 };
 const SALES_SYSTEM = ['NEW', 'SOLD', 'LOST', 'ARCHIVED'];
 
+/**
+ * CRM Part 2: Production now runs Confirmed → Closed. Saves with the old seeded
+ * stages (Pick Colours … Complete) get the new ones; stages someone added stay,
+ * before Closed. Cards on a stage that went move to its nearest new stage.
+ */
+const OLD_PRODUCTION = new Set(['pp_colours', 'pp_ready', 'pp_complete']);
+export const OLD_PRODUCTION_STAGE: Record<string, string> = { pp_colours: 'pp_confirmed', pp_ready: 'pp_confirmed', pp_complete: 'pp_closed' };
+
+function migrateProduction(saved: PipelineStage[], fresh: PipelineStage[]): PipelineStage[] {
+  if (!saved.some((s) => OLD_PRODUCTION.has(s.id)) || saved.some((s) => s.id === 'pp_confirmed')) return saved;
+  const seeded = fresh.filter((s) => s.pipelineId === 'production');
+  const seededIds = new Set(seeded.map((s) => s.id));
+  const added = saved.filter((s) => s.pipelineId === 'production' && !OLD_PRODUCTION.has(s.id) && !seededIds.has(s.id));
+  const kept = [...seeded];
+  const closed = kept.pop()!;
+  const production = [...kept, ...added, closed].map((s, i) => ({ ...s, sortOrder: i + 1 }));
+  return [...saved.filter((s) => s.pipelineId !== 'production'), ...production];
+}
+
 /** Saved stages without a pipeline are the original Sales stages. Missing seeded stages are added. */
-export function migratePipelineStages(saved: PipelineStage[], fresh: PipelineStage[]): PipelineStage[] {
+export function migratePipelineStages(savedIn: PipelineStage[], fresh: PipelineStage[]): PipelineStage[] {
+  const saved = migrateProduction(savedIn, fresh);
   const upgraded = saved.map((s): PipelineStage =>
     s.pipelineId ? s : {
       ...s, pipelineId: 'sales', system: SALES_SYSTEM.includes(s.stageId), leadStatus: SALES_STATUS[s.stageId],
@@ -33,8 +54,8 @@ export function migratePipelineStages(saved: PipelineStage[], fresh: PipelineSta
 
 /** Production stage for a job already in progress when cards were introduced. */
 const STAGE_FOR_JOB: Partial<Record<Job['status'], string>> = {
-  Unscheduled: 'pp_colours', Confirmed: 'pp_colours', Scheduled: 'pp_scheduled', 'In Production': 'pp_progress',
-  'Touch Up': 'pp_touchups', 'Ready for Inspection': 'pp_touchups', Completed: 'pp_complete', Marketing: 'pp_complete',
+  Unscheduled: 'pp_confirmed', Confirmed: 'pp_confirmed', Scheduled: 'pp_scheduled', 'In Production': 'pp_progress',
+  'Touch Up': 'pp_touchups', 'Ready for Inspection': 'pp_inspection', Completed: 'pp_closed', Marketing: 'pp_closed',
 };
 
 export const move = (pipelineId: string, stage: Pick<PipelineStage, 'id' | 'displayName'>, by: string, at: string): StageMove => ({
@@ -86,6 +107,8 @@ export function withCrmBaseline(db: Database, at = new Date().toISOString()): Da
   });
   const withLeads = { ...db, collections: { ...c, leads } };
   const cards = newProductionCards(withLeads, at, { placeByJob: true, by: 'Imported' });
+  let n = c.leadReviews.length;
+  const reviews = reviewsFor(withLeads, at, () => `lr_seed_${++n}`);
   const seen = new Set(c.automationEvents.map((e) => e.id));
   const events = automationEventKeys(withLeads).filter((k) => !seen.has(k)).map((id) => ({ id, at }));
   return {
@@ -93,6 +116,7 @@ export function withCrmBaseline(db: Database, at = new Date().toISOString()): Da
     collections: {
       ...withLeads.collections,
       productionCards: [...c.productionCards, ...cards],
+      leadReviews: [...c.leadReviews, ...reviews],
       automationEvents: [...c.automationEvents, ...events],
     },
   };
@@ -100,14 +124,33 @@ export function withCrmBaseline(db: Database, at = new Date().toISOString()): Da
 
 export { stagePipeline };
 
-/** CRM-C2: a new pipeline starts with one custom stage and its system stage last. */
+/** CRM Part 2 (7): a new pipeline starts with Not Started and Done. Custom pipelines have no locked stages. */
 export function createPipeline(name: string, order: number, newId: (prefix: string) => string): { pipeline: import('./types').Pipeline; stages: PipelineStage[] } {
   const id = newId('pl');
   return {
     pipeline: { id, name, kind: 'custom', sortOrder: order },
     stages: [
-      { id: newId('ps'), stageId: 'START', displayName: 'New', color: '#3B82F6', sortOrder: 1, pipelineId: id },
-      { id: newId('ps'), stageId: 'DONE', displayName: 'Done', color: '#22C55E', sortOrder: 2, pipelineId: id, system: true },
+      { id: newId('ps'), stageId: 'START', displayName: 'Not Started', color: '#6B7280', sortOrder: 1, pipelineId: id },
+      { id: newId('ps'), stageId: 'DONE', displayName: 'Done', color: '#22C55E', sortOrder: 2, pipelineId: id },
     ],
   };
+}
+
+/**
+ * CRM Part 1 (5): Lead Review rows for form leads that have none yet. Runs
+ * on first load, so the seeded form leads get the same check a new
+ * submission gets (lib/lead-capture.ts findMatch).
+ */
+export function reviewsFor(db: Database, at: string, newId: () => string): LeadReview[] {
+  const c = db.collections;
+  const have = new Set(c.leadReviews.map((r) => r.leadId));
+  const out: LeadReview[] = [];
+  const formLeads = c.leads.filter((l) => l.webRef && !have.has(l.id)).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  for (const l of formLeads) {
+    // Each lead is compared with the ones that were there before it.
+    const before = c.leads.filter((x) => x.createdAt <= l.createdAt);
+    const m = findMatch(l, before, c.customers, c.notDuplicatePairs, out);
+    if (m) out.push({ id: newId(), leadId: l.id, ...m, createdAt: l.createdAt || at, status: 'open' });
+  }
+  return out;
 }

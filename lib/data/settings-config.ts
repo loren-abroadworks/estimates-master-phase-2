@@ -8,6 +8,7 @@ import type {
   AutomationRule, GoalsProfit, LaborConfig, Pipeline, PipelineStage, ProjectDiscount, SmsTemplate, TableColumn, TaxRegion, TrackedLink, LeadSourceDef,
 } from '../types';
 import { defaultSources } from '@/features/lib/rules/lead-sources';
+import { WEB_THANKS_ID } from '../lead-capture';
 
 export const generalConfig: GeneralConfig = {
   baseLaborRate: 70.3125,
@@ -113,17 +114,35 @@ export const tableColumns: TableColumn[] = [
   { id: 'tcol_mask', name: 'Masking', columnType: 'CHECKBOX', prepRate: 500, isVisible: false, isSystem: false, sortOrder: 28 },
 ];
 
-/* CRM-M1: pipelines are a list, so more can be added without a data change. */
+/*
+  CRM-M1: pipelines are a list, so more can be added without a data change.
+  CRM Part 2: Training is a custom pipeline, shown only with dynamicPipelines on.
+*/
 export const pipelines: Pipeline[] = [
   { id: 'sales', name: 'Sales', kind: 'sales', sortOrder: 1 },
   { id: 'production', name: 'Production', kind: 'production', sortOrder: 2 },
+  { id: 'pl_training', name: 'Training', kind: 'custom', sortOrder: 3 },
 ];
 
 /*
-  CRM-M2. Sales: New first, Sold second last, Lost last (system). Contacted,
-  Estimate Scheduled and Pending are custom stages that keep driving the
-  lead lifecycle. Archived stays for the lifecycle but is not a column.
-  Production: Complete last (system).
+  CRM Part 2 (7, 11): Production starts at Confirmed and ends at Closed (both
+  locked). Job Progress on Job Details reads these stages.
+*/
+export const productionStages: PipelineStage[] = [
+  { id: 'pp_confirmed', stageId: 'CONFIRMED', displayName: 'Confirmed', color: '#8B5CF6', sortOrder: 1, pipelineId: 'production', system: true },
+  { id: 'pp_scheduled', stageId: 'SCHEDULED', displayName: 'Scheduled', color: '#14B8A6', sortOrder: 2, pipelineId: 'production' },
+  { id: 'pp_progress', stageId: 'IN_PROGRESS', displayName: 'In Production', color: '#F59E0B', sortOrder: 3, pipelineId: 'production' },
+  { id: 'pp_touchups', stageId: 'TOUCH_UPS', displayName: 'Touch Up', color: '#EC4899', sortOrder: 4, pipelineId: 'production' },
+  { id: 'pp_inspection', stageId: 'INSPECTION', displayName: 'Inspection', color: '#0EA5E9', sortOrder: 5, pipelineId: 'production' },
+  { id: 'pp_closed', stageId: 'CLOSED', displayName: 'Closed', color: '#22C55E', sortOrder: 6, pipelineId: 'production', system: true },
+];
+
+/*
+  CRM-M2 and CRM Part 2 (7). Locked (system) stages can be renamed and
+  recoloured, never deleted. Sales: New first, Sold second last, Lost last.
+  Contacted, Estimate Scheduled and Pending keep driving the lead lifecycle.
+  Archived stays for the lifecycle but is not a column. Custom pipelines
+  (Training) have no locked stages.
 */
 export const pipelineStages: PipelineStage[] = [
   { id: 'ps_new', stageId: 'NEW', displayName: 'New Leads', color: '#3B82F6', sortOrder: 1, pipelineId: 'sales', system: true, leadStatus: 'New' },
@@ -133,22 +152,26 @@ export const pipelineStages: PipelineStage[] = [
   { id: 'ps_sold', stageId: 'SOLD', displayName: 'Sold', color: '#22C55E', sortOrder: 5, pipelineId: 'sales', system: true, leadStatus: 'Sold' },
   { id: 'ps_lost', stageId: 'LOST', displayName: 'Lost', color: '#EF4444', sortOrder: 6, pipelineId: 'sales', system: true, leadStatus: 'Lost' },
   { id: 'ps_archived', stageId: 'ARCHIVED', displayName: 'Archived', color: '#6B7280', sortOrder: 7, pipelineId: 'sales', system: true, leadStatus: 'Archived', hidden: true },
-  { id: 'pp_colours', stageId: 'PICK_COLOURS', displayName: 'Pick Colours', color: '#8B5CF6', sortOrder: 1, pipelineId: 'production' },
-  { id: 'pp_ready', stageId: 'READY_TO_SCHEDULE', displayName: 'Ready to Schedule', color: '#0EA5E9', sortOrder: 2, pipelineId: 'production' },
-  { id: 'pp_scheduled', stageId: 'SCHEDULED', displayName: 'Scheduled', color: '#14B8A6', sortOrder: 3, pipelineId: 'production' },
-  { id: 'pp_progress', stageId: 'IN_PROGRESS', displayName: 'In Progress', color: '#F59E0B', sortOrder: 4, pipelineId: 'production' },
-  { id: 'pp_touchups', stageId: 'TOUCH_UPS', displayName: 'Touch-ups', color: '#EC4899', sortOrder: 5, pipelineId: 'production' },
-  { id: 'pp_complete', stageId: 'COMPLETE', displayName: 'Complete', color: '#22C55E', sortOrder: 6, pipelineId: 'production', system: true },
+  ...productionStages,
+  { id: 'ps_tr_intro', stageId: 'TR_INTRO', displayName: 'Intro Call', color: '#0EA5E9', sortOrder: 1, pipelineId: 'pl_training' },
+  { id: 'ps_tr_demo', stageId: 'TR_DEMO', displayName: 'Product Demo', color: '#8B5CF6', sortOrder: 2, pipelineId: 'pl_training' },
+  { id: 'ps_tr_done', stageId: 'TR_DONE', displayName: 'Trained', color: '#22C55E', sortOrder: 3, pipelineId: 'pl_training' },
 ];
 
 /* D6: built-in sources plus the four an admin added (Nextdoor, Thumbtack, Angi, Yard Sign). */
 export const leadSources: LeadSourceDef[] = defaultSources();
 
-/* CRM-M5: sample tracked links for the website form. Sources come from the list above. */
+/*
+  CRM-M5 and CRM Part 1 (1): sample form links, one Paused. Submissions match
+  the seeded form leads (features/data/seed-crm.ts). Google starts its leads
+  in Contacted (CRM Part 2, 8).
+*/
 export const trackedLinks: TrackedLink[] = [
-  { id: 'tl_facebook', name: 'Facebook page button', source: 'Facebook', status: 'active', createdAt: '2026-08-01T15:00:00.000Z', createdBy: 'Dana Ruiz' },
-  { id: 'tl_yardsign', name: 'Yard sign QR code', source: 'Yard Sign', status: 'active', createdAt: '2026-08-12T15:00:00.000Z', createdBy: 'Dana Ruiz' },
-  { id: 'tl_spring', name: 'Spring mailer', source: 'Other', status: 'paused', createdAt: '2026-03-02T15:00:00.000Z', createdBy: 'Tim Skelly' },
+  { id: 'tl_website', name: 'Website contact page', source: 'Website', status: 'active', createdAt: '2026-07-14T15:00:00.000Z', createdBy: 'Tim Skelly', submissions: 1 },
+  { id: 'tl_facebook', name: 'Facebook page button', source: 'Facebook', status: 'active', createdAt: '2026-08-01T15:00:00.000Z', createdBy: 'Dana Ruiz', submissions: 1 },
+  { id: 'tl_instagram', name: 'Instagram bio link', source: 'Instagram', status: 'active', createdAt: '2026-08-20T15:00:00.000Z', createdBy: 'Dana Ruiz', submissions: 2 },
+  { id: 'tl_google', name: 'Google Business profile', source: 'Google', status: 'active', createdAt: '2026-09-02T15:00:00.000Z', createdBy: 'Tim Skelly', submissions: 1, startStageId: 'ps_contacted' },
+  { id: 'tl_spring', name: 'Spring mailer', source: 'Website', status: 'paused', createdAt: '2026-03-02T15:00:00.000Z', createdBy: 'Tim Skelly', submissions: 0 },
 ];
 
 /*
@@ -193,6 +216,8 @@ export const automatedMessages: AutomatedMessage[] = [
   { id: 'am_lead_contacted', name: 'Lead Contacted', trigger: 'Lead Contacted', channel: 'EMAIL', delayValue: 0, delayUnit: 'minutes', subject: 'Great speaking with you', body: 'Hi {{customerName}},\n\nThanks for speaking with us about your project. Reply to this email or call us any time with questions.', isActive: true, availableVariables: LEAD_VARS },
   { id: 'am_lead_pending', name: 'Estimate Pending Follow Up', trigger: 'Lead Pending', channel: 'EMAIL', delayValue: 0, delayUnit: 'minutes', subject: 'Your estimate from {{orgName}}', body: 'Hi {{customerName}},\n\nYour estimate is ready for review. Let us know if you have any questions or would like to change anything.', isActive: true, availableVariables: LEAD_VARS },
   { id: 'am_lead_lost', name: 'Lead Closed', trigger: 'Lead Lost', channel: 'EMAIL', delayValue: 0, delayUnit: 'minutes', subject: 'Thank you for considering {{orgName}}', body: 'Hi {{customerName}},\n\nThank you for considering {{orgName}}. If your plans change, we would be glad to help in the future.', isActive: false, availableVariables: LEAD_VARS },
+  /* CRM Part 1 (3): sent (simulated) when a form link creates a lead. Its own card in Settings › Automated Messages. */
+  { id: WEB_THANKS_ID, name: 'Thank-you email for new website leads', trigger: 'Website Lead Created', channel: 'EMAIL', delayValue: 0, delayUnit: 'minutes', subject: 'Thanks for contacting {BusinessName}', body: 'Hi {FirstName}, thanks for reaching out to {BusinessName}. We received your request and will contact you soon.', isActive: true, availableVariables: ['FirstName', 'BusinessName', 'BusinessPhone'] },
 ];
 
 const SMS_EST = ['clientName', 'projectName', 'estimateLink', 'orgName'];

@@ -7,6 +7,7 @@
  *   Minimal / Complete parts are switched on or off.
  * - Switch the organisation's QuickBooks add-on (2 Oct 2026, D3) to see
  *   Settings › Accounting without it.
+ * - CRM Part 2: dynamic pipelines (Option B) on or off, and Light / Dark theme.
  * - Reset all data back to the demo seed (the New Features choices too).
  */
 import { useState } from "react";
@@ -22,6 +23,8 @@ import { Button, ConfirmDialog, Select, Switch } from "@/features/components/ui"
 import { act } from "@/features/lib/store";
 import { hasQuickBooksAddOn, setQuickBooksAddOn } from "@/features/lib/store/actions/finance";
 import { cn } from "@/features/lib/cn";
+import { useVisibility } from "@/features/lib/feature-visibility";
+import { useTheme } from "@/features/lib/theme";
 
 export function DemoBar() {
   const { db, currentUserId, setUser, clockMode, setClock } = useStore();
@@ -33,6 +36,9 @@ export function DemoBar() {
   const user = db.users.find((u) => u.id === currentUserId);
   const startTour = useStartTour();
   const left = leftTour(useTour());
+  const dynamic = useVisibility((s) => s.dynamicPipelines);
+  const setDynamic = useVisibility((s) => s.setDynamicPipelines);
+  const { theme, setTheme } = useTheme();
 
   return (
     // Desktop (lg): docked in the main sidebar's footer, below Logout, in the
@@ -78,6 +84,14 @@ export function DemoBar() {
             <div className="flex items-center justify-between gap-2">
               <span className="text-xxs font-bold uppercase tracking-[0.14em] text-gray-400">QuickBooks add-on</span>
               <Switch checked={hasQuickBooksAddOn(db)} onCheckedChange={(on) => act(setQuickBooksAddOn, on)} label={<span className="sr-only">QuickBooks add-on on the plan</span>} />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xxs font-bold uppercase tracking-[0.14em] text-gray-400" title="Option B: custom pipelines. Off is Option A: Sales and Production only.">Dynamic pipelines</span>
+              <Switch checked={dynamic} onCheckedChange={setDynamic} label={<span className="sr-only">Dynamic pipelines (custom pipelines)</span>} />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xxs font-bold uppercase tracking-[0.14em] text-gray-400">Dark mode</span>
+              <Switch checked={theme === "dark"} onCheckedChange={(on) => setTheme(on ? "dark" : "light")} label={<span className="sr-only">Dark mode</span>} />
             </div>
             <Button size="sm" variant="secondary" className="w-full justify-center" onClick={() => { setOpen(false); router.push("/dashboard#new-features"); }}>
               <Sparkles className="h-3.5 w-3.5" /> New features panel

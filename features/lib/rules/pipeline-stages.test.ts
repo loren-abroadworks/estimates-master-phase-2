@@ -14,16 +14,16 @@ const names = (cols: PipelineStage[]) => cols.map((s) => s.displayName);
 describe("pipeline stages", () => {
   it("seeds Sales and Production in the agreed order", () => {
     expect(names(sales())).toEqual(["New Leads", "Contacted", "Estimate Scheduled", "Pending", "Sold", "Lost"]);
-    expect(names(production())).toEqual(["Pick Colours", "Ready to Schedule", "Scheduled", "In Progress", "Touch-ups", "Complete"]);
+    expect(names(production())).toEqual(["Confirmed", "Scheduled", "In Production", "Touch Up", "Inspection", "Closed"]);
     expect(stageOrderProblem(sales())).toBeUndefined();
     expect(stageOrderProblem(production())).toBeUndefined();
   });
 
-  it("adds a stage above Sold, and above Complete on Production", () => {
+  it("adds a stage above Sold, and above Closed on Production", () => {
     const r = insertStage(sales(), custom("ps_quote", "Quote Sent"));
     expect(r.ok && names(r.columns)).toEqual(["New Leads", "Contacted", "Estimate Scheduled", "Pending", "Quote Sent", "Sold", "Lost"]);
-    const p = insertStage(production(), { ...custom("pp_inspect", "Inspection"), pipelineId: "production" });
-    expect(p.ok && names(p.columns).slice(-2)).toEqual(["Inspection", "Complete"]);
+    const p = insertStage(production(), { ...custom("pp_colour", "Colour Consultation"), pipelineId: "production" });
+    expect(p.ok && names(p.columns).slice(-2)).toEqual(["Colour Consultation", "Closed"]);
   });
 
   it("caps a pipeline at 12 stages", () => {

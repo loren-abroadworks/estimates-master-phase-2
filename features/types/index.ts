@@ -110,6 +110,8 @@ export interface Lead {
   /** Mandatory website fields that were missing on submission. */
   missingFields?: string[];
   manual?: boolean;
+  /** CRM Part 2: stage on each added pipeline (pipeline id → stage id), carried to the replica lead. */
+  pipelineStages?: Record<ID, ID>;
 }
 
 /** The live app's EstimateStatus (types/estimates.ts). ACCEPTED is shown as "Approved". */

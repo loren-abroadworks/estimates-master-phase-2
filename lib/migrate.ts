@@ -14,7 +14,7 @@
 */
 import type { Collections, Estimate, TableColumn } from './types';
 import { estimateTotals, round2, versionSnapshot } from './calculations';
-import { migratePipelineStages } from './crm';
+import { OLD_PRODUCTION_STAGE, migratePipelineStages } from './crm';
 
 export function migrateTableColumns(saved: TableColumn[], fresh: TableColumn[]): TableColumn[] {
   const byId = new Map(saved.map((c) => [c.id, c]));
@@ -88,5 +88,10 @@ export function migrateCollections(saved: Collections, fresh: Collections): Coll
   if (saved.automatedMessages) next.automatedMessages = addMissingById(saved.automatedMessages, fresh.automatedMessages).map((t) => migrateCrewTemplate(t, fresh.automatedMessages));
   if (saved.estimates) next.estimates = saved.estimates.map(migrateEstimateVersions);
   if (saved.pipelineStages) next.pipelineStages = migratePipelineStages(saved.pipelineStages, fresh.pipelineStages);
+  // CRM Part 2: cards on a retired Production stage move to its nearest new one.
+  if (saved.productionCards) next.productionCards = saved.productionCards.map((c) => (OLD_PRODUCTION_STAGE[c.stageId] ? { ...c, stageId: OLD_PRODUCTION_STAGE[c.stageId]! } : c));
+  // CRM Part 1 and 2: the seeded form links and the Training pipeline join older saves.
+  if (saved.trackedLinks) next.trackedLinks = addMissingById(saved.trackedLinks, fresh.trackedLinks);
+  if (saved.pipelines) next.pipelines = addMissingById(saved.pipelines, fresh.pipelines);
   return next;
 }

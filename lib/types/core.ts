@@ -144,6 +144,8 @@ export interface Lead {
   stageHistory?: import('./settings').StageMove[];
   /** CRM-M5: the tracked link the website form was opened from. */
   trackedLinkId?: ID;
+  /** CRM Part 1 (2): reference of the form submission that created the lead. Set only on form leads. */
+  webRef?: string;
 }
 
 export interface ScheduledLeadMessage {

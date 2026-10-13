@@ -1,0 +1,99 @@
+/*
+  Dark theme (prototype switch in the demo bar, features/lib/theme.ts).
+  The gray scale is swapped through its tokens; white surfaces and the
+  coloured tints are swapped by class. Kept in the utilities layer so hover
+  and focus styles still win. Generated: one block per colour.
+*/
+:root.dark {
+  color-scheme: dark;
+  --color-gray-50: #0d121a;
+  --color-gray-100: #141b25;
+  --color-gray-200: #253043;
+  --color-gray-300: #344156;
+  --color-gray-400: #6b7686;
+  --color-gray-500: #9aa3b2;
+  --color-gray-600: #b4bcc8;
+  --color-gray-700: #cfd5de;
+  --color-gray-800: #e2e6ec;
+  --color-gray-900: #f3f5f8;
+  --color-line: #253043;
+  --color-canvas: #0d121a;
+  --color-brand-soft: #172338;
+}
+@layer utilities {
+  :where(.dark) .bg-white { background-color: #18202c; }
+  :where(.dark) .bg-white\/80, :where(.dark) .bg-white\/90, :where(.dark) .bg-white\/95 { background-color: rgb(24 32 44 / 0.92); }
+  :where(.dark) .text-ink { color: #f3f5f8; }
+  :where(.dark) .bg-gray-800 { background-color: #2a3446; }
+  :where(.dark) .bg-gray-900 { background-color: #05080d; }
+  :where(.dark) .border-white { border-color: #18202c; }
+  :where(.dark) .bg-blue-50 { background-color: color-mix(in srgb, #3b82f6 12%, #141b25); }
+  :where(.dark) .bg-blue-100 { background-color: color-mix(in srgb, #3b82f6 22%, #141b25); }
+  :where(.dark) .border-blue-100, :where(.dark) .border-blue-200 { border-color: color-mix(in srgb, #3b82f6 35%, #253043); }
+  :where(.dark) .text-blue-600, :where(.dark) .text-blue-700, :where(.dark) .text-blue-800, :where(.dark) .text-blue-900 { color: #93c5fd; }
+  :where(.dark) .bg-primary-50 { background-color: color-mix(in srgb, #3b82f6 12%, #141b25); }
+  :where(.dark) .bg-primary-100 { background-color: color-mix(in srgb, #3b82f6 22%, #141b25); }
+  :where(.dark) .border-primary-100, :where(.dark) .border-primary-200 { border-color: color-mix(in srgb, #3b82f6 35%, #253043); }
+  :where(.dark) .text-primary-600, :where(.dark) .text-primary-700, :where(.dark) .text-primary-800, :where(.dark) .text-primary-900 { color: #93c5fd; }
+  :where(.dark) .bg-green-50 { background-color: color-mix(in srgb, #22c55e 12%, #141b25); }
+  :where(.dark) .bg-green-100 { background-color: color-mix(in srgb, #22c55e 22%, #141b25); }
+  :where(.dark) .border-green-100, :where(.dark) .border-green-200 { border-color: color-mix(in srgb, #22c55e 35%, #253043); }
+  :where(.dark) .text-green-600, :where(.dark) .text-green-700, :where(.dark) .text-green-800, :where(.dark) .text-green-900 { color: #86efac; }
+  :where(.dark) .bg-emerald-50 { background-color: color-mix(in srgb, #10b981 12%, #141b25); }
+  :where(.dark) .bg-emerald-100 { background-color: color-mix(in srgb, #10b981 22%, #141b25); }
+  :where(.dark) .border-emerald-100, :where(.dark) .border-emerald-200 { border-color: color-mix(in srgb, #10b981 35%, #253043); }
+  :where(.dark) .text-emerald-600, :where(.dark) .text-emerald-700, :where(.dark) .text-emerald-800, :where(.dark) .text-emerald-900 { color: #6ee7b7; }
+  :where(.dark) .bg-amber-50 { background-color: color-mix(in srgb, #f59e0b 12%, #141b25); }
+  :where(.dark) .bg-amber-100 { background-color: color-mix(in srgb, #f59e0b 22%, #141b25); }
+  :where(.dark) .border-amber-100, :where(.dark) .border-amber-200 { border-color: color-mix(in srgb, #f59e0b 35%, #253043); }
+  :where(.dark) .text-amber-600, :where(.dark) .text-amber-700, :where(.dark) .text-amber-800, :where(.dark) .text-amber-900 { color: #fcd34d; }
+  :where(.dark) .bg-yellow-50 { background-color: color-mix(in srgb, #eab308 12%, #141b25); }
+  :where(.dark) .bg-yellow-100 { background-color: color-mix(in srgb, #eab308 22%, #141b25); }
+  :where(.dark) .border-yellow-100, :where(.dark) .border-yellow-200 { border-color: color-mix(in srgb, #eab308 35%, #253043); }
+  :where(.dark) .text-yellow-600, :where(.dark) .text-yellow-700, :where(.dark) .text-yellow-800, :where(.dark) .text-yellow-900 { color: #fde047; }
+  :where(.dark) .bg-red-50 { background-color: color-mix(in srgb, #ef4444 12%, #141b25); }
+  :where(.dark) .bg-red-100 { background-color: color-mix(in srgb, #ef4444 22%, #141b25); }
+  :where(.dark) .border-red-100, :where(.dark) .border-red-200 { border-color: color-mix(in srgb, #ef4444 35%, #253043); }
+  :where(.dark) .text-red-600, :where(.dark) .text-red-700, :where(.dark) .text-red-800, :where(.dark) .text-red-900 { color: #fca5a5; }
+  :where(.dark) .bg-rose-50 { background-color: color-mix(in srgb, #f43f5e 12%, #141b25); }
+  :where(.dark) .bg-rose-100 { background-color: color-mix(in srgb, #f43f5e 22%, #141b25); }
+  :where(.dark) .border-rose-100, :where(.dark) .border-rose-200 { border-color: color-mix(in srgb, #f43f5e 35%, #253043); }
+  :where(.dark) .text-rose-600, :where(.dark) .text-rose-700, :where(.dark) .text-rose-800, :where(.dark) .text-rose-900 { color: #fda4af; }
+  :where(.dark) .bg-purple-50 { background-color: color-mix(in srgb, #a855f7 12%, #141b25); }
+  :where(.dark) .bg-purple-100 { background-color: color-mix(in srgb, #a855f7 22%, #141b25); }
+  :where(.dark) .border-purple-100, :where(.dark) .border-purple-200 { border-color: color-mix(in srgb, #a855f7 35%, #253043); }
+  :where(.dark) .text-purple-600, :where(.dark) .text-purple-700, :where(.dark) .text-purple-800, :where(.dark) .text-purple-900 { color: #d8b4fe; }
+  :where(.dark) .bg-violet-50 { background-color: color-mix(in srgb, #8b5cf6 12%, #141b25); }
+  :where(.dark) .bg-violet-100 { background-color: color-mix(in srgb, #8b5cf6 22%, #141b25); }
+  :where(.dark) .border-violet-100, :where(.dark) .border-violet-200 { border-color: color-mix(in srgb, #8b5cf6 35%, #253043); }
+  :where(.dark) .text-violet-600, :where(.dark) .text-violet-700, :where(.dark) .text-violet-800, :where(.dark) .text-violet-900 { color: #c4b5fd; }
+  :where(.dark) .bg-indigo-50 { background-color: color-mix(in srgb, #6366f1 12%, #141b25); }
+  :where(.dark) .bg-indigo-100 { background-color: color-mix(in srgb, #6366f1 22%, #141b25); }
+  :where(.dark) .border-indigo-100, :where(.dark) .border-indigo-200 { border-color: color-mix(in srgb, #6366f1 35%, #253043); }
+  :where(.dark) .text-indigo-600, :where(.dark) .text-indigo-700, :where(.dark) .text-indigo-800, :where(.dark) .text-indigo-900 { color: #a5b4fc; }
+  :where(.dark) .bg-teal-50 { background-color: color-mix(in srgb, #14b8a6 12%, #141b25); }
+  :where(.dark) .bg-teal-100 { background-color: color-mix(in srgb, #14b8a6 22%, #141b25); }
+  :where(.dark) .border-teal-100, :where(.dark) .border-teal-200 { border-color: color-mix(in srgb, #14b8a6 35%, #253043); }
+  :where(.dark) .text-teal-600, :where(.dark) .text-teal-700, :where(.dark) .text-teal-800, :where(.dark) .text-teal-900 { color: #5eead4; }
+  :where(.dark) .bg-sky-50 { background-color: color-mix(in srgb, #0ea5e9 12%, #141b25); }
+  :where(.dark) .bg-sky-100 { background-color: color-mix(in srgb, #0ea5e9 22%, #141b25); }
+  :where(.dark) .border-sky-100, :where(.dark) .border-sky-200 { border-color: color-mix(in srgb, #0ea5e9 35%, #253043); }
+  :where(.dark) .text-sky-600, :where(.dark) .text-sky-700, :where(.dark) .text-sky-800, :where(.dark) .text-sky-900 { color: #7dd3fc; }
+  :where(.dark) .bg-orange-50 { background-color: color-mix(in srgb, #f97316 12%, #141b25); }
+  :where(.dark) .bg-orange-100 { background-color: color-mix(in srgb, #f97316 22%, #141b25); }
+  :where(.dark) .border-orange-100, :where(.dark) .border-orange-200 { border-color: color-mix(in srgb, #f97316 35%, #253043); }
+  :where(.dark) .text-orange-600, :where(.dark) .text-orange-700, :where(.dark) .text-orange-800, :where(.dark) .text-orange-900 { color: #fdba74; }
+  :where(.dark) .bg-pink-50 { background-color: color-mix(in srgb, #ec4899 12%, #141b25); }
+  :where(.dark) .bg-pink-100 { background-color: color-mix(in srgb, #ec4899 22%, #141b25); }
+  :where(.dark) .border-pink-100, :where(.dark) .border-pink-200 { border-color: color-mix(in srgb, #ec4899 35%, #253043); }
+  :where(.dark) .text-pink-600, :where(.dark) .text-pink-700, :where(.dark) .text-pink-800, :where(.dark) .text-pink-900 { color: #f9a8d4; }
+  :where(.dark) .bg-cyan-50 { background-color: color-mix(in srgb, #06b6d4 12%, #141b25); }
+  :where(.dark) .bg-cyan-100 { background-color: color-mix(in srgb, #06b6d4 22%, #141b25); }
+  :where(.dark) .border-cyan-100, :where(.dark) .border-cyan-200 { border-color: color-mix(in srgb, #06b6d4 35%, #253043); }
+  :where(.dark) .text-cyan-600, :where(.dark) .text-cyan-700, :where(.dark) .text-cyan-800, :where(.dark) .text-cyan-900 { color: #67e8f9; }
+  :where(.dark) .bg-lime-50 { background-color: color-mix(in srgb, #84cc16 12%, #141b25); }
+  :where(.dark) .bg-lime-100 { background-color: color-mix(in srgb, #84cc16 22%, #141b25); }
+  :where(.dark) .border-lime-100, :where(.dark) .border-lime-200 { border-color: color-mix(in srgb, #84cc16 35%, #253043); }
+  :where(.dark) .text-lime-600, :where(.dark) .text-lime-700, :where(.dark) .text-lime-800, :where(.dark) .text-lime-900 { color: #bef264; }
+}
+.dark .rtable > table > tbody > tr { background: #18202c; }

@@ -14,7 +14,7 @@ import type {
   EstimateTemplate, EstimateType, FinancialSettings, GeneralConfig, GoalsProfit, LaborConfig,
   LineItemTemplate, Material, PackageTemplate, PaintProduct, PaymentGateway, Pipeline, PipelineStage, PreparedMessage, ProductionCard,
   ProjectDiscount, RateGroup, Role, SmsTemplate, Subscription, SurfaceRate, TableColumn, TaxRegion,
-  TermsCondition, TrackedLink, UserProfile, LeadSourceDef,
+  TermsCondition, TrackedLink, UserProfile, LeadSourceDef, LeadReview, NotDuplicatePair,
 } from './types/settings';
 
 /** Every list of records in the app. Each key is a "collection". */
@@ -50,6 +50,10 @@ export interface Collections {
   trackedLinks: TrackedLink[];
   /** D6 (2 Oct 2026): the organisation's lead sources. */
   leadSources: LeadSourceDef[];
+  /** CRM Part 1 (5): form leads that look like someone already on file. */
+  leadReviews: LeadReview[];
+  /** CRM Part 1 (5): pairs marked "not a duplicate". */
+  notDuplicatePairs: NotDuplicatePair[];
   /** CRM-C4: automation rules (linked steps). */
   automationRules: AutomationRule[];
   /** CRM-C3 to C5: customer messages prepared by rules and templates (the approval queue). */

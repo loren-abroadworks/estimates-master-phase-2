@@ -38,6 +38,7 @@ import { presetRange } from "@/features/lib/rules/performance";
 import { addDaysToDay, localDay, weekStartOf } from "@/features/lib/rules/payroll";
 import { buildRows, jobPerformance } from "@/features/lib/store/actions/performance";
 import { hostSeed } from "./seed-hosts";
+import { crmSeed } from "./seed-crm";
 
 export function createSeed(nowIso: string): Database {
   const d = (days: number) => addDays(nowIso, days);
@@ -1009,5 +1010,7 @@ export function createSeed(nowIso: string): Database {
 
   // Live host screens: work orders, estimate history, one lead per estimate.
   hostSeed(db, nowIso);
+  // CRM Part 1 and 2: form leads, the two John Smiths and Training pipeline members.
+  crmSeed(db, nowIso);
   return db;
 }

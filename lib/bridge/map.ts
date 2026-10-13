@@ -211,6 +211,9 @@ export function projectLead(db: P.Database, l: P.Lead): Lead {
     assignedTo: l.assignedUserId, appointment: leadAppointment(l), appointmentDuration: l.durationMin,
     ...(l.trackedLinkId ? { trackedLinkId: l.trackedLinkId } : {}),
     ...(l.possibleDuplicateOf ? { possibleDuplicateOf: l.possibleDuplicateOf } : {}),
+    // CRM Part 1: form leads keep their submission reference (the match check runs on them).
+    ...(l.eventRef ? { webRef: l.eventRef } : {}),
+    ...(l.pipelineStages ? { pipelineStages: { ...l.pipelineStages } } : {}),
   };
 }
 

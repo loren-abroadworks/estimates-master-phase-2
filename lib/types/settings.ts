@@ -279,6 +279,43 @@ export interface TrackedLink {
   status: 'active' | 'paused';
   createdAt: string;
   createdBy: string;
+  /** CRM Part 2 (8): the Sales stage a submission lands in. Missing = the first Sales stage (New Lead). */
+  startStageId?: ID;
+  /** CRM Part 1 (1): leads this link has created, merged or removed ones included. */
+  submissions?: number;
+  /** CRM Part 1 (1): deleted links stay so the form can say "no longer available". Hidden from the list. */
+  deletedAt?: string;
+}
+
+/**
+ * CRM Part 1 (5): a form lead that looks like someone already on file. Made
+ * by the match check (lib/lead-review.ts) and worked on Lead Review. Nothing
+ * is merged or removed automatically.
+ */
+export interface LeadReview {
+  id: ID; // lr_…
+  /** The lead the form just created. */
+  leadId: ID;
+  /** The existing record it matched: a lead, or a contact with no lead. */
+  matchKind: 'lead' | 'contact';
+  matchId: ID;
+  level: 'strong' | 'possible';
+  /** What matched: phone, email, or first and last name. */
+  on: 'phone' | 'email' | 'name';
+  createdAt: string;
+  status: 'open' | 'merged' | 'retained' | 'removed';
+  resolvedBy?: string;
+  resolvedAt?: string;
+}
+
+/** CRM Part 1 (5): two records someone marked "not a duplicate" (Retain). Never flagged again. */
+export interface NotDuplicatePair {
+  id: ID; // ndp_…
+  /** Record ids, sorted, so the pair reads the same either way round. */
+  a: ID;
+  b: ID;
+  by: string;
+  at: string;
 }
 
 export interface AutomatedMessage {

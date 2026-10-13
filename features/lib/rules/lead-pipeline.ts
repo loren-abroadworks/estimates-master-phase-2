@@ -102,13 +102,16 @@ export function pipelineColumns(stages: RStage[], pipelineId: string): RStage[] 
   return stages.filter((s) => stagePipeline(s) === pipelineId && !s.hidden).sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
+/** Locked stages that open their pipeline: New (Sales) and Confirmed (Production). */
+export const isStartStage = (s: Pick<RStage, "system" | "leadStatus" | "stageId">) => !!s.system && (s.leadStatus === "New" || s.stageId === "CONFIRMED");
+
 /**
  * Where each system stage must sit. Sales: New first, Sold second last, Lost
- * last. Production and added pipelines: their system stage last.
+ * last. Production: Confirmed first, Closed last.
  */
 function fixedSlot(s: RStage, count: number): number | undefined {
   if (!s.system) return undefined;
-  if (s.leadStatus === "New") return 0;
+  if (isStartStage(s)) return 0;
   if (s.leadStatus === "Sold") return count - 2;
   return count - 1;
 }

@@ -20,7 +20,7 @@ import type {
 import { createInitialDatabase } from './sampleData';
 import { migrateCollections } from './migrate';
 import { withNotifyBaseline } from './schedule-notify';
-import { withCrmBaseline } from './crm';
+import { reviewsFor, withCrmBaseline } from './crm';
 import { useVisibility } from '@/features/lib/feature-visibility';
 import { uid } from './utils';
 import { applyOps, resetBridge, runSync, type BridgeOp } from './bridge/sync';
@@ -101,7 +101,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           // Saves from before crew notifications: everyone counts as told about the schedule as it is.
           const notified = saved.collections.scheduleNotifySnapshots ? synced : withNotifyBaseline(synced);
           // Saves from before pipelines: existing sales get their Production cards, quietly.
-          dispatch({ type: 'replace', db: saved.collections.productionCards ? notified : withCrmBaseline(notified) });
+          const crm = saved.collections.productionCards ? notified : withCrmBaseline(notified);
+          // Saves from before Lead Review (CRM Part 1): form leads get the match check once.
+          const reviewed = saved.collections.leadReviews ? crm : { ...crm, collections: { ...crm.collections, leadReviews: [...crm.collections.leadReviews, ...reviewsFor(crm, new Date().toISOString(), () => uid('lr'))] } };
+          dispatch({ type: 'replace', db: reviewed });
         } else {
           const fresh = createInitialDatabase();
           dispatch({ type: 'replace', db: withCrmBaseline(withNotifyBaseline(applyOps(fresh, runSync(fresh, { baseline: true })))) });

@@ -51,6 +51,9 @@ export function createInitialDatabase(): Database {
       productionCards: [],
       trackedLinks: cfg.trackedLinks,
       leadSources: cfg.leadSources,
+      // Filled by the match check when the store loads (lib/crm.ts withCrmBaseline).
+      leadReviews: [],
+      notDuplicatePairs: [],
       automationRules: cfg.automationRules,
       preparedMessages: [],
       automationEvents: [],

@@ -8,6 +8,9 @@
  *   ticking Complete ticks Minimal, unticking Minimal unticks Complete.
  * - showBadges: the green NEW badges and Minimal / Complete markers on
  *   screens. Off by default.
+ * - dynamicPipelines (CRM Part 2): Option B, custom pipelines (add, delete,
+ *   reorder, Training). Off = Option A: Sales and Production stages only.
+ *   Switched in the demo bar. Off by default.
  *
  * Hiding is display only: nothing is deleted or changed. Saved in this
  * browser under emts-new-features; "Reset demo data" puts the defaults back.
@@ -27,11 +30,12 @@ export type Rows = Record<FeatureKey, { minimal: boolean; complete: boolean }>;
 export interface VisibilityState {
   showNew: boolean;
   showBadges: boolean;
+  dynamicPipelines: boolean;
   rows: Rows;
 }
 
 export const defaultRows = (): Rows => Object.fromEntries(FEATURE_KEYS.map((k) => [k, { minimal: true, complete: false }])) as Rows;
-export const defaultVisibility = (): VisibilityState => ({ showNew: true, showBadges: false, rows: defaultRows() });
+export const defaultVisibility = (): VisibilityState => ({ showNew: true, showBadges: false, dynamicPipelines: false, rows: defaultRows() });
 
 /* ------------------------------ Pure rules ------------------------------ */
 
@@ -92,6 +96,7 @@ export function gateTarget(p: { feature?: number | number[]; item?: string; feat
 interface Store extends VisibilityState {
   setShowNew: (on: boolean) => void;
   setShowBadges: (on: boolean) => void;
+  setDynamicPipelines: (on: boolean) => void;
   setMinimal: (key: FeatureKey, on: boolean) => void;
   setComplete: (key: FeatureKey, on: boolean) => void;
   allMinimal: () => void;
@@ -105,6 +110,7 @@ export const useVisibility = create<Store>()(
       ...defaultVisibility(),
       setShowNew: (showNew) => set({ showNew }),
       setShowBadges: (showBadges) => set({ showBadges }),
+      setDynamicPipelines: (dynamicPipelines) => set({ dynamicPipelines }),
       setMinimal: (key, on) => set((s) => ({ rows: withMinimal(s.rows, key, on) })),
       setComplete: (key, on) => set((s) => ({ rows: withComplete(s.rows, key, on) })),
       allMinimal: () => set({ rows: allMinimalRows() }),
@@ -142,3 +148,6 @@ export function useFeatureFilter() {
     return isOn({ showNew, rows }, t.keys, t.part);
   };
 }
+
+/** CRM Part 2: Option B (custom pipelines) is on. */
+export const useDynamicPipelines = () => useVisibility((s) => s.dynamicPipelines);

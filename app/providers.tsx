@@ -6,6 +6,7 @@ import { ToastProvider } from '@/components/ui/toast';
 import { MobileMenuProvider } from '@/components/Sidebar';
 import { FeatureShell } from '@/features/components/layout/app-shell';
 import { FeatureSettingsSync } from '@/components/settings/FeatureSettingsSync';
+import { ThemeSync } from '@/features/lib/theme';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <FeatureShell>
               {/* Waste and deposit settings the features read (lib/bridge covers records). */}
               <FeatureSettingsSync />
+              <ThemeSync />
               {children}
             </FeatureShell>
           </MobileMenuProvider>

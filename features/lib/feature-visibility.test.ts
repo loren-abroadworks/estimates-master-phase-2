@@ -38,7 +38,7 @@ describe("feature visibility", () => {
   });
 
   it("reset restores the defaults", () => {
-    expect(defaultVisibility()).toEqual({ showNew: true, showBadges: false, rows: allMinimalRows() });
+    expect(defaultVisibility()).toEqual({ showNew: true, showBadges: false, dynamicPipelines: false, rows: allMinimalRows() });
   });
 
   it("maps existing markers to features", () => {
