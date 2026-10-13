@@ -131,6 +131,12 @@ const renumber = (cols: RStage[]) => cols.map((s, i) => ({ ...s, sortOrder: i + 
 
 type StageResult = { ok: true; columns: RStage[] } | { ok: false; error: string };
 
+/** CRM Part 2 (7): can this stage go one place up (-1) or down (+1)? Locked stages never move. */
+export const canStep = (columns: RStage[], id: string, dir: -1 | 1) => {
+  const i = columns.findIndex((s) => s.id === id);
+  return i >= 0 && moveStage(columns, id, i + dir).ok && i + dir >= 0 && i + dir < columns.length;
+};
+
 /** Moves a custom stage to a new position (0-based). System stages don't move. */
 export function moveStage(columns: RStage[], id: string, to: number): StageResult {
   const from = columns.findIndex((s) => s.id === id);
@@ -153,38 +159,68 @@ export function insertStage(columns: RStage[], stage: RStage): StageResult {
   return { ok: true, columns: renumber(next) };
 }
 
-/** Why a stage can't be deleted, or undefined. */
-export function deleteStageProblem(stage: Pick<RStage, "system">, cardCount: number): string | undefined {
+/**
+ * Why a stage can't be deleted, or undefined. CRM Part 2 (7): a stage with
+ * leads or cards is deleted only after they move (deleteStageWithMove); the
+ * last stage of a pipeline stays.
+ */
+export function deleteStageProblem(stage: Pick<RStage, "system">, cardCount: number, stagesLeft = 2): string | undefined {
   if (stage.system) return "System stages can't be deleted.";
+  if (stagesLeft <= 1) return "A pipeline keeps at least one stage.";
   if (cardCount > 0) return `Move the ${cardCount} ${cardCount === 1 ? "card" : "cards"} in this stage first.`;
   return undefined;
 }
+
+export const NAME_MAX = 40;
 
 /** Why a stage name can't be saved, or undefined. Names are unique inside a pipeline. */
 export function stageNameProblem(name: string, others: string[]): string | undefined {
   const n = name.trim();
   if (!n) return "Enter a stage name.";
-  if (n.length > 30) return "Keep it under 30 characters.";
+  if (n.length > NAME_MAX) return `Keep it to ${NAME_MAX} characters or fewer.`;
   if (others.some((o) => o.trim().toLowerCase() === n.toLowerCase())) return "Each stage needs a unique name.";
   return undefined;
 }
 
+/** CRM Part 2 (7): pipeline names are required, at most 40 characters and unique. */
+export function pipelineNameProblem(name: string, others: string[]): string | undefined {
+  const n = name.trim();
+  if (!n) return "Enter a pipeline name.";
+  if (n.length > NAME_MAX) return `Keep it to ${NAME_MAX} characters or fewer.`;
+  if (others.some((o) => o.trim().toLowerCase() === n.toLowerCase())) return "Another pipeline has this name.";
+  return undefined;
+}
+
+/** Lead statuses in pipeline order; a status whose stage was deleted shows on the nearest earlier one. */
+const STATUS_ORDER: RLeadStatus[] = ["New", "Contacted", "Scheduled", "Pending", "Sold", "Lost"];
+
 /**
  * The Sales column a lead sits in: a stage it was moved into by hand while its
- * status is unchanged, otherwise the stage that stands for its status.
+ * status is unchanged, otherwise the stage that stands for its status. When
+ * that stage was deleted, the nearest earlier status stage (CRM Part 2).
  */
 export function salesColumnFor(lead: Pick<RLead, "status" | "stageId" | "stageStatus">, columns: RStage[]): RStage | undefined {
   if (lead.stageId && lead.stageStatus === lead.status) {
-    const own = columns.find((s) => s.id === lead.stageId && !s.leadStatus);
+    const own = columns.find((s) => s.id === lead.stageId);
     if (own) return own;
   }
-  return columns.find((s) => s.leadStatus === lead.status);
+  const exact = columns.find((s) => s.leadStatus === lead.status);
+  if (exact || lead.status === "Archived") return exact;
+  for (let i = STATUS_ORDER.indexOf(lead.status) - 1; i >= 0; i--) {
+    const near = columns.find((s) => s.leadStatus === STATUS_ORDER[i]);
+    if (near) return near;
+  }
+  return columns[0];
 }
 
-/** The stage a lead is in on an added pipeline (CRM-C2): its saved one, else the first. */
+/**
+ * The stage a lead is in on an added pipeline, or undefined when it is not on
+ * that pipeline. CRM Part 2: a lead joins a custom pipeline when someone
+ * moves it to a stage there (tracker or board).
+ */
 export function customColumnFor(lead: Pick<RLead, "pipelineStages">, columns: RStage[], pipelineId: string): RStage | undefined {
   const saved = lead.pipelineStages?.[pipelineId];
-  return columns.find((s) => s.id === saved) ?? columns[0];
+  return saved ? columns.find((s) => s.id === saved) : undefined;
 }
 
 /** Leads or cards sitting in each stage, for the delete guard and the settings counts. */

@@ -1,246 +1,521 @@
 'use client';
 
 /*
-  Settings > Pipeline Stages ("Pipeline Configuration").
+  Settings > Pipeline Stages ("Pipeline Configuration"). CRM Part 2 (7).
 
-  30 Sep call (CRM-M1, CRM-M2): one tab per pipeline (Sales, Production, and
-  added ones in the Complete version, CRM-C2). Each row has a drag handle,
-  the stage colour, its name, how many cards sit in it, and delete.
-  System stages (Sales: New, Sold, Lost; Production: Complete) show a lock:
-  they can be renamed and recoloured, not moved or deleted. "+ Add stage"
-  inserts above Sold (or above the last system stage). A pipeline has at
-  most 12 stages, and a stage with cards can't be deleted. Nothing is stored
-  until Save; Discard puts the saved stages back.
+  Left: the pipelines in Settings order, each with its stage count. Sales and
+  Production carry a "System" badge: they can be renamed, never deleted.
+  With dynamicPipelines on (Option B) pipelines also move up and down, a
+  custom pipeline can be deleted (its leads leave that pipeline only; their
+  Sales and Production progress stays), and "Add pipeline" makes one with
+  Not Started and Done. Option A hides all three. Names: required, at most
+  40 characters, unique. "Lead sources" (D6) sits under the list.
+
+  Right: the chosen pipeline's stages, under a preview tracker that follows
+  every change. Each row: drag handle, colour (preset palette), name (saved
+  when the field loses focus), lead count, up/down, and a lock or Delete.
+  Locked stages (Sales: New, Sold, Lost; Production: Confirmed, Closed) can
+  be renamed and recoloured, never moved or deleted. New stages go before
+  Sold (Sales), before Closed (Production), or last (custom pipelines). A
+  pipeline keeps at least one stage. Deleting a stage that has leads asks
+  where to move them first. Every change is saved straight away and logged.
   The rules are in features/lib/rules/lead-pipeline.ts.
 */
 import React, { useMemo, useState } from 'react';
-import { GripVertical, Lock, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, GripVertical, Lock, Plus, Trash2 } from 'lucide-react';
 import { SettingsPage } from '@/components/settings/SettingsSidebar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/form';
+import { Input, NativeSelect } from '@/components/ui/form';
 import { useToast } from '@/components/ui/toast';
-import { useCollection } from '@/lib/store';
-import type { PipelineStage } from '@/lib/types';
-import { createPipeline } from '@/lib/crm';
-import { cn, uid } from '@/lib/utils';
-import { Field as FField, Input as FInput, Modal, NewBadge, VersionBadge, FeatureGate } from '@/features/components/ui';
-import { useIsOn } from '@/features/lib/feature-visibility';
+import { StageTracker } from '@/components/ui/StageTracker';
+import { useCollection, useCurrentUser, useLogActivity } from '@/lib/store';
+import type { Pipeline, PipelineStage } from '@/lib/types';
+import { createPipeline, move } from '@/lib/crm';
+import { cn, fullName, uid } from '@/lib/utils';
+import { Field as FField, Input as FInput, Modal, VersionBadge } from '@/features/components/ui';
+import { useDynamicPipelines } from '@/features/lib/feature-visibility';
 import { useCurrentUser as useFeatureUser } from '@/features/lib/store';
 import { can } from '@/features/lib/permissions';
+import { useVisiblePipelines } from '@/components/leads/usePipelines';
 import { LeadSourcesPanel } from './LeadSourcesPanel';
 import {
-  MAX_STAGES, deleteStageProblem, insertStage, moveStage, pipelineColumns, stageCounts, stageNameProblem, stageOrderProblem, stagePipeline,
+  MAX_STAGES, NAME_MAX, canStep, customColumnFor, deleteStageProblem, insertStage, moveStage, pipelineColumns, pipelineNameProblem, salesColumnFor,
+  stageCounts, stageNameProblem, stagePipeline,
 } from '@/features/lib/rules/lead-pipeline';
 
 const LEAD_SOURCES_TAB = 'lead_sources';
-const COLORS = ['#3B82F6', '#A855F7', '#14B8A6', '#F59E0B', '#EC4899', '#0EA5E9', '#8B5CF6', '#22C55E'];
+/** Preset palette: stage colours come only from here. */
+export const STAGE_COLORS = ['#3B82F6', '#A855F7', '#14B8A6', '#F59E0B', '#EC4899', '#0EA5E9', '#8B5CF6', '#22C55E', '#EF4444', '#6B7280'];
 
 export function PipelineStagesView() {
   const stages = useCollection('pipelineStages');
   const pipelines = useCollection('pipelines');
-  const { items: leads } = useCollection('leads');
-  const { items: cards } = useCollection('productionCards');
+  const leads = useCollection('leads');
+  const cards = useCollection('productionCards');
   const { toast } = useToast();
-  // New Features (dashboard): Production needs CRM Minimal, added pipelines CRM Complete.
-  const crmOn = useIsOn({ featureKey: 'crm' });
+  const log = useLogActivity();
+  const me = fullName(useCurrentUser());
+  const dynamic = useDynamicPipelines();
   // Tab 2: only Admin Master Data (Owner and Admin) changes stages; everyone else sees them read-only, with no edit controls.
   const admin = can(useFeatureUser(), 'settings.masterData');
-  const crmComplete = useIsOn({ featureKey: 'crm', part: 'complete' });
-  const sortedPipelines = [...pipelines.items]
-    .filter((p) => p.kind === 'sales' || (crmOn && (p.kind !== 'custom' || crmComplete)))
-    .sort((a, b) => a.sortOrder - b.sortOrder);
-  const [tabState, setTab] = useState(sortedPipelines[0]?.id ?? 'sales');
-  // D6 (2 Oct 2026): a "Lead sources" tab beside the pipelines.
-  const tab = tabState === LEAD_SOURCES_TAB || sortedPipelines.some((p) => p.id === tabState) ? tabState : sortedPipelines[0]?.id ?? 'sales';
-  const [draft, setDraft] = useState<PipelineStage[]>(() => stages.items);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [dragId, setDragId] = useState<string>();
-  const [adding, setAdding] = useState(false);
+  const visible = useVisiblePipelines();
+  const [tabState, setTab] = useState(visible[0]?.id ?? 'sales');
+  const tab = tabState === LEAD_SOURCES_TAB || visible.some((p) => p.id === tabState) ? tabState : visible[0]?.id ?? 'sales';
+  const pipeline = visible.find((p) => p.id === tab);
+  const liveCards = useMemo(() => cards.items.filter((c) => !c.removedAt), [cards.items]);
+  const counts = useMemo(() => stageCounts(stages.items, pipelines.items, leads.items, liveCards), [stages.items, pipelines.items, leads.items, liveCards]);
 
-  const columns = pipelineColumns(draft, tab);
-  const counts = useMemo(
-    () => stageCounts(draft, pipelines.items, leads, cards.filter((c) => !c.removedAt)),
-    [draft, pipelines.items, leads, cards],
-  );
-  const dirty = JSON.stringify(draft) !== JSON.stringify(stages.items);
+  /** Replaces one pipeline's visible stages (hidden ones, like Archived, stay). */
+  const setColumns = (pipelineId: string, cols: PipelineStage[]) =>
+    stages.setAll([...stages.items.filter((s) => stagePipeline(s) !== pipelineId || s.hidden), ...cols]);
 
-  /** Replaces this pipeline's visible columns in the draft (hidden stages stay). */
-  const setColumns = (cols: PipelineStage[]) => setDraft((d) => [...d.filter((s) => stagePipeline(s) !== tab || s.hidden), ...cols]);
-  const patch = (id: string, p: Partial<PipelineStage>) => {
-    setDraft((d) => d.map((s) => (s.id === id ? { ...s, ...p } : s)));
-    if (p.displayName !== undefined) setErrors((e) => ({ ...e, [id]: '' }));
+  /* ---------- pipelines ---------- */
+
+  const renamePipeline = (p: Pipeline, name: string) => {
+    const problem = pipelineNameProblem(name, pipelines.items.filter((x) => x.id !== p.id).map((x) => x.name));
+    if (problem) return problem;
+    if (name.trim() === p.name) return undefined;
+    pipelines.update(p.id, { name: name.trim() });
+    log(`Pipeline ${name.trim()} renamed by ${me}. It was ${p.name}.`);
+    toast('Pipeline renamed');
+    return undefined;
   };
-
-  const addStage = () => {
-    const id = uid('ps');
-    const r = insertStage(columns, { id, stageId: id.toUpperCase(), displayName: `New stage ${columns.length - 1}`, color: COLORS[columns.length % COLORS.length]!, sortOrder: 0, pipelineId: tab });
-    if (!r.ok) return toast(r.error, 'error');
-    setColumns(r.columns);
-  };
-
-  const remove = (s: PipelineStage) => {
-    const problem = deleteStageProblem(s, counts[s.id] ?? 0);
-    if (problem) return toast(problem, 'error');
-    setColumns(columns.filter((x) => x.id !== s.id).map((x, i) => ({ ...x, sortOrder: i + 1 })));
-  };
-
-  const drop = (targetId: string) => {
-    if (!dragId || dragId === targetId) return;
-    const r = moveStage(columns, dragId, columns.findIndex((s) => s.id === targetId));
-    setDragId(undefined);
-    if (!r.ok) return toast(r.error, 'error');
-    setColumns(r.columns);
-  };
-
-  const save = () => {
-    const e: Record<string, string> = {};
-    for (const p of pipelines.items) {
-      const cols = pipelineColumns(draft, p.id);
-      cols.forEach((s) => {
-        const problem = stageNameProblem(s.displayName, cols.filter((o) => o.id !== s.id).map((o) => o.displayName));
-        if (problem) e[s.id] = problem;
-      });
-      const order = stageOrderProblem(cols);
-      if (order) return toast(`${p.name}: ${order}`, 'error');
-    }
-    setErrors(e);
-    if (Object.keys(e).length) {
-      const first = draft.find((s) => e[s.id]);
-      if (first) setTab(stagePipeline(first));
-      return toast('Please fix the stage names before saving', 'error');
-    }
-    stages.setAll(draft.map((s) => ({ ...s, displayName: s.displayName.trim() })));
-    toast('Pipeline stages updated successfully');
-  };
-
-  const discard = () => {
-    setDraft(stages.items);
-    setErrors({});
-  };
-
   const addPipeline = (name: string) => {
-    const made = createPipeline(name, sortedPipelines.length + 1, uid);
+    const problem = pipelineNameProblem(name, pipelines.items.map((x) => x.name));
+    if (problem) return problem;
+    const made = createPipeline(name.trim(), Math.max(0, ...pipelines.items.map((p) => p.sortOrder)) + 1, uid);
     pipelines.setAll([...pipelines.items, made.pipeline]);
     stages.setAll([...stages.items, ...made.stages]);
-    setDraft((d) => [...d, ...made.stages]);
     setTab(made.pipeline.id);
-    setAdding(false);
-    toast(`${name} pipeline added`);
+    log(`Pipeline ${made.pipeline.name} created by ${me}.`);
+    toast(`${made.pipeline.name} pipeline added`);
+    return undefined;
+  };
+  const stepPipeline = (p: Pipeline, dir: -1 | 1) => {
+    const list = [...pipelines.items].sort((a, b) => a.sortOrder - b.sortOrder);
+    const i = list.findIndex((x) => x.id === p.id);
+    const j = i + dir;
+    if (j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j]!, list[i]!];
+    pipelines.setAll(list.map((x, k) => ({ ...x, sortOrder: k + 1 })));
+  };
+  const deletePipeline = (p: Pipeline) => {
+    const members = leads.items.filter((l) => l.pipelineStages?.[p.id]).length;
+    pipelines.setAll(pipelines.items.filter((x) => x.id !== p.id));
+    stages.setAll(stages.items.filter((s) => stagePipeline(s) !== p.id));
+    leads.setAll(leads.items.map((l) => {
+      if (!l.pipelineStages?.[p.id]) return l;
+      const { [p.id]: _gone, ...rest } = l.pipelineStages;
+      return { ...l, pipelineStages: rest };
+    }));
+    log(`Pipeline ${p.name} deleted by ${me}. ${members} ${members === 1 ? 'lead was' : 'leads were'} removed from it.`);
+    toast(`${p.name} deleted`);
+    setTab('sales');
   };
 
+  /* ---------- stages ---------- */
+
+  const columns = pipeline ? pipelineColumns(stages.items, pipeline.id) : [];
+  const editStage = (s: PipelineStage, patch: Partial<PipelineStage>) => {
+    stages.update(s.id, patch);
+    log(`Stage ${patch.displayName ?? s.displayName} edited in ${pipeline?.name} by ${me}.`);
+  };
+  const addStage = (name: string) => {
+    if (!pipeline) return 'No pipeline.';
+    const problem = stageNameProblem(name, columns.map((c) => c.displayName));
+    if (problem) return problem;
+    const id = uid('ps');
+    const used = new Set(columns.map((c) => c.color));
+    const color = STAGE_COLORS.find((c) => !used.has(c)) ?? STAGE_COLORS[columns.length % STAGE_COLORS.length]!;
+    const r = insertStage(columns, { id, stageId: id.toUpperCase(), displayName: name.trim(), color, sortOrder: 0, pipelineId: pipeline.id });
+    if (!r.ok) return r.error;
+    setColumns(pipeline.id, r.columns);
+    log(`Stage ${name.trim()} added to ${pipeline.name} by ${me}.`);
+    toast(`${name.trim()} added`);
+    return undefined;
+  };
+  const stepStage = (s: PipelineStage, dir: -1 | 1) => {
+    if (!pipeline) return;
+    const r = moveStage(columns, s.id, columns.findIndex((c) => c.id === s.id) + dir);
+    if (!r.ok) return toast(r.error, 'error');
+    setColumns(pipeline.id, r.columns);
+  };
+  const dropOn = (dragId: string, targetId: string) => {
+    if (!pipeline || dragId === targetId) return;
+    const r = moveStage(columns, dragId, columns.findIndex((s) => s.id === targetId));
+    if (!r.ok) return toast(r.error, 'error');
+    setColumns(pipeline.id, r.columns);
+  };
+  /** Deletes a stage after moving its leads or cards to `target`. */
+  const deleteStage = (s: PipelineStage, target?: PipelineStage) => {
+    if (!pipeline) return;
+    const at = new Date().toISOString();
+    let moved = 0;
+    if (target && pipeline.kind === 'sales') {
+      const updated = leads.items.map((l) => {
+        if (l.status === 'Archived' || salesColumnFor(l, columns)?.id !== s.id) return l;
+        moved++;
+        return { ...l, stageId: target.id, stageStatus: l.status, updatedAt: at, stageHistory: [...(l.stageHistory ?? []), move('sales', target, me, at)] };
+      });
+      if (moved) leads.setAll(updated);
+    } else if (target && pipeline.kind === 'custom') {
+      const updated = leads.items.map((l) => {
+        if (customColumnFor(l, columns, pipeline.id)?.id !== s.id) return l;
+        moved++;
+        return { ...l, pipelineStages: { ...l.pipelineStages, [pipeline.id]: target.id }, stageHistory: [...(l.stageHistory ?? []), move(pipeline.id, target, me, at)] };
+      });
+      if (moved) leads.setAll(updated);
+    } else if (target) {
+      const updated = cards.items.map((c) => {
+        if (c.removedAt || c.stageId !== s.id) return c;
+        moved++;
+        return { ...c, stageId: target.id, history: [...c.history, move('production', target, me, at)] };
+      });
+      if (moved) cards.setAll(updated);
+    }
+    setColumns(pipeline.id, columns.filter((x) => x.id !== s.id).map((x, i) => ({ ...x, sortOrder: i + 1 })));
+    log(`Stage ${s.displayName} deleted from ${pipeline.name} by ${me}.${moved && target ? ` ${moved} moved to ${target.displayName}.` : ''}`);
+    toast(moved && target ? `${s.displayName} deleted. ${moved} moved to ${target.displayName}.` : `${s.displayName} deleted`);
+  };
+
+  const preview = columns.length ? columns[Math.floor((columns.length - 1) / 2)]!.id : undefined;
+
   return (
-    <SettingsPage
-      wide
-      title="Pipeline Configuration"
-      subtitle="The stages of your lead and production boards. Drag to reorder."
-    >
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <div className="flex rounded-xl border border-gray-200 bg-gray-100 p-1" role="tablist" aria-label="Pipelines">
-          {[...sortedPipelines, { id: LEAD_SOURCES_TAB, name: 'Lead sources' }].map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === p.id}
-              onClick={() => setTab(p.id)}
-              className={cn('rounded-lg px-4 py-2 text-sm font-bold', tab === p.id ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-900')}
-            >
-              {p.name}
-            </button>
-          ))}
+    <SettingsPage wide title="Pipeline Configuration" subtitle="Your pipelines and their stages. Changes save as you make them.">
+      {!admin && <p className="mb-4 text-sm text-gray-500">Only the owner or an admin changes pipelines, stages and lead sources.</p>}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+        {/* Pipelines */}
+        <div className="min-w-0 space-y-3">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" data-tour="crm-pipelines-settings">
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-500">
+              <span>Pipelines</span>
+              <VersionBadge item="CRM-M1" />
+            </div>
+            <ul role="tablist" aria-label="Pipelines" aria-orientation="vertical">
+              {visible.map((p, i) => (
+                <PipelineRow
+                  key={p.id}
+                  pipeline={p}
+                  selected={tab === p.id}
+                  stageCount={pipelineColumns(stages.items, p.id).length}
+                  memberCount={leads.items.filter((l) => l.pipelineStages?.[p.id]).length}
+                  admin={admin}
+                  dynamic={dynamic}
+                  first={i === 0}
+                  last={i === visible.length - 1}
+                  onSelect={() => setTab(p.id)}
+                  onRename={(name) => renamePipeline(p, name)}
+                  onStep={(dir) => stepPipeline(p, dir)}
+                  onDelete={() => deletePipeline(p)}
+                />
+              ))}
+            </ul>
+            {admin && dynamic && <AddByName label="Add pipeline" placeholder="New pipeline name" onAdd={addPipeline} />}
+          </div>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === LEAD_SOURCES_TAB}
+            onClick={() => setTab(LEAD_SOURCES_TAB)}
+            className={cn('w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold shadow-sm', tab === LEAD_SOURCES_TAB ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50')}
+          >
+            Lead sources
+          </button>
         </div>
-        {crmOn && <VersionBadge item="CRM-M1" />}
-        {admin && <FeatureGate item="CRM-C2">
-          <Button variant="secondary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => setAdding(true)}>
-            Add pipeline <VersionBadge item="CRM-C2" />
-          </Button>
-        </FeatureGate>}
-      </div>
-      {!admin && <p className="mb-4 text-sm text-gray-500">Only the owner or an admin changes stages and lead sources.</p>}
 
-      {tab === LEAD_SOURCES_TAB ? <LeadSourcesPanel /> : <>
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" data-tour="crm-stages">
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 text-xs font-bold uppercase tracking-wider text-gray-500">
-          <span className="flex items-center gap-2">Stages <VersionBadge item="CRM-M2" /></span>
-          <span>{columns.length} of {MAX_STAGES}</span>
-        </div>
-        <ul>
-          {columns.map((s) => (
-            <li
-              key={s.id}
-              draggable={admin && !s.system}
-              onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragId(s.id); }}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => { e.preventDefault(); drop(s.id); }}
-              onDragEnd={() => setDragId(undefined)}
-              className={cn('flex flex-wrap items-center gap-3 border-b border-gray-100 px-5 py-3 last:border-0', dragId === s.id && 'opacity-50')}
-            >
-              {admin && <span className={cn('text-gray-400', s.system ? 'cursor-not-allowed opacity-40' : 'cursor-grab')} aria-hidden title={s.system ? undefined : 'Drag to reorder'}>
-                <GripVertical className="h-4 w-4" />
-              </span>}
-              {admin ? (
-                <label className="relative h-7 w-7 shrink-0 cursor-pointer rounded-lg border border-gray-200" style={{ backgroundColor: s.color }} title="Change colour">
-                  <span className="sr-only">{s.displayName} colour</span>
-                  <input type="color" value={s.color} onChange={(e) => patch(s.id, { color: e.target.value.toUpperCase() })} className="absolute inset-0 cursor-pointer opacity-0" />
-                </label>
-              ) : <span className="h-7 w-7 shrink-0 rounded-lg border border-gray-200" style={{ backgroundColor: s.color }} aria-hidden />}
-              <div className="min-w-[200px] flex-1">
-                {admin ? <Input aria-label={`${s.displayName} name`} value={s.displayName} invalid={!!errors[s.id]} onChange={(e) => patch(s.id, { displayName: e.target.value })} /> : <span className="text-sm font-semibold text-gray-900">{s.displayName}</span>}
-                {errors[s.id] && <p className="mt-1 text-xs text-red-600">{errors[s.id]}</p>}
+        {/* Stages */}
+        <div className="min-w-0">
+          {tab === LEAD_SOURCES_TAB ? <LeadSourcesPanel /> : pipeline && (
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" data-tour="crm-stages">
+              <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-5 py-3">
+                <h2 className="font-heading text-base font-bold text-gray-900">{pipeline.name} stages</h2>
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{columns.length} of {MAX_STAGES}</span>
               </div>
-              {s.system && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-gray-500" title="System stage: rename and recolour only">
-                  <Lock className="h-3.5 w-3.5" /> System
-                </span>
+              {columns.length > 0 && (
+                <div className="border-b border-gray-100 px-5 py-4">
+                  <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">Preview</p>
+                  <StageTracker steps={columns.map((s) => ({ id: s.id, label: s.displayName, color: s.color }))} current={preview} label={`${pipeline.name} preview`} />
+                </div>
               )}
-              <AutomateLink stage={s} kind={sortedPipelines.find((x) => x.id === tab)?.kind} />
-              <span className="w-20 text-right text-xs text-gray-500">{counts[s.id] ?? 0} {counts[s.id] === 1 ? 'card' : 'cards'}</span>
-              {admin && <button
-                type="button"
-                onClick={() => remove(s)}
-                disabled={s.system}
-                aria-label={`Delete ${s.displayName}`}
-                title={s.system ? "System stages can't be deleted" : (counts[s.id] ?? 0) > 0 ? `Move the ${counts[s.id]} cards in this stage first.` : 'Delete stage'}
-                className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>}
-            </li>
-          ))}
-        </ul>
-        {admin && <div className="border-t border-gray-100 px-5 py-3">
-          <Button variant="secondary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addStage} disabled={columns.length >= MAX_STAGES}>
-            Add stage
-          </Button>
-        </div>}
+              {columns.length === 0 ? (
+                <p className="px-5 py-8 text-center text-sm text-gray-500">No stages yet. Add the first one below.</p>
+              ) : (
+                <StageList
+                  columns={columns}
+                  counts={counts}
+                  admin={admin}
+                  kind={pipeline.kind}
+                  onEdit={editStage}
+                  onStep={stepStage}
+                  onDrop={dropOn}
+                  onDelete={deleteStage}
+                />
+              )}
+              {admin && columns.length < MAX_STAGES && <AddByName label="Add stage" placeholder="New stage name" onAdd={addStage} />}
+            </div>
+          )}
+        </div>
       </div>
-
-      {admin && <div className="mt-8 flex justify-end gap-2">
-        <Button variant="secondary" onClick={discard} disabled={!dirty} icon={<RotateCcw className="h-4 w-4" />}>Discard</Button>
-        <Button onClick={save} disabled={!dirty} icon={<Save className="h-4 w-4" />}>Save Changes</Button>
-      </div>}
-      </>}
-
-      {adding && <AddPipelineModal onClose={() => setAdding(false)} onAdd={addPipeline} taken={pipelines.items.map((p) => p.name)} />}
     </SettingsPage>
   );
 }
 
-/** CRM-C2: "+ Add pipeline", e.g. Marketing. */
+/* ---------- pipeline row ---------- */
+
+function PipelineRow({ pipeline: p, selected, stageCount, memberCount, admin, dynamic, first, last, onSelect, onRename, onStep, onDelete }: {
+  pipeline: Pipeline; selected: boolean; stageCount: number; memberCount: number; admin: boolean; dynamic: boolean; first: boolean; last: boolean;
+  onSelect: () => void; onRename: (name: string) => string | undefined; onStep: (dir: -1 | 1) => void; onDelete: () => void;
+}) {
+  const [name, setName] = useState(p.name);
+  const [error, setError] = useState<string>();
+  const [confirming, setConfirming] = useState(false);
+  const system = p.kind !== 'custom';
+  const save = () => {
+    const problem = onRename(name);
+    setError(problem);
+  };
+  return (
+    <li className={cn('border-b border-gray-100 px-4 py-3 last:border-0', selected && 'bg-primary-50/60')}>
+      <div className="flex items-center gap-2">
+        <button type="button" role="tab" aria-selected={selected} onClick={onSelect} className="min-w-0 flex-1 text-left">
+          <span className="flex items-center gap-2">
+            <span className={cn('truncate text-sm font-bold', selected ? 'text-primary-700' : 'text-gray-900')}>{p.name}</span>
+            {system && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xxs font-bold uppercase tracking-wide text-gray-600">System</span>}
+          </span>
+          <span className="text-xs text-gray-500">{stageCount} {stageCount === 1 ? 'stage' : 'stages'}</span>
+        </button>
+        {admin && dynamic && (
+          <span className="flex shrink-0 gap-0.5">
+            <IconButton label={`Move ${p.name} up`} disabled={first} onClick={() => onStep(-1)}><ArrowUp className="h-4 w-4" /></IconButton>
+            <IconButton label={`Move ${p.name} down`} disabled={last} onClick={() => onStep(1)}><ArrowDown className="h-4 w-4" /></IconButton>
+          </span>
+        )}
+      </div>
+      {admin && selected && (
+        <div className="mt-2 space-y-2">
+          <Input
+            aria-label={`${p.name} pipeline name`}
+            value={name}
+            maxLength={NAME_MAX + 10}
+            invalid={!!error}
+            onChange={(e) => { setName(e.target.value); setError(undefined); }}
+            onBlur={save}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+          />
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          {!system && dynamic && (confirming ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
+              <p>Delete {p.name}? {memberCount} {memberCount === 1 ? 'lead' : 'leads'} will be removed from this pipeline only.</p>
+              <div className="mt-2 flex gap-2">
+                <Button size="sm" variant="danger" onClick={onDelete}>Delete</Button>
+                <Button size="sm" variant="secondary" onClick={() => setConfirming(false)}>Cancel</Button>
+              </div>
+            </div>
+          ) : (
+            <Button size="sm" variant="ghost" icon={<Trash2 className="h-4 w-4" />} onClick={() => setConfirming(true)}>Delete pipeline</Button>
+          ))}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/* ---------- stage list ---------- */
+
+function StageList({ columns, counts, admin, kind, onEdit, onStep, onDrop, onDelete }: {
+  columns: PipelineStage[]; counts: Record<string, number>; admin: boolean; kind: Pipeline['kind'];
+  onEdit: (s: PipelineStage, patch: Partial<PipelineStage>) => void; onStep: (s: PipelineStage, dir: -1 | 1) => void;
+  onDrop: (dragId: string, targetId: string) => void; onDelete: (s: PipelineStage, target?: PipelineStage) => void;
+}) {
+  const [dragId, setDragId] = useState<string>();
+  return (
+    <ul>
+      {columns.map((s) => (
+        <StageRow
+          key={s.id}
+          stage={s}
+          columns={columns}
+          count={counts[s.id] ?? 0}
+          admin={admin}
+          kind={kind}
+          dragging={dragId === s.id}
+          onDragStart={() => setDragId(s.id)}
+          onDragEnd={() => setDragId(undefined)}
+          onDropHere={() => { if (dragId) onDrop(dragId, s.id); setDragId(undefined); }}
+          onEdit={(patch) => onEdit(s, patch)}
+          onStep={(dir) => onStep(s, dir)}
+          onDelete={(target) => onDelete(s, target)}
+        />
+      ))}
+    </ul>
+  );
+}
+
+function StageRow({ stage: s, columns, count, admin, kind, dragging, onDragStart, onDragEnd, onDropHere, onEdit, onStep, onDelete }: {
+  stage: PipelineStage; columns: PipelineStage[]; count: number; admin: boolean; kind: Pipeline['kind']; dragging: boolean;
+  onDragStart: () => void; onDragEnd: () => void; onDropHere: () => void;
+  onEdit: (patch: Partial<PipelineStage>) => void; onStep: (dir: -1 | 1) => void; onDelete: (target?: PipelineStage) => void;
+}) {
+  const [name, setName] = useState(s.displayName);
+  const [error, setError] = useState<string>();
+  const [palette, setPalette] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const others = columns.filter((o) => o.id !== s.id);
+  const [target, setTarget] = useState(others[0]?.id ?? '');
+  const blocked = deleteStageProblem(s, 0, columns.length);
+  const saveName = () => {
+    if (name.trim() === s.displayName) return setError(undefined);
+    const problem = stageNameProblem(name, others.map((o) => o.displayName));
+    setError(problem);
+    if (!problem) onEdit({ displayName: name.trim() });
+  };
+  const askDelete = () => {
+    if (count === 0) onDelete();
+    else setDeleting(true);
+  };
+  const noun = kind === 'production' ? (count === 1 ? 'card is' : 'cards are') : count === 1 ? 'lead is' : 'leads are';
+  return (
+    <li
+      draggable={admin && !s.system}
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; onDragStart(); }}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); onDropHere(); }}
+      onDragEnd={onDragEnd}
+      className={cn('border-b border-gray-100 px-5 py-3 last:border-0', dragging && 'opacity-50')}
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        {admin && (
+          <span className={cn('text-gray-400', s.system ? 'cursor-not-allowed opacity-40' : 'cursor-grab')} aria-hidden title={s.system ? undefined : 'Drag to reorder'}>
+            <GripVertical className="h-4 w-4" />
+          </span>
+        )}
+        {admin ? (
+          <button
+            type="button"
+            onClick={() => setPalette((v) => !v)}
+            aria-expanded={palette}
+            aria-label={`${s.displayName} colour`}
+            title="Change colour"
+            className="h-7 w-7 shrink-0 rounded-lg border border-gray-200"
+            style={{ backgroundColor: s.color }}
+          />
+        ) : <span className="h-7 w-7 shrink-0 rounded-lg border border-gray-200" style={{ backgroundColor: s.color }} aria-hidden />}
+        <div className="min-w-[10rem] flex-1">
+          {admin ? (
+            <Input
+              aria-label={`${s.displayName} name`}
+              value={name}
+              maxLength={NAME_MAX + 10}
+              invalid={!!error}
+              onChange={(e) => { setName(e.target.value); setError(undefined); }}
+              onBlur={saveName}
+              onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            />
+          ) : <span className="text-sm font-semibold text-gray-900">{s.displayName}</span>}
+          {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        </div>
+        <span className="w-20 text-right text-xs text-gray-500">{count} {kind === 'production' ? (count === 1 ? 'card' : 'cards') : count === 1 ? 'lead' : 'leads'}</span>
+        {admin && (
+          <span className="flex shrink-0 gap-0.5">
+            <IconButton label={`Move ${s.displayName} up`} disabled={!canStep(columns, s.id, -1)} onClick={() => onStep(-1)}><ArrowUp className="h-4 w-4" /></IconButton>
+            <IconButton label={`Move ${s.displayName} down`} disabled={!canStep(columns, s.id, 1)} onClick={() => onStep(1)}><ArrowDown className="h-4 w-4" /></IconButton>
+          </span>
+        )}
+        {s.system ? (
+          <span className="flex w-9 justify-center text-gray-500" title="Locked: rename and recolour only"><Lock className="h-4 w-4" aria-label="Locked stage" /></span>
+        ) : admin && (
+          <IconButton label={`Delete ${s.displayName}`} disabled={!!blocked} title={blocked} danger onClick={askDelete}><Trash2 className="h-4 w-4" /></IconButton>
+        )}
+        {kind !== 'custom' && <AutomateLink stage={s} kind={kind} />}
+      </div>
+      {palette && admin && (
+        <div className="mt-2 flex flex-wrap gap-2 pl-7" role="radiogroup" aria-label={`${s.displayName} colour`}>
+          {STAGE_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="radio"
+              aria-checked={s.color.toUpperCase() === c}
+              aria-label={c}
+              onClick={() => { onEdit({ color: c }); setPalette(false); }}
+              className={cn('h-7 w-7 rounded-full border-2', s.color.toUpperCase() === c ? 'border-gray-900' : 'border-transparent')}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      )}
+      {deleting && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="alert">
+          <span>{count} {noun} in {s.displayName}. Move them to</span>
+          <NativeSelect value={target} onChange={(e) => setTarget(e.target.value)} aria-label="Move them to" className="h-9 w-48">
+            {others.map((o) => <option key={o.id} value={o.id}>{o.displayName}</option>)}
+          </NativeSelect>
+          <span>then delete.</span>
+          <span className="flex gap-2">
+            <Button size="sm" variant="danger" onClick={() => onDelete(others.find((o) => o.id === target))} disabled={!target}>Move and delete</Button>
+            <Button size="sm" variant="secondary" onClick={() => setDeleting(false)}>Cancel</Button>
+          </span>
+        </div>
+      )}
+    </li>
+  );
+}
+
+/* ---------- small parts ---------- */
+
+function IconButton({ label, title, disabled, danger, onClick, children }: { label: string; title?: string; disabled?: boolean; danger?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={title ?? label}
+      className={cn(
+        'rounded-lg p-2 text-gray-500 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent',
+        danger ? 'hover:bg-red-50 hover:text-red-600' : 'hover:bg-gray-100 hover:text-gray-900',
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** A name field and an Add button ("Add pipeline", "Add stage"). Shows the rule it breaks. */
+function AddByName({ label, placeholder, onAdd }: { label: string; placeholder: string; onAdd: (name: string) => string | undefined }) {
+  const [name, setName] = useState('');
+  const [error, setError] = useState<string>();
+  const add = () => {
+    const problem = onAdd(name);
+    setError(problem);
+    if (!problem) setName('');
+  };
+  return (
+    <div className="border-t border-gray-100 px-4 py-3">
+      <div className="flex gap-2">
+        <Input value={name} placeholder={placeholder} aria-label={placeholder} maxLength={NAME_MAX + 10} invalid={!!error} onChange={(e) => { setName(e.target.value); setError(undefined); }} onKeyDown={(e) => e.key === 'Enter' && add()} />
+        <Button variant="secondary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={add} className="shrink-0">{label}</Button>
+      </div>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+/** "Add pipeline" from the Lead Pipeline board (Option B). Starts with Not Started and Done. */
 export function AddPipelineModal({ onClose, onAdd, taken }: { onClose: () => void; onAdd: (name: string) => void; taken: string[] }) {
-  const [name, setName] = useState('Marketing');
-  const problem = !name.trim() ? 'Enter a name.' : taken.some((t) => t.toLowerCase() === name.trim().toLowerCase()) ? 'A pipeline with this name exists.' : undefined;
+  const [name, setName] = useState('');
+  const problem = pipelineNameProblem(name, taken);
   return (
     <Modal
       open
       onOpenChange={(v) => !v && onClose()}
       title="Add pipeline"
-      description={<span className="inline-flex items-center gap-1.5">Starts with a New stage and a Done stage. <VersionBadge item="CRM-C2" /></span>}
+      description="Starts with a Not Started stage and a Done stage."
       size="sm"
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button disabled={!!problem} onClick={() => onAdd(name.trim())}>Add pipeline</Button></>}
     >
       <FField label="Name" error={name ? problem : undefined}>
-        <FInput value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+        <FInput value={name} onChange={(e) => setName(e.target.value)} placeholder="Training" autoFocus />
       </FField>
     </Modal>
   );
@@ -251,7 +526,7 @@ function AutomateLink({ stage, kind }: { stage: { leadStatus?: string; displayNa
   const pipeline = kind === 'sales' ? 'LEAD' : 'JOB';
   const key = (stage.leadStatus ?? stage.displayName).toUpperCase().replace(/[^A-Z]+/g, '_');
   return (
-    <a href={`/automations?tab=board&pipeline=${pipeline}&stage=${key}`} className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:underline">
+    <a href={`/automations?view=overview&pipeline=${pipeline}&stage=${key}`} className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:underline">
       Automate this stage
     </a>
   );

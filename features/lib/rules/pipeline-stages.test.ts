@@ -3,7 +3,7 @@ import { pipelineStages } from "@/lib/data/settings-config";
 import type { Lead, PipelineStage } from "@/lib/types";
 import {
   MAX_STAGES, deleteStageProblem, insertStage, leavesSold, moveStage, pipelineColumns, productionCardsToCreate, salesColumnFor,
-  stageCounts, stageNameProblem, stageOrderProblem,
+  stageCounts, stageNameProblem, stageOrderProblem, canStep, customColumnFor, pipelineNameProblem,
 } from "./lead-pipeline";
 
 const sales = () => pipelineColumns(pipelineStages, "sales");
@@ -106,5 +106,46 @@ describe("production cards", () => {
   it("asks only when leaving Sold", () => {
     expect(leavesSold("Sold", "Contacted")).toBe(true);
     expect(leavesSold("Contacted", "Sold")).toBe(false);
+  });
+});
+
+describe("CRM Part 2: stage and pipeline rules", () => {
+  it("locked stages never step; others step within the locked ends", () => {
+    const cols = sales();
+    expect(canStep(cols, "ps_new", 1)).toBe(false);
+    expect(canStep(cols, "ps_sold", -1)).toBe(false);
+    expect(canStep(cols, "ps_contacted", -1)).toBe(false); // would pass New
+    expect(canStep(cols, "ps_contacted", 1)).toBe(true);
+    expect(canStep(cols, "ps_pending", 1)).toBe(false); // would pass Sold
+    const prod = production();
+    expect(canStep(prod, "pp_scheduled", -1)).toBe(false); // would pass Confirmed
+    expect(canStep(prod, "pp_inspection", 1)).toBe(false); // would pass Closed
+  });
+
+  it("a custom pipeline adds at the end and keeps at least one stage", () => {
+    const one = [{ ...custom("t1", "Only"), pipelineId: "pl_x" }];
+    const r = insertStage(one, { ...custom("t2", "Next"), pipelineId: "pl_x" });
+    expect(r.ok && names(r.columns)).toEqual(["Only", "Next"]);
+    expect(deleteStageProblem({ system: false }, 0, 1)).toBe("A pipeline keeps at least one stage.");
+  });
+
+  it("names: required, at most 40 characters, unique", () => {
+    expect(stageNameProblem("x".repeat(41), [])).toBe("Keep it to 40 characters or fewer.");
+    expect(stageNameProblem("x".repeat(40), [])).toBeUndefined();
+    expect(pipelineNameProblem("", [])).toBe("Enter a pipeline name.");
+    expect(pipelineNameProblem("sales", ["Sales"])).toBe("Another pipeline has this name.");
+  });
+
+  it("a lead moved onto any stage stays there; a deleted status stage falls back to the one before", () => {
+    const cols = sales();
+    expect(salesColumnFor({ status: "New", stageId: "ps_pending", stageStatus: "New" }, cols)?.id).toBe("ps_pending");
+    const noPending = cols.filter((s) => s.id !== "ps_pending");
+    expect(salesColumnFor({ status: "Pending" }, noPending)?.id).toBe("ps_scheduled");
+  });
+
+  it("a lead is on a custom pipeline only once it has a stage there", () => {
+    const cols = [{ ...custom("t1", "Intro"), pipelineId: "pl_x" }];
+    expect(customColumnFor({}, cols, "pl_x")).toBeUndefined();
+    expect(customColumnFor({ pipelineStages: { pl_x: "t1" } }, cols, "pl_x")?.id).toBe("t1");
   });
 });
