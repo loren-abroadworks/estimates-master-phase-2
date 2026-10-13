@@ -300,6 +300,8 @@ function LeadPipeline() {
       ) : view === 'table' ? (
         <LeadsTable
           leads={active}
+          pipelineName={pipelines.find((p) => p.kind === 'sales')?.name ?? 'Sales'}
+          outerFilters={[...(sourceFilter.length ? [`Sources: ${sourceFilter.join(', ')}`] : []), ...(search.trim() ? [`Search: "${search.trim()}"`] : [])]}
           onEdit={(l) => { setEditing(l); setFormOpen(true); }}
           onArchive={actions.archive}
           onDelete={setDeleting}

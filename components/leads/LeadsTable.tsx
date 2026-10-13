@@ -8,27 +8,38 @@
   (live: features/(main)/leads/listings/templates/useColumns.tsx).
   NEW (29): the Repaint alert source badge; a lead driven by an open repaint
   follow-up has no Archive item.
+  CRM Part 2 (12): Status is the lead's Sales stage (stages added in Settings
+  included). Export to Excel and Print take the visible columns, the current
+  filters and the sort; both are off when no leads match ("No leads to export").
 */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Edit2, Mail, Phone, Star, Trash2 } from 'lucide-react';
-import type { Lead, LeadStatus } from '@/lib/types';
-import { useLookups } from '@/lib/store';
+import { Archive, ArrowDown, ArrowUp, ArrowUpDown, Edit2, FileSpreadsheet, Mail, Phone, Printer, Star, Trash2 } from 'lucide-react';
+import type { Lead, PipelineStage } from '@/lib/types';
+import { useCollection, useCurrentUser, useLogActivity, useLookups, useSingleton } from '@/lib/store';
 import { Badge, Pagination, RefChip, usePagination } from '@/components/ui/display';
 import { Input, NativeSelect } from '@/components/ui/form';
 import { RowMenu } from '@/components/ui/menu';
 import { Button } from '@/components/ui/button';
-import { cn, money, shortDate } from '@/lib/utils';
-import { LEAD_LIFECYCLE, LEAD_STATUS_BADGE, PIPELINE_STEPS, canArchiveLeadStatus, formatPhone } from './leadHelpers';
+import { useToast } from '@/components/ui/toast';
+import { cn, fullName, money, shortDate } from '@/lib/utils';
+import { NO_LEADS, dateCell, downloadLeadsXlsx, exportFileName, exportRows, type ExportColumn } from '@/lib/lead-export';
+import { IS_HOSTED_DEMO, printElement } from '@/features/lib/export';
+import { pipelineColumns, salesColumnFor } from '@/features/lib/rules/lead-pipeline';
+import { LEAD_LIFECYCLE, canArchiveLeadStatus, formatPhone } from './leadHelpers';
 import { LeadSourceChip, PossibleDuplicateChip, useFollowUpLocks } from './leadFeatures';
 import { pressable } from '@/lib/a11y';
 
 type SortKey = 'name' | 'status' | 'source' | 'service' | 'value' | 'date';
 
 export function LeadsTable({
-  leads, onEdit, onArchive, onDelete,
+  leads, onEdit, onArchive, onDelete, pipelineName = 'Sales', outerFilters = [],
 }: {
   leads: Lead[];
+  /** For the export file name and the print header. */
+  pipelineName?: string;
+  /** Filters set above the table (Sources, search), for the print header. */
+  outerFilters?: string[];
   onEdit: (lead: Lead) => void;
   onArchive: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
@@ -36,7 +47,15 @@ export function LeadsTable({
   const router = useRouter();
   const lookups = useLookups();
   const lockOf = useFollowUpLocks();
-  const [stage, setStage] = useState<'' | LeadStatus>('');
+  const [stage, setStage] = useState('');
+  const { items: stageItems } = useCollection('pipelineStages');
+  const columns = useMemo(() => pipelineColumns(stageItems, 'sales'), [stageItems]);
+  const stageOf = (l: Lead) => salesColumnFor(l, columns);
+  const [bp] = useSingleton('businessProfile');
+  const me = fullName(useCurrentUser());
+  const log = useLogActivity();
+  const { toast } = useToast();
+  const printRef = useRef<HTMLDivElement>(null);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'date', dir: 'desc' });
@@ -44,7 +63,7 @@ export function LeadsTable({
   const rows = useMemo(() => {
     const filtered = leads.filter((l) => {
       const day = l.date.slice(0, 10);
-      if (stage && l.status !== stage) return false;
+      if (stage && stageOf(l)?.id !== stage) return false;
       if (from && day < from) return false;
       if (to && day > to) return false;
       return true;
@@ -52,7 +71,7 @@ export function LeadsTable({
     const val = (l: Lead): string | number => {
       switch (sort.key) {
         case 'name': return `${l.firstName} ${l.lastName}`.toLowerCase();
-        case 'status': return PIPELINE_STEPS.indexOf(l.status);
+        case 'status': return stageOf(l)?.sortOrder ?? 99;
         case 'source': return l.leadSource.toLowerCase();
         case 'service': return l.serviceType.toLowerCase();
         case 'value': return l.estimatedValue;
@@ -64,10 +83,46 @@ export function LeadsTable({
       const c = x < y ? -1 : x > y ? 1 : 0;
       return sort.dir === 'asc' ? c : -c;
     });
-  }, [leads, stage, from, to, sort]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leads, stage, from, to, sort, columns]);
 
   const pg = usePagination(rows, 10);
   const hasFilters = !!(stage || from || to);
+
+  /* ---------- Export to Excel and Print (CRM Part 2, 12): the visible columns ---------- */
+  const exportCols: ExportColumn[] = [
+    { header: 'Lead #', value: (l) => l.leadNumber, width: 14 },
+    { header: 'Lead Name', value: (l) => fullName(l), width: 22 },
+    { header: 'Status', value: (l) => stageOf(l)?.displayName ?? l.status, width: 18 },
+    { header: 'Estimate', value: (l) => lookups.estimate(l.estimateId)?.estimateNumber ?? '', width: 14 },
+    { header: 'Phone', value: (l) => formatPhone(l.phone), width: 16 },
+    { header: 'Email', value: (l) => l.email, width: 28 },
+    { header: 'Location', value: (l) => [l.city, l.state].filter(Boolean).join(', '), width: 18 },
+    { header: 'Source', value: (l) => l.leadSource, width: 14 },
+    { header: 'Service Type', value: (l) => l.serviceType, width: 14 },
+    { header: 'Value', value: (l) => l.estimatedValue, width: 12 },
+    { header: 'Created', value: (l) => dateCell(l.date), width: 12 },
+  ];
+  const filterText = [
+    ...outerFilters,
+    ...(stage ? [`Stage: ${columns.find((c) => c.id === stage)?.displayName ?? stage}`] : []),
+    ...(from || to ? [`Created: ${from || 'any date'} to ${to || 'any date'}`] : []),
+  ];
+  const SORT_LABEL: Record<SortKey, string> = { name: 'Lead Name', status: 'Status', source: 'Source', service: 'Service Type', value: 'Value', date: 'Created' };
+  const sortText = `Sorted by ${SORT_LABEL[sort.key]}, ${sort.dir === 'asc' ? 'ascending' : 'descending'}`;
+  const none = rows.length === 0;
+  const exportExcel = async () => {
+    if (IS_HOSTED_DEMO) return toast('Excel download is not available in the hosted preview. Run the prototype locally to use it.', 'info');
+    const { rows: data, capped } = exportRows(rows, exportCols);
+    try {
+      await downloadLeadsXlsx(exportFileName(pipelineName), pipelineName, data, exportCols.map((c) => c.width ?? 14));
+      log(`${me} exported ${data.length - 1} leads from ${pipelineName} to Excel.`);
+      toast(capped ? `Exported the first ${data.length - 1} leads (the limit).` : `Exported ${data.length - 1} leads to Excel`);
+    } catch {
+      toast('Could not build the Excel file. Please try again.', 'error');
+    }
+  };
+  const print = () => printElement(printRef.current, `Leads ${pipelineName}`);
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: key === 'date' || key === 'value' ? 'desc' : 'asc' }));
@@ -88,9 +143,9 @@ export function LeadsTable({
       {/* Filters */}
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="w-44">
-          <NativeSelect value={stage} onChange={(e) => setStage(e.target.value as LeadStatus | '')} aria-label="Filter by stage">
+          <NativeSelect value={stage} onChange={(e) => setStage(e.target.value)} aria-label="Filter by stage">
             <option value="">All Stages</option>
-            {PIPELINE_STEPS.map((s) => <option key={s} value={s}>{s}</option>)}
+            {columns.map((s) => <option key={s.id} value={s.id}>{s.displayName}</option>)}
           </NativeSelect>
         </div>
         <div className="flex items-center gap-2">
@@ -103,6 +158,37 @@ export function LeadsTable({
             Clear filters
           </Button>
         )}
+        <div className="flex flex-wrap gap-2 sm:ml-auto">
+          <span title={none ? NO_LEADS : undefined}>
+            <Button variant="secondary" size="sm" onClick={() => void exportExcel()} disabled={none} icon={<FileSpreadsheet className="h-4 w-4" />}>Export to Excel</Button>
+          </span>
+          <span title={none ? NO_LEADS : undefined}>
+            <Button variant="secondary" size="sm" onClick={print} disabled={none} icon={<Printer className="h-4 w-4" />}>Print</Button>
+          </span>
+        </div>
+      </div>
+
+      {/* Print view: no menus, black text, a header with the business, pipeline, filters and today's date. */}
+      <div className="hidden">
+        <div ref={printRef} style={{ color: '#000', background: '#fff', fontFamily: 'Arial, sans-serif' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{bp.companyName || 'Leads'}</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13 }}>Leads · {pipelineName} · {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p style={{ margin: '2px 0 12px', fontSize: 12 }}>Filters: {filterText.length ? filterText.join('; ') : 'None'} · {sortText} · {rows.length} {rows.length === 1 ? 'lead' : 'leads'}</p>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+            <thead>
+              <tr>{exportCols.map((c) => <th key={c.header} style={{ textAlign: 'left', borderBottom: '1px solid #000', padding: '4px 6px', fontWeight: 700 }}>{c.header}</th>)}</tr>
+            </thead>
+            <tbody>
+              {exportRows(rows, exportCols).rows.slice(1).map((r, i) => (
+                <tr key={i}>{r.map((v, j) => (
+                  <td key={j} style={{ borderBottom: '1px solid #ccc', padding: '4px 6px' }}>
+                    {v instanceof Date ? v.toLocaleDateString('en-US') : exportCols[j]!.header === 'Value' ? money(Number(v)) : String(v)}
+                  </td>
+                ))}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -149,7 +235,7 @@ export function LeadsTable({
                         </div>
                         <span className={cn('mt-1 inline-flex rounded-full px-2 py-0.5 text-xxs font-bold uppercase tracking-wide', lc.color)}>{lc.label}</span>
                       </td>
-                      <td className="px-5 py-4"><Badge className={LEAD_STATUS_BADGE[l.status]}>{l.status}</Badge></td>
+                      <td className="px-5 py-4"><StageBadge stage={stageOf(l)} fallback={l.status} /></td>
                       <td className="px-5 py-4">
                         {est ? <RefChip href={`/estimates/${est.id}`}>{est.estimateNumber}</RefChip> : <span className="text-xs text-gray-500">-</span>}
                       </td>
@@ -192,5 +278,16 @@ export function LeadsTable({
         </div>
       </div>
     </div>
+  );
+}
+
+/** The lead's Sales stage, in the stage colour (CRM Part 2). */
+function StageBadge({ stage, fallback }: { stage?: PipelineStage; fallback: string }) {
+  if (!stage) return <Badge>{fallback}</Badge>;
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-bold text-gray-700">
+      <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: stage.color }} />
+      {stage.displayName}
+    </span>
   );
 }
