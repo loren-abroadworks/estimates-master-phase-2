@@ -17,13 +17,13 @@
   - Complete: Group by Stage / Source (CRM-C1) and "+ Add pipeline" (CRM-C2).
   - Website view: Tracked links (CRM-M5) and Connect Facebook Lead Ads (CRM-C6).
 */
-import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Archive, Globe, LayoutGrid, List, Plus, UserPlus } from 'lucide-react';
 import type { Lead, LeadStatus } from '@/lib/types';
 import { PageShell } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
-import { NativeSelect } from '@/components/ui/form';
+import { SourceChips, useSourceFilter } from '@/components/leads/SourceFilter';
 import { SearchInput, Skeleton } from '@/components/ui/display';
 import { ConfirmDialog, Modal } from '@/components/Modals/Modal';
 import { useCollection, useCurrentUser } from '@/lib/store';
@@ -53,29 +53,6 @@ export default function LeadsPage() {
       </Suspense>
     </PageShell>
   );
-}
-
-/** CRM-M6: the board's Source filter, remembered per user in this browser. */
-function useSourceFilter(userId: string) {
-  const key = `emts-lead-source-filter:${userId}`;
-  const [value, setValue] = useState('');
-  useEffect(() => {
-    try {
-      setValue(localStorage.getItem(key) ?? '');
-    } catch {
-      setValue('');
-    }
-  }, [key]);
-  const set = (v: string) => {
-    setValue(v);
-    try {
-      if (v) localStorage.setItem(key, v);
-      else localStorage.removeItem(key);
-    } catch {
-      /* private window: the filter just isn't remembered */
-    }
-  };
-  return [value, set] as const;
 }
 
 function LeadPipeline() {
@@ -131,28 +108,38 @@ function LeadPipeline() {
   // Board columns of the chosen pipeline, in the order set in Settings (Archived is not a column).
   const stages = useMemo(() => pipelineColumns(stagesCol.items, pipelineId), [stagesCol.items, pipelineId]);
 
-  // D6 (2 Oct 2026): the Source filter offers the organisation's list (inactive sources only while they still have leads).
+  // CRM Part 1 (4): one chip per source that has leads, in the organisation's list order (D6).
   const { items: sourceList } = useCollection('leadSources');
   const sourceOf = (l: Lead) => resolveSource(l.leadSource, sourceList);
   const sources = useMemo(
-    () => sourceList.filter((s) => s.active || leads.some((l) => resolveSource(l.leadSource, sourceList) === s.name)).map((s) => s.name),
+    () => sourceList.filter((s) => leads.some((l) => resolveSource(l.leadSource, sourceList) === s.name)).map((s) => s.name),
     [sourceList, leads],
   );
-  // A remembered filter that is no longer on the list (renamed or deleted) is ignored.
-  const sourceFilter = sources.includes(source) ? source : '';
+  // A remembered source that no longer has leads (renamed, deleted, all moved) is ignored.
+  const sourceFilter = crmOn ? source.filter((s) => sources.includes(s)) : [];
+  const sourceKey = sourceFilter.join('|');
+  const sourceOk = (l: Lead) => !sourceFilter.length || sourceFilter.includes(sourceOf(l));
+  const emptyText = sourceFilter.length ? 'No leads from this source.' : undefined;
   const matches = useMemo(() => {
     const q = search.trim().toLowerCase();
     return leads.filter(
       (l) =>
-        // The Source filter belongs to the board; the table has its own filters.
-        (view !== 'kanban' || !crmOn || !sourceFilter || sourceOf(l) === sourceFilter) &&
+        // The Sources filter applies to the board (every pipeline) and the table.
+        sourceOk(l) &&
         (!q ||
           `${l.firstName} ${l.lastName}`.toLowerCase().includes(q) ||
           l.email.toLowerCase().includes(q) ||
           l.city.toLowerCase().includes(q)),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leads, search, sourceFilter, view, crmOn, sourceList]);
+  }, [leads, search, sourceKey, sourceList]);
+  // Production cards follow their lead's source.
+  const leadById = useMemo(() => new Map(leads.map((l) => [l.id, l])), [leads]);
+  const cardOk = (c: { leadId?: string }) => {
+    if (!sourceFilter.length) return true;
+    const l = c.leadId ? leadById.get(c.leadId) : undefined;
+    return !!l && sourceOk(l);
+  };
 
   const active = matches.filter((l) => l.status !== 'Archived');
   const archived = matches.filter((l) => l.status === 'Archived');
@@ -271,16 +258,6 @@ function LeadPipeline() {
             </FeatureGate>
           </div>
           <VersionBadge item="CRM-M1" />
-          {pipeline?.kind !== 'production' && (
-            <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-500" data-tour="crm-source">
-              Source
-              <NativeSelect value={sourceFilter} onChange={(e) => setSource(e.target.value)} className="h-9 w-44 normal-case">
-                <option value="">All sources</option>
-                {sources.map((s) => <option key={s} value={s}>{s}</option>)}
-              </NativeSelect>
-              <VersionBadge item="CRM-M6" />
-            </label>
-          )}
           {pipeline?.kind === 'sales' && (
             <FeatureGate item="CRM-C1">
               <div className="flex items-center gap-2" data-tour="crm-groupby">
@@ -295,6 +272,11 @@ function LeadPipeline() {
             </FeatureGate>
           )}
         </div>
+      )}
+
+      {/* CRM Part 1 (4): Sources chips, for every pipeline on the board and the table. */}
+      {view !== 'website' && !viewArchived && crmOn && (
+        <div className="mb-6"><SourceChips sources={sources} value={sourceFilter} onChange={setSource} /></div>
       )}
 
       {viewArchived && view !== 'website' && (
@@ -320,13 +302,14 @@ function LeadPipeline() {
           onDelete={setDeleting}
         />
       ) : pipeline?.kind === 'production' ? (
-        <ProductionBoard stages={stages} search={search} />
+        <ProductionBoard stages={stages} search={search} filter={cardOk} emptyText={emptyText} />
       ) : pipeline?.kind === 'custom' ? (
-        <LeadPipelineBoard pipelineId={pipelineId} stages={stages} leads={active} onMove={(l, s) => actions.moveInPipeline(l, pipelineId, s)} />
+        <LeadPipelineBoard pipelineId={pipelineId} stages={stages} leads={active} onMove={(l, s) => actions.moveInPipeline(l, pipelineId, s)} emptyText={emptyText} />
       ) : (
         <KanbanBoard
           leads={active}
           stages={stages}
+          emptyText={emptyText}
           groupBy={complete ? groupBy : 'stage'}
           onMove={move}
           onMoveToStage={actions.moveToStage}

@@ -21,8 +21,8 @@ import { customColumnFor } from '@/features/lib/rules/lead-pipeline';
 import { useToast } from '@/components/ui/toast';
 import { LeadCard } from './LeadCard';
 
-function Column({ stage, count, over, onOver, onDrop, children }: {
-  stage: PipelineStage; count: number; over: boolean; onOver: () => void; onDrop: () => void; children: React.ReactNode;
+function Column({ stage, count, over, onOver, onDrop, emptyText, children }: {
+  stage: PipelineStage; count: number; over: boolean; onOver: () => void; onDrop: () => void; emptyText?: string; children: React.ReactNode;
 }) {
   return (
     <div
@@ -36,7 +36,7 @@ function Column({ stage, count, over, onOver, onDrop, children }: {
       </div>
       <div className="flex-1 space-y-3 px-2 pb-4">
         {children}
-        {count === 0 && <div className="flex h-16 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-xs font-medium italic text-gray-300">Drop cards here</div>}
+        {count === 0 && <div className="flex h-16 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-xs font-medium italic text-gray-300">{emptyText ?? 'Drop cards here'}</div>}
       </div>
     </div>
   );
@@ -44,7 +44,7 @@ function Column({ stage, count, over, onOver, onDrop, children }: {
 
 /* ---------- Production ---------- */
 
-export function ProductionBoard({ stages, search }: { stages: PipelineStage[]; search: string }) {
+export function ProductionBoard({ stages, search, filter, emptyText }: { stages: PipelineStage[]; search: string; filter?: (c: ProductionCard) => boolean; emptyText?: string }) {
   const cards = useCollection('productionCards');
   const { items: jobs } = useCollection('jobs');
   const { items: estimates } = useCollection('estimates');
@@ -53,7 +53,7 @@ export function ProductionBoard({ stages, search }: { stages: PipelineStage[]; s
   const [dragId, setDragId] = useState<string>();
   const [overId, setOverId] = useState<string>();
   const q = search.trim().toLowerCase();
-  const shown = cards.items.filter((c) => !c.removedAt && (!q || `${c.title} ${c.customerName}`.toLowerCase().includes(q)));
+  const shown = cards.items.filter((c) => !c.removedAt && (!filter || filter(c)) && (!q || `${c.title} ${c.customerName}`.toLowerCase().includes(q)));
 
   const drop = (stage: PipelineStage) => {
     const card = cards.items.find((c) => c.id === dragId);
@@ -71,7 +71,7 @@ export function ProductionBoard({ stages, search }: { stages: PipelineStage[]; s
         {stages.map((s) => {
           const list = shown.filter((c) => c.stageId === s.id);
           return (
-            <Column key={s.id} stage={s} count={list.length} over={overId === s.id} onOver={() => dragId && setOverId(s.id)} onDrop={() => drop(s)}>
+            <Column key={s.id} stage={s} count={list.length} over={overId === s.id} onOver={() => dragId && setOverId(s.id)} onDrop={() => drop(s)} emptyText={emptyText}>
               {list.map((c) => (
                 <ProductionCardView key={c.id} card={c} job={jobs.find((j) => j.id === c.jobId)} estimateNumber={estimates.find((e) => e.id === c.estimateId)?.estimateNumber} dragging={dragId === c.id} onDragStart={() => setDragId(c.id)} />
               ))}
@@ -114,8 +114,8 @@ function ProductionCardView({ card, job, estimateNumber, dragging, onDragStart }
 
 /* ---------- Added pipelines (CRM-C2) ---------- */
 
-export function LeadPipelineBoard({ pipelineId, stages, leads, onMove }: {
-  pipelineId: string; stages: PipelineStage[]; leads: Lead[]; onMove: (lead: Lead, stage: PipelineStage) => void;
+export function LeadPipelineBoard({ pipelineId, stages, leads, onMove, emptyText }: {
+  pipelineId: string; stages: PipelineStage[]; leads: Lead[]; onMove: (lead: Lead, stage: PipelineStage) => void; emptyText?: string;
 }) {
   const [dragId, setDragId] = useState<string>();
   const [overId, setOverId] = useState<string>();
@@ -131,7 +131,7 @@ export function LeadPipelineBoard({ pipelineId, stages, leads, onMove }: {
         {stages.map((s) => {
           const list = leads.filter((l) => customColumnFor(l, stages, pipelineId)?.id === s.id);
           return (
-            <Column key={s.id} stage={s} count={list.length} over={overId === s.id} onOver={() => dragId && setOverId(s.id)} onDrop={() => drop(s)}>
+            <Column key={s.id} stage={s} count={list.length} over={overId === s.id} onOver={() => dragId && setOverId(s.id)} onDrop={() => drop(s)} emptyText={emptyText}>
               {list.map((l) => <LeadCard key={l.id} lead={l} dragging={dragId === l.id} onDragStart={(e, id) => { e.dataTransfer.setData('text/plain', id); setDragId(id); }} />)}
             </Column>
           );

@@ -29,12 +29,14 @@ import { followUpLockMessage, useFollowUpLocks } from './leadFeatures';
 const SOURCE_COLORS = ['#3B82F6', '#A855F7', '#14B8A6', '#F59E0B', '#EC4899', '#0EA5E9', '#22C55E', '#6B7280'];
 
 export function KanbanBoard({
-  leads, stages, groupBy = 'stage', onMove, onMoveToStage, onArchive,
+  leads, stages, groupBy = 'stage', emptyText, onMove, onMoveToStage, onArchive,
 }: {
   leads: Lead[];
   /** Sales columns in order (pipelineColumns). */
   stages: PipelineStage[];
   groupBy?: 'stage' | 'source';
+  /** Shown in an empty column while a filter is on (CRM Part 1, 4). */
+  emptyText?: string;
   onMove: (lead: Lead, status: LeadStatus) => void;
   onMoveToStage: (lead: Lead, stage: PipelineStage) => void;
   onArchive: (lead: Lead) => void;
@@ -189,7 +191,7 @@ export function KanbanBoard({
                       isOver ? 'border-primary-300 bg-primary-50/50' : 'border-gray-200',
                     )}
                   >
-                    Drop leads here
+                    {emptyText && !draggedId ? emptyText : 'Drop leads here'}
                   </div>
                 )}
               </div>

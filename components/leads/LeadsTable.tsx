@@ -1,7 +1,8 @@
 'use client';
 
 /*
-  Table view of the pipeline. Filters by stage, source and date range,
+  Table view of the pipeline. Filters by stage and date range (the Sources
+  chips above it filter by source, CRM Part 1, 4),
   sorts by clicking a column header, and pages 10 rows at a time.
   Clicking a row opens the lead. The kebab menu has Edit, Archive and Delete
   (live: features/(main)/leads/listings/templates/useColumns.tsx).
@@ -36,18 +37,14 @@ export function LeadsTable({
   const lookups = useLookups();
   const lockOf = useFollowUpLocks();
   const [stage, setStage] = useState<'' | LeadStatus>('');
-  const [source, setSource] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({ key: 'date', dir: 'desc' });
-
-  const sources = useMemo(() => Array.from(new Set(leads.map((l) => l.leadSource).filter(Boolean))).sort(), [leads]);
 
   const rows = useMemo(() => {
     const filtered = leads.filter((l) => {
       const day = l.date.slice(0, 10);
       if (stage && l.status !== stage) return false;
-      if (source && l.leadSource !== source) return false;
       if (from && day < from) return false;
       if (to && day > to) return false;
       return true;
@@ -67,10 +64,10 @@ export function LeadsTable({
       const c = x < y ? -1 : x > y ? 1 : 0;
       return sort.dir === 'asc' ? c : -c;
     });
-  }, [leads, stage, source, from, to, sort]);
+  }, [leads, stage, from, to, sort]);
 
   const pg = usePagination(rows, 10);
-  const hasFilters = !!(stage || source || from || to);
+  const hasFilters = !!(stage || from || to);
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: key === 'date' || key === 'value' ? 'desc' : 'asc' }));
@@ -96,19 +93,13 @@ export function LeadsTable({
             {PIPELINE_STEPS.map((s) => <option key={s} value={s}>{s}</option>)}
           </NativeSelect>
         </div>
-        <div className="w-44">
-          <NativeSelect value={source} onChange={(e) => setSource(e.target.value)} aria-label="Filter by source">
-            <option value="">All Sources</option>
-            {sources.map((s) => <option key={s} value={s}>{s}</option>)}
-          </NativeSelect>
-        </div>
         <div className="flex items-center gap-2">
           <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" className="w-40" />
           <span className="text-xs text-gray-500">to</span>
           <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" className="w-40" />
         </div>
         {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={() => { setStage(''); setSource(''); setFrom(''); setTo(''); }}>
+          <Button variant="ghost" size="sm" onClick={() => { setStage(''); setFrom(''); setTo(''); }}>
             Clear filters
           </Button>
         )}
