@@ -1,8 +1,8 @@
 # CRM Part 1 and Part 2: build plan
 
-Status: **plan only, waiting for go-ahead.** No code has changed yet.
+Status: **built (14 Oct 2026).** All defaults in section 3 were approved ("go") and used. What was built, the browser check of each "Done when" item, the gaps and the PM questions are in sections 5 to 8 at the end.
 
-Much of this brief is already partly built from the 30 Sep and 2 Oct CRM work (tracked links, a Sources filter, Sales/Production pipelines, Add pipeline, a Journey bar, Website Lead Review). The plan below extends those pieces instead of building second copies. The decisions I need from you are at the end under "Questions before I start".
+Much of this brief was already partly built from the 30 Sep and 2 Oct CRM work (tracked links, a Sources filter, Sales/Production pipelines, Add pipeline, a Journey bar, Website Lead Review). The build extends those pieces instead of making second copies.
 
 ---
 
@@ -136,3 +136,79 @@ These need a decision. My default is in **bold**; I'll use it if you just say "g
 - Real email sending (simulated with an activity entry and a toast).
 - Real duplicate merging in a database (merge edits the in-browser data).
 - Server-side link status beyond what the existing `/api/website-form/links` route already does.
+
+---
+
+## 5. What was built
+
+One commit per part, on `main`:
+
+| Commit | Part |
+| --- | --- |
+| `ec379e9` | Data and flag: form link fields (starting stage, submissions, soft delete), Lead Review and "not a duplicate" collections, `lib/lead-capture.ts` rules, Production reseeded Confirmed → Closed, Training pipeline, five form links, CRM demo leads, the `dynamicPipelines` and Dark mode switches in the demo bar, and the dark theme (`app/dark.css`). |
+| `a719bf8` | Form Links panel (`components/leads/TrackedLinksCard.tsx`). |
+| `84024a7` | Public form `/f/[linkId]` and the intake that turns submissions into leads (`components/leads/useFormLeadIntake.ts`). |
+| `e13b12c` | Thank-you email card in Settings › Automated Messages. |
+| `fe634c4` | Sources filter chips (board, every pipeline, and table). |
+| `cb99220` | Lead Review with Merge, Retain and Remove (`components/leads/LeadReviewPanel.tsx`); Website Leads table removed. |
+| `6d92a07` | Settings › Pipeline Stages rebuilt; shared `StageTracker` (`components/ui/StageTracker.tsx`). |
+| `45247d8` | Board pipeline selector in Settings order. |
+| `22cd489` | Stacked trackers on lead details and the contact page (`components/leads/PipelineTrackers.tsx`). |
+| `d61c8dc` | Job Progress reads the Production pipeline. |
+| `e104027` | Export to Excel and Print on the table view (`lib/lead-export.ts`). |
+| `c1c9ce9` | Dark theme fixes found in the final sweep. |
+
+Starting stage on form links (spec 8) is in the Create/Edit Link popup (`a719bf8`) and the intake (`84024a7`).
+
+How to demo:
+
+- **Option A / B:** demo bar (bottom left) › "Dynamic pipelines". Off = Option A.
+- **Dark mode:** demo bar › "Dark mode". It applies to the whole app, not only the new screens.
+- **A form submission:** Lead Pipeline › Website › Copy Link, open it in a new tab, send the form. The lead appears on the board within about 10 seconds while a signed-in page is open.
+
+Tests: 822 pass (`npm test`), `npm run typecheck` is clean. New tests: `lib/lead-capture.test.ts`, `lib/lead-export.test.ts`, the Part 2 cases in `features/lib/rules/pipeline-stages.test.ts`, and the form-link cases in `lib/website-form-route.test.ts`.
+
+## 6. "Done when" results
+
+Checked in headless Edge against the running dev server, from fresh demo data.
+
+| # | Check | Result |
+| --- | --- | --- |
+| 1 | Active Instagram link creates an Instagram lead in New Lead | Pass |
+| 2 | Paused link shows the paused message, no lead | Pass |
+| 3 | Thank-you On: one simulated email logged per lead. Off: none | Pass (see note in section 7) |
+| 4 | Matching phone → Lead Review, "Likely the same person" | Pass |
+| 5 | Two John Smiths marked Retain are not flagged again | Pass (pair saved; unit test covers re-check) |
+| 6 | Merge keeps the chosen email and removes the new lead | Pass |
+| 7 | Website Leads table gone | Pass |
+| 8 | Sources = Instagram shows only Instagram leads, matching counts | Pass (New Leads 2, Contacted 1, others 0 with the empty text) |
+| 9 | "Colour Consultation" goes before Closed and shows on Job Progress | Pass (checked on three jobs) |
+| 10 | Sales and Production have no Delete | Pass |
+| 11 | Deleting a stage with leads forces a move first | Pass |
+| 12 | Link with starting stage Contacted creates leads in Contacted | Pass (Google link) |
+| 13 | Sold on the tracker starts Production at its first stage | Pass |
+| 14 | Option B: Sales, Production, Training stacked in that order | Pass |
+| 15 | Option A: Add Pipeline and pipeline delete hidden | Pass |
+| 16 | Excel export with Instagram filter: only Instagram, visible columns | Pass |
+| 17 | Light, dark and 400px with no sideways page scroll | Pass on all 9 new or changed screens |
+
+## 7. What the prototype does not do, and known issues
+
+- **Email is simulated.** The thank-you email is a log entry, an activity line and a toast. Nothing is sent.
+- **Form submissions need a signed-in page open.** The public form posts to the existing `/api/website-form` inbox, and a signed-in browser turns each submission into a lead (as before). With no staff page open, leads appear the next time one is.
+- **Two tabs overwrite each other.** Each open tab keeps its own copy of the demo data and saves it, so the last tab to save wins. This predates the CRM work, but it can make a setting look like it "didn't stick" during a demo. Use one tab per browser.
+- **Lead numbers keep the `LEAD-2026-N` format** (not `L-2026-032`), as agreed.
+- **Job status vs Production stage.** Job Progress now shows the Production stage. The job's own status (scheduling, closeout) still lives in the job header and is not linked to the Production stage.
+- **Custom pipeline membership.** A lead joins Training (or any custom pipeline) only when someone clicks a stage on its tracker. There is no "add to pipeline" action on the board.
+- **Merging into a contact with no lead** writes the history to the contact's notes and removes the new lead. The request itself is not kept as a lead.
+- **The staff sidebar shows on `/f/...`** when the person opening it is signed in. Visitors don't see it.
+- **Already in the repo:** a React "unique key" warning in `LeadsTable` (it was there before this work), and `npm audit` reports high-severity advisories for `next` 16.3.x and `source-map-js`. The new `xlsx` dependency (0.20.3, SheetJS CDN) has none.
+
+## 8. Questions for the PM
+
+1. **Tracker vs live rules.** Any stage can now be picked by hand on the tracker, including Pending, Sold and Lost (the live app only allows these through the estimate). The board keeps the live drag rules. Is that split right, or should the board allow the same?
+2. **Sold from the tracker** also sends the "Project Acceptance" stage email (the existing stage message). Should a manual Sold send it?
+3. **Job status and Production stage.** Should moving a job's Production stage also change its job status (for example Scheduled → Scheduled), or stay separate as now?
+4. **Public form fields.** The form now uses the manual lead form's fields (full address required), which overrides the 2 Oct D5 decision (phone or email, address optional). Please confirm with Tim.
+5. **Custom pipelines on the board.** Should there be a way to add leads to a custom pipeline from the board (for example "Add to Training" on a card)?
+6. **Merge into a contact.** Keep the new request as a lead under that contact instead of removing it?
