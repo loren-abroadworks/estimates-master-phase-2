@@ -275,7 +275,7 @@ function PipelineRow({ pipeline: p, selected, stageCount, memberCount, admin, dy
     setError(problem);
   };
   return (
-    <li className={cn('border-b border-gray-100 px-4 py-3 last:border-0', selected && 'bg-primary-50/60')}>
+    <li className={cn('border-b border-gray-100 px-4 py-3 last:border-0', selected && 'bg-primary-50')}>
       <div className="flex items-center gap-2">
         <button type="button" role="tab" aria-selected={selected} onClick={onSelect} className="min-w-0 flex-1 text-left">
           <span className="flex items-center gap-2">

@@ -97,3 +97,19 @@
   :where(.dark) .text-lime-600, :where(.dark) .text-lime-700, :where(.dark) .text-lime-800, :where(.dark) .text-lime-900 { color: #bef264; }
 }
 .dark .rtable > table > tbody > tr { background: #18202c; }
+/* Responsive tables (globals.css .rtable): the pinned first column and the scroll-edge shade. */
+@media (min-width: 768px) {
+  .dark .rtable > table > tbody > tr > td:first-child { background: #18202c; }
+  .dark .rtable {
+    background:
+      linear-gradient(to left, #18202c 30%, rgb(24 32 44 / 0)) right center / 2.5rem 100% no-repeat local,
+      radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.4), transparent) right center / 0.875rem 100% no-repeat scroll;
+  }
+}
+/* Gradients that fade to white (sidebar scroll edges, dashboard banners). */
+@layer utilities {
+  :where(.dark) .from-white { --tw-gradient-from: #18202c; }
+  :where(.dark) .via-white\/80 { --tw-gradient-via: rgb(24 32 44 / 0.8); }
+  :where(.dark) .to-white { --tw-gradient-to: #18202c; }
+  :where(.dark) .bg-gray-900\/40, :where(.dark) .bg-gray-900\/50 { background-color: rgb(0 0 0 / 0.6); }
+}
