@@ -5,7 +5,7 @@
   Layout follows the live job detail template: Financials and Schedule on the
   left, Job Progress and Work Order details on the right. Crew, pause periods,
   notes/daily log and history are extra cards the brief asks for, styled the
-  same way.
+  same way. Job Progress follows the Production pipeline (CRM Part 2, 11).
 */
 import { useState } from 'react';
 import Link from 'next/link';
@@ -18,7 +18,11 @@ import { Avatar, EmptyState, ProgressBar } from '@/components/ui/display';
 import { Field, Input, NativeSelect, Textarea } from '@/components/ui/form';
 import { ConfirmDialog } from '@/components/Modals/Modal';
 import { useToast } from '@/components/ui/toast';
-import { useCollection, useCurrentUser, useLookups } from '@/lib/store';
+import { useCollection, useCurrentUser, useLogActivity, useLookups } from '@/lib/store';
+import { StageTracker, type TrackerStep } from '@/components/ui/StageTracker';
+import { useLeadActions } from '@/components/leads/useLeadActions';
+import { move } from '@/lib/crm';
+import { pipelineColumns } from '@/features/lib/rules/lead-pipeline';
 import type { Customer, Job, JobNote, JobStatus, WorkOrder } from '@/lib/types';
 import { cn, fullName, longDate, money, shortDate } from '@/lib/utils';
 import { usText } from '@/features/lib/display-text';
@@ -153,41 +157,52 @@ export function ScheduleCard({ job, onEdit, onCancel, onToggleProtected }: { job
 
 /* ---------- Job progress stepper ---------- */
 
-export const PROGRESS_STAGES: JobStatus[] = ['Confirmed', 'Scheduled', 'In Production', 'Touch Up', 'Ready for Inspection', 'Completed', 'Marketing'];
-const STAGE_LABELS: Partial<Record<JobStatus, string>> = { 'In Production': 'Production', 'Ready for Inspection': 'Inspection' };
-
-export function JobProgress({ status, onChange }: { status: JobStatus; onChange: (s: JobStatus) => void }) {
-  const idx = PROGRESS_STAGES.indexOf(status);
+/**
+ * Job Progress (CRM Part 2, 11): reads only the Production pipeline,
+ * including stages added in Settings, through the job's Production card.
+ * Custom pipelines never show here. Clicking a stage moves the card; a job
+ * with no card yet gets one on the stage clicked. The job's own status
+ * (scheduling, closeout) is unchanged and shown in the page header.
+ */
+export function JobProgress({ job }: { job: Job }) {
+  const { items: stages } = useCollection('pipelineStages');
+  const cards = useCollection('productionCards');
+  const { items: leads } = useCollection('leads');
+  const { items: customers } = useCollection('customers');
+  const actions = useLeadActions();
+  const log = useLogActivity();
+  const me = fullName(useCurrentUser());
+  const { toast } = useToast();
+  const cols = pipelineColumns(stages, 'production');
+  const card = cards.items.find((c) => !c.removedAt && (c.jobId === job.id || (!!job.estimateId && c.estimateId === job.estimateId)));
+  const current = cols.find((s) => s.id === card?.stageId);
+  const lead = leads.find((l) => l.id === (card?.leadId ?? job.leadId));
+  const select = (step: TrackerStep) => {
+    const stage = cols.find((s) => s.id === step.id);
+    if (!stage || stage.id === card?.stageId) return;
+    if (card && lead) return actions.moveProduction(lead, card, stage);
+    const at = new Date().toISOString();
+    if (card) {
+      cards.update(card.id, { stageId: stage.id, history: [...card.history, move('production', stage, me, at)] });
+    } else {
+      cards.add({
+        id: `pc_${job.estimateId ?? job.id}`, saleKey: job.estimateId ?? job.id, pipelineId: 'production', stageId: stage.id, title: job.title,
+        customerName: fullName(customers.find((c) => c.id === job.customerId)), leadId: job.leadId, estimateId: job.estimateId, jobId: job.id,
+        value: job.value, createdAt: at, history: [move('production', stage, me, at)],
+      });
+    }
+    log(`Job ${job.jobNumber} moved from ${current?.displayName ?? 'Not started'} to ${stage.displayName} in Production by ${me}.`, 'job', job.id);
+    toast(`${job.title} moved to ${stage.displayName}`);
+  };
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-      <h3 className="mb-8 text-lg font-bold text-gray-900">Job Progress</h3>
-      <div className="relative px-2">
-        <div className="absolute left-0 top-[15px] h-1 w-full rounded-full bg-gray-100" />
-        <div className="absolute left-0 top-[15px] h-1 rounded-full bg-primary-600 transition-all duration-500"
-          style={{ width: `${idx >= 0 ? (idx / (PROGRESS_STAGES.length - 1)) * 100 : 0}%` }} />
-        <div className="relative z-10 flex w-full justify-between overflow-x-auto pb-2">
-          {PROGRESS_STAGES.map((s, i) => {
-            const done = i <= idx;
-            const current = i === idx;
-            return (
-              <button key={s} type="button" onClick={() => onChange(s)} className="group flex min-w-[60px] flex-col items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60">
-                <div className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-full border-4 transition-all',
-                  current ? 'scale-110 border-white bg-primary-600 text-white shadow-lg ring-2 ring-primary-600'
-                    : done ? 'border-primary-600 bg-white text-primary-600 group-hover:bg-primary-50'
-                      : 'border-gray-200 bg-white text-gray-300 group-hover:border-gray-300',
-                )}>
-                  {done ? <Check className="h-3.5 w-3.5 stroke-[4]" /> : <div className="h-2 w-2 rounded-full bg-gray-200" />}
-                </div>
-                <span className={cn('max-w-[80px] text-center text-xxs font-black uppercase tracking-wider', current ? 'text-primary-700' : 'text-gray-500 group-hover:text-gray-600')}>
-                  {STAGE_LABELS[s] ?? s}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-lg font-bold text-gray-900">Job Progress</h3>
+        <span className="text-sm font-semibold" style={current ? { color: current.color } : undefined}>
+          {current ? current.displayName : <span className="text-gray-500">Not started</span>}
+        </span>
       </div>
-      {idx === -1 && <p className="mt-4 text-sm text-gray-500">Current status: <span className="font-bold text-gray-700">{usText(status)}</span></p>}
+      <StageTracker steps={cols.map((s) => ({ id: s.id, label: s.displayName, color: s.color }))} current={current?.id} onSelect={select} label="Production stages" />
     </div>
   );
 }

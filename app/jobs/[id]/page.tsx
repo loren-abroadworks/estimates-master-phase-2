@@ -192,7 +192,7 @@ export default function JobDetailPage() {
             <WorkOrderScope job={job} estimate={est} lead={lead} workOrder={linkedWOs[0]} onSchedule={() => setScheduleOpen(true)} />
           ) : (
             <>
-              <JobProgress status={job.status} onChange={changeStatus} />
+              <JobProgress job={job} />
               <WorkOrdersCard job={job} workOrders={linkedWOs} onCreate={() => setWoOpen(true)} statusOf={(w) => twinWoStatusLabel(twin, w.id)} />
               <BreaksCard job={job} />
               <NotesCard job={job} />
