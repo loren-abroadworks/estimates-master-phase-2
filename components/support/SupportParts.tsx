@@ -4,6 +4,7 @@
   Help & Support building blocks: the Knowledge Base accordion, Video
   Tutorials grid with a mock player modal, the Contact Support form and the
   "Reset demo data" card. Layout and copy follow the live support feature.
+  A support request lands in the Admin Portal's Messages (/platform/messages).
 */
 import React, { useState } from 'react';
 import { BookOpen, CheckCircle2, ChevronDown, Mail, Maximize, MessageSquare, Phone, Play, RotateCcw, Send, Video as VideoIcon } from 'lucide-react';
@@ -11,7 +12,8 @@ import { Modal, ConfirmDialog } from '@/components/Modals/Modal';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Textarea } from '@/components/ui/form';
 import { useToast } from '@/components/ui/toast';
-import { useDataActions } from '@/lib/store';
+import { useCollection, useCurrentUser, useDataActions, useSingleton } from '@/lib/store';
+import { fullName } from '@/lib/utils';
 import { SUPPORT_EMAIL, SUPPORT_PHONE, faqAnswer, type Video } from './content';
 
 /* ---------- Knowledge Base ---------- */
@@ -126,6 +128,9 @@ export function VideoTutorials({ videos, searching }: { videos: Video[]; searchi
 
 export function ContactSupport() {
   const { toast } = useToast();
+  const inbox = useCollection('platformMessages');
+  const [business] = useSingleton('businessProfile');
+  const me = fullName(useCurrentUser());
   const [form, setForm] = useState({ subject: '', message: '' });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -134,8 +139,12 @@ export function ContactSupport() {
   const send = () => {
     if (!canSend) return;
     setSending(true);
-    // No backend: pretend the request took a moment, then confirm
+    // No backend: the request goes to the Admin Portal inbox after a moment, then confirms.
     window.setTimeout(() => {
+      inbox.add({
+        org: business.companyName || 'Unknown organization', from: me, at: new Date().toISOString(), direction: 'in', read: false, source: 'support-form',
+        body: `You have received a new support request via the app. Subject: ${form.subject.trim()}\n${form.message.trim()}`,
+      }, { atStart: true });
       setSending(false);
       setSent(true);
       toast('Support request sent successfully');

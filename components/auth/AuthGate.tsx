@@ -88,7 +88,8 @@ export function AppFrame({ sidebar, children }: { sidebar: React.ReactNode; chil
     <div className="flex h-screen bg-gray-50">
       {/* Customers on a public link are not signed in and don't get the staff navigation. */}
       {/* The workflow builder (/automations/<id>) is full-screen, like the design: no staff navigation. */}
-      {session && !/^\/automations\/.+/.test(pathname) && sidebar}
+      {/* The Admin Portal (/platform) has its own menu (components/platform/PlatformShell.tsx). */}
+      {session && !/^\/automations\/.+/.test(pathname) && !/^\/platform(\/|$)/.test(pathname) && sidebar}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-gray-50">{children}</div>
     </div>
   );

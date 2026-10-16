@@ -4,6 +4,7 @@
 */
 export * from './types/core';
 export * from './types/settings';
+export * from './types/platform';
 
 import type {
   Activity, CalendarEvent, Customer, Estimate, Invoice, Job, Lead, Message,
@@ -16,6 +17,9 @@ import type {
   ProjectDiscount, RateGroup, Role, SmsTemplate, Subscription, SurfaceRate, TableColumn, TaxRegion,
   TermsCondition, TrackedLink, UserProfile, LeadSourceDef, LeadReview, NotDuplicatePair,
 } from './types/settings';
+import type {
+  PlatformEvent, PlatformLead, PlatformMessage, PlatformPayment, PlatformSettings, PlatformStaff, PlatformSubscriber, PlatformTask,
+} from './types/platform';
 
 /** Every list of records in the app. Each key is a "collection". */
 export interface Collections {
@@ -74,6 +78,14 @@ export interface Collections {
   materials: Material[];
   lineItemTemplates: LineItemTemplate[];
   termsConditions: TermsCondition[];
+  // Admin Portal (/platform): Estimate Master's own records across all organizations.
+  platformSubscribers: PlatformSubscriber[];
+  platformPayments: PlatformPayment[];
+  platformLeads: PlatformLead[];
+  platformTasks: PlatformTask[];
+  platformMessages: PlatformMessage[];
+  platformEvents: PlatformEvent[];
+  platformStaff: PlatformStaff[];
 }
 
 /** Single-object settings (one record per organization). */
@@ -89,6 +101,8 @@ export interface Singletons {
   laborConfig: LaborConfig;
   /** Job Scheduling settings: working weekdays, workday hours, crew capacity, breaks, rain days. */
   schedulingSettings: import('@/components/scheduling/phase1/types').SchedulingSettings;
+  /** Admin Portal goals and each admin's dashboard layout. */
+  platformSettings: PlatformSettings;
 }
 
 export type CollectionKey = keyof Collections;

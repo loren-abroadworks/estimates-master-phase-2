@@ -9,13 +9,13 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, LogOut, Menu, Settings, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, LogOut, Menu, Settings, Shield, User } from 'lucide-react';
 import { useCurrentUser } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { useMobileMenu } from './Sidebar';
 import { Avatar } from './ui/display';
 import { DropdownMenu } from './ui/menu';
-import { useSignOut } from './auth/AuthGate';
+import { useSession, useSignOut } from './auth/AuthGate';
 import { NotificationBell } from './NotificationBell';
 import { SyncStatusBar } from './RemoteStateGate';
 
@@ -30,6 +30,7 @@ export function AppHeader({ title, breadcrumbs = [], backHref }: { title: string
   const [hasHistory, setHasHistory] = useState(false);
   const user = useCurrentUser();
   const signOut = useSignOut();
+  const { session } = useSession();
 
   useEffect(() => setHasHistory(window.history.length > 1), []);
   const canGoBack = hasHistory || !!backHref;
@@ -80,6 +81,8 @@ export function AppHeader({ title, breadcrumbs = [], backHref }: { title: string
         items={[
           { label: 'My Profile', icon: <User />, onClick: () => router.push('/settings/my-profile') },
           { label: 'Settings', icon: <Settings />, onClick: () => router.push('/settings') },
+          // Estimate Master staff (the owner account here) also run the Admin Portal.
+          ...(session?.role === 'owner' ? [{ label: 'Admin Portal', icon: <Shield />, onClick: () => router.push('/platform/dashboard') }] : []),
           { label: 'Logout', icon: <LogOut />, separatorBefore: true, onClick: signOut },
         ]}
         trigger={

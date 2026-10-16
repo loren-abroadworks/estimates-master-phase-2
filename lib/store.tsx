@@ -13,7 +13,7 @@
     useLogActivity()              -> (text, entity?, id?) => void
     useDataActions()              -> { reset }
 */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type {
   CollectionKey, Collections, Database, DocumentNumbering, ItemOf, SingletonKey, Singletons,
 } from './types';
@@ -83,6 +83,8 @@ const DataContext = createContext<Ctx | null>(null);
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [db, dispatch] = useReducer(reducer, undefined, createInitialDatabase);
   const [ready, setReady] = useState(false);
+  /** The last copy saved or loaded, so tabs don't bounce the same save back and forth. */
+  const lastRaw = useRef<string | null>(null);
 
   // Load saved data once, in the browser only, and again when the shared copy changes.
   useEffect(() => {
@@ -116,13 +118,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
     load();
     setReady(true);
-    return onRemoteChange((c) => c.key === STORAGE_KEY && load());
+    // Another tab saved (e.g. a stage added in Settings): pick it up here too.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY || !e.newValue || e.newValue === lastRaw.current) return;
+      lastRaw.current = e.newValue;
+      load();
+    };
+    window.addEventListener('storage', onStorage);
+    const offRemote = onRemoteChange((c) => c.key === STORAGE_KEY && load());
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      offRemote();
+    };
   }, []);
 
   // Save on every change.
   useEffect(() => {
     if (!ready) return;
     const raw = JSON.stringify(db);
+    // Nothing new (this copy was just loaded from another tab): don't echo it back.
+    if (raw === lastRaw.current) return;
+    lastRaw.current = raw;
     remoteSave(STORAGE_KEY, raw);
     try {
       window.localStorage.setItem(STORAGE_KEY, raw);

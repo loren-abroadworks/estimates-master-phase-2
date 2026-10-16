@@ -23,13 +23,13 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onOutside: ()
 
 const fmt = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
 
-export function PeriodFilter({ value, onChange }: { value: PeriodValue; onChange: (v: PeriodValue) => void }) {
+export function PeriodFilter({ value, onChange, options = PERIOD_OPTIONS }: { value: PeriodValue; onChange: (v: PeriodValue) => void; options?: typeof PERIOD_OPTIONS }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useClickOutside(ref, () => setOpen(false));
 
   const label =
-    PERIOD_OPTIONS.find((o) => o.key === value.preset)?.label ??
+    options.find((o) => o.key === value.preset)?.label ??
     (value.from && value.to ? `${fmt(value.from)} - ${fmt(value.to)}` : value.from ? `From ${fmt(value.from)}` : 'Custom Range');
 
   const setCustom = (field: 'from' | 'to', v: string) => onChange({ ...value, preset: 'custom', [field]: v || undefined });
@@ -47,7 +47,7 @@ export function PeriodFilter({ value, onChange }: { value: PeriodValue; onChange
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-xl border border-gray-100 bg-white shadow-xl">
           <div className="border-b border-gray-100 p-2">
-            {PERIOD_OPTIONS.map((o) => (
+            {options.map((o) => (
               <button
                 key={o.key}
                 onClick={() => {

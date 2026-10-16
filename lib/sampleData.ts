@@ -13,6 +13,7 @@ import * as core from './data/core';
 import * as lib from './data/settings-library';
 import * as cfg from './data/settings-config';
 import * as org from './data/settings-org';
+import * as platform from './data/platform';
 
 export const CURRENT_USER_ID = 'u_kevin';
 
@@ -71,6 +72,13 @@ export function createInitialDatabase(): Database {
       materials: lib.materials,
       lineItemTemplates: lib.lineItemTemplates,
       termsConditions: lib.termsConditions,
+      platformSubscribers: platform.platformSubscribers,
+      platformPayments: platform.platformPayments,
+      platformLeads: platform.platformLeads,
+      platformTasks: platform.platformTasks,
+      platformMessages: platform.platformMessages,
+      platformEvents: platform.platformEvents,
+      platformStaff: platform.platformStaff,
     },
     singletons: {
       currentUserId: CURRENT_USER_ID,
@@ -83,6 +91,7 @@ export function createInitialDatabase(): Database {
       financialSettings: cfg.financialSettings,
       laborConfig: cfg.laborConfig,
       schedulingSettings: { nonWorkingWeekdays: [0, 6], holidays: [], rainDays: [], workDayStartHour: 8, workDayEndHour: 17, crewDailyCapacityHours: 9 },
+      platformSettings: platform.platformSettings,
     },
   });
 }
