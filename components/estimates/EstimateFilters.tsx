@@ -57,7 +57,7 @@ function DateRangeFilter({ value, onChange }: { value: DateRange | null; onChang
     <Popover.Root>
       <Popover.Trigger asChild>
         <button type="button" className={cn(pill(!!value), 'min-w-45 justify-start')}>
-          <ChevronDown className="h-4 w-4 text-gray-500" />
+          <ChevronDown className="h-4 w-4 text-gray-400" />
           <span className="flex-1 text-left">{label}</span>
           {value && (
             <span
@@ -67,7 +67,7 @@ function DateRangeFilter({ value, onChange }: { value: DateRange | null; onChang
                 e.stopPropagation();
                 onChange(null);
               }}
-              className="rounded p-0.5 text-gray-500 hover:bg-white hover:text-gray-700"
+              className="rounded p-0.5 text-gray-400 hover:bg-white hover:text-gray-700"
             >
               <X className="h-3.5 w-3.5" />
             </span>
@@ -92,7 +92,7 @@ function DateRangeFilter({ value, onChange }: { value: DateRange | null; onChang
           <div className="space-y-2">
             {(['from', 'to'] as const).map((k) => (
               <label key={k} className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500">{k === 'from' ? 'From' : 'To'}</span>
+                <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-gray-500">{k === 'from' ? 'From' : 'To'}</span>
                 <input
                   type="date"
                   value={value?.[k] ?? ''}
@@ -143,11 +143,11 @@ export function EstimateFilters(p: {
             trigger={
               <button type="button" className={pill(p.status !== 'All Active')}>
                 <span className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-gray-500" />
+                  <Filter className="h-4 w-4 text-gray-400" />
                   {p.status === 'From History' ? 'From history' : statusLabel(p.status)}
                   {p.status === 'From History' && <NewBadge feature={28} />}
                 </span>
-                <ChevronDown className="h-3 w-3 text-gray-500" />
+                <ChevronDown className="h-3 w-3 text-gray-400" />
               </button>
             }
           />
@@ -156,10 +156,10 @@ export function EstimateFilters(p: {
             trigger={
               <button type="button" className={pill(p.sort !== 'date-desc')}>
                 <span className="flex items-center gap-2">
-                  <SortIcon className={cn('h-4 w-4', p.sort !== 'date-desc' ? 'text-primary-500' : 'text-gray-500')} />
+                  <SortIcon className={cn('h-4 w-4', p.sort !== 'date-desc' ? 'text-primary-500' : 'text-gray-400')} />
                   {sortOpt.label}
                 </span>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-4 w-4 text-gray-400" />
               </button>
             }
           />

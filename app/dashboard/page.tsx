@@ -35,11 +35,10 @@ import { ActivityWidget, JobsToDoWidget, MessagesWidget, RecentLeadsWidget, Task
 import { InvoicesDueWidget, PendingSalesWidget, RevenueWidget, ScheduleAgendaWidget, WinRateWidget } from '@/components/dashboard/CenterWidgets';
 import { ActiveJobsWidget, EstimateStatusWidget, MonthlyGoalWidget, PipelineWidget } from '@/components/dashboard/RightWidgets';
 import {
-  ChangeOrderExceptionsDrawer, ChangeOrderExceptionsWidget, DemoWalkthroughCard, FEATURE_CARD_TITLES, RepaintAlertsWidget, SupplierOrderExceptionsWidget,
+  ChangeOrderExceptionsDrawer, ChangeOrderExceptionsWidget, FEATURE_CARD_TITLES, RepaintAlertsWidget, SupplierOrderExceptionsWidget,
   TimeToApproveWidget, useFeatureCardAccess, type FeatureCardId,
 } from '@/components/dashboard/FeatureWidgets';
 import { useVisibility } from '@/features/lib/feature-visibility';
-import { NewFeaturesPanel } from '@/components/dashboard/NewFeaturesPanel';
 
 const HIDDEN_KEY = 'emts-dashboard-hidden-cards-v1';
 
@@ -106,7 +105,7 @@ function DashboardInner() {
           <>
             <button
               onClick={() => saveHidden([...hidden, id])}
-              className="absolute -top-2 right-2 z-10 rounded-full border border-gray-200 bg-white p-1.5 text-gray-500 shadow-md transition-colors hover:text-red-500"
+              className="absolute -top-2 right-2 z-10 rounded-full border border-gray-200 bg-white p-1.5 text-gray-400 shadow-md transition-colors hover:text-red-500"
               title={`Hide ${CARD_TITLES[id]}`}
               aria-label={`Hide ${CARD_TITLES[id]}`}
             >
@@ -191,9 +190,9 @@ function DashboardInner() {
       {/* Hidden cards bar (edit mode only) */}
       {editMode && (
         <div className="mb-6 rounded-2xl border border-dashed border-gray-300 bg-white/70 p-4">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-gray-500">Hidden cards</p>
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.15em] text-gray-500">Hidden cards</p>
           {hidden.length === 0 ? (
-            <p className="text-xs italic text-gray-500">All cards are showing. Use the eye button on a card to hide it.</p>
+            <p className="text-xs italic text-gray-400">All cards are showing. Use the eye button on a card to hide it.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {hidden.filter((id) => !(id in FEATURE_CARD_TITLES) || access[id as FeatureCardId]).map((id) => (
@@ -210,12 +209,6 @@ function DashboardInner() {
         </div>
       )}
 
-      {/* Prototype only: switch new features on or off (#new-features). */}
-      <NewFeaturesPanel />
-
-      {/* NEW: prototype-only demo journey + product tour */}
-      <DemoWalkthroughCard />
-
       {/* Card grid */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <div className="flex flex-col gap-4 lg:col-span-3">{left}</div>
@@ -224,7 +217,7 @@ function DashboardInner() {
       </div>
 
       {editMode && (
-        <div className="mt-4 text-center text-xs font-medium text-gray-500">
+        <div className="mt-4 text-center text-xs font-medium text-gray-400">
           Use the eye button to hide a card. Click &quot;Done&quot; when finished.
         </div>
       )}

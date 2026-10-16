@@ -87,6 +87,8 @@ export interface Singletons {
   goalsProfit: GoalsProfit;
   financialSettings: FinancialSettings;
   laborConfig: LaborConfig;
+  /** Job Scheduling settings: working weekdays, workday hours, crew capacity, breaks, rain days. */
+  schedulingSettings: import('@/components/scheduling/phase1/types').SchedulingSettings;
 }
 
 export type CollectionKey = keyof Collections;

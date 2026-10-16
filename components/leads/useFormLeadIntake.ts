@@ -12,14 +12,16 @@
   - Thank-you email (Settings › Automated Messages): when it is On, a
     simulated send is recorded on the lead, in the activity log and as a
     toast. Off: nothing is sent or logged.
-  - The match check runs; a match goes on Lead Review. Nothing is merged or
-    removed automatically, and no other automation runs on the lead.
+  - Oct 14 call: Lead Review is dropped. An email or phone number already on
+    file is rejected (the form says so first); a valid Customer ID adds the
+    lead to that customer instead of creating a new contact. No other
+    automation runs on the lead.
 */
 import { useCallback, useRef } from 'react';
 import type { Lead, LeadMessageLog } from '@/lib/types';
 import { useCollection, useDb, useLogActivity, useNextNumber, useSingleton } from '@/lib/store';
 import type { InboxSubmission } from '@/lib/website-form';
-import { EMPTY_FORM_LEAD, WEB_THANKS_ID, fillThanks, findMatch, isDoubleSubmit, linkState, thanksVars, type FormLeadInput } from '@/lib/lead-capture';
+import { EMPTY_FORM_LEAD, WEB_THANKS_ID, checkFormSubmission, fillThanks, isDoubleSubmit, linkState, thanksVars, type FormLeadInput } from '@/lib/lead-capture';
 import { move } from '@/lib/crm';
 import { pipelineColumns } from '@/features/lib/rules/lead-pipeline';
 import { leadSourceFor, resolveSource } from '@/features/lib/rules/lead-sources';
@@ -28,7 +30,7 @@ import { fullName, uid } from '@/lib/utils';
 import { appendNote, formatPhone } from './leadHelpers';
 import { SERVICE_TYPES } from '@/lib/constants';
 
-export type IntakeOutcome = { kind: 'created'; leadId: string; review: boolean } | { kind: 'ignored'; reason: 'recorded' | 'double' | 'link' };
+export type IntakeOutcome = { kind: 'created'; leadId: string; review: boolean } | { kind: 'ignored'; reason: 'recorded' | 'double' | 'link' | 'duplicate' };
 
 /** Older /website-form submissions (one name, one address line) in the form-link shape. */
 function asFormLead(s: InboxSubmission): FormLeadInput {
@@ -44,7 +46,6 @@ export function useFormLeadIntake() {
   const leads = useCollection('leads');
   const customers = useCollection('customers');
   const links = useCollection('trackedLinks');
-  const reviews = useCollection('leadReviews');
   const nextNumber = useNextNumber();
   const [bp] = useSingleton('businessProfile');
   const log = useLogActivity();
@@ -58,9 +59,16 @@ export function useFormLeadIntake() {
       if (known.some((l) => l.webRef === s.ref)) return { kind: 'ignored', reason: 'recorded' };
       const link = s.trackedLinkId ? c.trackedLinks.find((l) => l.id === s.trackedLinkId) : undefined;
       if (s.trackedLinkId && linkState(link) !== 'open') return { kind: 'ignored', reason: 'link' };
-      const f = asFormLead(s);
+      const f = { ...EMPTY_FORM_LEAD, ...asFormLead(s) };
       const at = new Date(Date.parse(s.receivedAt) || Date.now()).toISOString();
       if (link && isDoubleSubmit(f, link.id, known, Date.parse(at))) return { kind: 'ignored', reason: 'double' };
+      // Already on file and no valid Customer ID: rejected (the public form tells the person first).
+      const check = checkFormSubmission(f, known, c.customers);
+      if (!check.ok) {
+        log(`Website form submission from ${f.email || f.phone} rejected: ${check.reason === 'unknownId' ? 'unknown Customer ID' : 'email or phone already on file'}.`);
+        return { kind: 'ignored', reason: 'duplicate' };
+      }
+      const existingCustomer = check.customer;
 
       const columns = pipelineColumns(c.pipelineStages, 'sales');
       const stage = columns.find((x) => x.id === link?.startStageId) ?? columns[0];
@@ -71,14 +79,14 @@ export function useFormLeadIntake() {
         phone: formatPhone(f.phone.replace(/\D/g, '')), email: f.email.trim(),
         street: f.street.trim(), city: f.city.trim(), state: f.state.trim().toUpperCase(), zip: f.zip.trim(),
       };
-      const customer = customers.add({ ...contact, type: 'Lead', source, createdAt: at }, { atStart: true });
+      const customer = existingCustomer ?? customers.add({ ...contact, type: 'Lead', source, createdAt: at }, { atStart: true });
       const leadNumber = nextNumber('LEAD');
       const lead: Lead = {
         id: leadNumber, leadNumber, ...contact, leadSource: source,
         serviceType: SERVICE_TYPES.includes(f.serviceType) ? f.serviceType : 'Interior',
         status, estimatedValue: 0, date: at, createdAt: at, updatedAt: at,
         notes: f.notes.trim() ? appendNote(undefined, f.notes) : undefined,
-        customerId: customer.id, contactType: 'LEAD', appointment: null,
+        customerId: customer.id, contactType: existingCustomer ? 'CONTACT' : 'LEAD', appointment: null,
         trackedLinkId: link?.id, webRef: s.ref,
         ...(stage && !stage.leadStatus ? { stageId: stage.id, stageStatus: status } : {}),
         stageHistory: stage ? [move('sales', stage, 'Website form', at)] : [],
@@ -99,14 +107,10 @@ export function useFormLeadIntake() {
       log(link ? `Lead ${leadNumber} created from form link ${link.name} (${source}).` : `Lead ${leadNumber} created from the website form (${source}).`, 'lead', lead.id);
       if (lead.sentMessages?.length) log(`Thank-you email sent to ${lead.email} for lead ${leadNumber}.`, 'lead', lead.id);
 
-      // Match check (Lead Review). The new contact is the lead's own, so it is not a match.
-      const match = findMatch(lead, [lead, ...known], c.customers, c.notDuplicatePairs, c.leadReviews);
-      if (match) reviews.add({ id: uid('lr'), leadId: lead.id, ...match, createdAt: at, status: 'open' }, { atStart: true });
-
-      toast.success(`New website lead: ${fullName(lead)} (${leadNumber})`, `${source}${stage ? ` · ${stage.displayName}` : ''}${match ? ' · added to Lead Review' : ''}`);
+      toast.success(`New website lead: ${fullName(lead)} (${leadNumber})`, `${source}${stage ? ` · ${stage.displayName}` : ''}${existingCustomer ? ' · existing customer' : ''}`);
       if (lead.sentMessages?.length) toast.info(`Thank-you email sent to ${lead.email}`, 'Simulated: no email service is connected.');
-      return { kind: 'created', leadId: lead.id, review: !!match };
+      return { kind: 'created', leadId: lead.id, review: false };
     },
-    [customers, leads, links, reviews, nextNumber, bp.companyName, bp.phone, log],
+    [customers, leads, links, nextNumber, bp.companyName, bp.phone, log],
   );
 }

@@ -34,6 +34,8 @@ export interface TeamMember {
   workingDays?: number[];
   /** Time off / unavailable dates. The scheduler refuses hours on these days. */
   timeOff?: MemberTimeOff[];
+  /** Job Scheduling (phase-1 board): per-date availability edits that differ from schedule / workingDays / timeOff. */
+  daySchedule?: Record<string, import('@/components/scheduling/phase1/types').CrewScheduleEntry>;
 }
 export interface MemberTimeOff {
   id: ID;
@@ -425,6 +427,14 @@ export interface Job {
   completedAt?: string;
   /** Scheduling priority shown in the Job Scheduling details panel (default Normal) */
   priority?: 'Low' | 'Normal' | 'High' | 'Urgent';
+  /**
+   * Job Scheduling (phase-1 board): the full crew allocations, with per-member daily hours,
+   * skipped days, member windows and pinned past shifts. `shifts` and `crew` are derived
+   * from these on save; they are used only while they still match `shifts`.
+   */
+  scheduleAllocations?: import('@/components/scheduling/phase1/types').JobCrewAllocation[];
+  /** Job Scheduling (phase-1 board): per-day working windows keyed by YYYY-MM-DD. */
+  dailyHours?: Record<string, { startTime: string; endTime: string }>;
 }
 
 /* ---------- Crew schedule notifications (JS) ---------- */

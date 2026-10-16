@@ -89,7 +89,7 @@ export function AddToEstimateModal({
                 }}
                 className="flex w-full items-center gap-4 rounded-xl border border-dashed border-gray-300 bg-white p-3 text-left hover:border-primary-300 hover:shadow-md"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500"><Plus className="h-5 w-5" /></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400"><Plus className="h-5 w-5" /></div>
                 <div className="min-w-0 flex-1">
                   <div className="font-bold text-gray-800">Blank Area</div>
                   <div className="truncate text-xs text-gray-500">An empty area: name it, enter L x W x H, then add line items.</div>
@@ -107,12 +107,12 @@ export function AddToEstimateModal({
                 }}
                 className="flex w-full items-center gap-4 rounded-xl border border-gray-200 bg-white p-3 text-left hover:border-primary-300 hover:shadow-md"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500"><LayoutTemplate className="h-5 w-5" /></div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400"><LayoutTemplate className="h-5 w-5" /></div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-bold text-gray-800">{a.name} <span className="ml-1 text-xs font-medium text-gray-500">{typeName(a.estimateTypeId)}</span></div>
+                  <div className="font-bold text-gray-800">{a.name} <span className="ml-1 text-xs font-medium text-gray-400">{typeName(a.estimateTypeId)}</span></div>
                   <div className="truncate text-xs text-gray-500">{a.surfaceRateIds.map(srName).filter(Boolean).join(', ') || 'No surfaces'}</div>
                 </div>
-                <Plus className="h-4 w-4 text-gray-500" />
+                <Plus className="h-4 w-4 text-gray-400" />
               </button>
             ))}
           </div>
@@ -157,7 +157,7 @@ export function AddToEstimateModal({
                   <div className="font-bold text-gray-800">{x.name}</div>
                   <div className="truncate text-xs text-gray-500">{x.description}</div>
                 </div>
-                <span className={cn('rounded-full border px-2 py-0.5 text-xs font-bold', x.itemType === 'PRICED' ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500')}>
+                <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-bold', x.itemType === 'PRICED' ? 'border-green-200 bg-green-50 text-green-700' : 'border-gray-200 bg-gray-50 text-gray-500')}>
                   {x.itemType === 'DESCRIPTIVE' ? 'Descriptive' : x.calculationType === 'PERCENT' ? `${x.defaultValue}%` : money(x.defaultValue ?? 0)}
                 </span>
               </button>
@@ -198,7 +198,7 @@ export function SurfacePickerModal({
         {groups.length === 0 && <p className="py-6 text-center text-sm text-gray-500">No surfaces found.</p>}
         {groups.map((g) => (
           <div key={g}>
-            <div className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-gray-500">{g}</div>
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.15em] text-gray-500">{g}</div>
             <div className="space-y-1.5">
               {list.filter((s) => s.rateGroup === g).map((s) => (
                 <button

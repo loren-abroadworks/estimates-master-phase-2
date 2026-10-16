@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DELETE, GET, POST } from '@/app/api/website-form/route';
 import { GET as getLink, PUT as putLinks } from '@/app/api/website-form/links/route';
 import { sessionCookie } from '@/lib/auth/server';
-import { DEMO_SITE_KEY } from '@/lib/website-form';
+import { CAPTCHA_DEMO_TOKEN, CAPTCHA_REQUIRED, DEMO_SITE_KEY } from '@/lib/website-form';
 
 const staff = { cookie: sessionCookie('U-OWNER').header.split(';')[0]! };
 let ip = 0;
@@ -42,10 +42,14 @@ describe('website form API', () => {
   });
 
   it('CRM Part 1: the form-link form checks the manual lead form fields', async () => {
-    const lead = { form: 'lead', firstName: 'Ann', phone: '(214) 555-0101', email: 'ann@example.com', street: '1 Elm St', city: 'Dallas', state: 'TX', zip: '75201' };
+    const lead = { form: 'lead', firstName: 'Ann', phone: '(214) 555-0101', email: 'ann@example.com', street: '1 Elm St', city: 'Dallas', state: 'TX', zip: '75201', captcha: CAPTCHA_DEMO_TOKEN };
     const missing = await post({ ...lead, city: '' });
     expect(missing.status).toBe(422);
     expect(await missing.json()).toMatchObject({ field: 'city', error: 'City is required' });
+    // Oct 14 call: Google reCAPTCHA on the public form.
+    const robot = await post({ ...lead, captcha: '' });
+    expect(robot.status).toBe(422);
+    expect(await robot.json()).toMatchObject({ field: 'captcha', error: CAPTCHA_REQUIRED });
     expect((await post({ ...lead, ref: 'T-LEAD' })).status).toBe(201);
     const waiting = (await inbox()).find((s) => s.ref === 'WEB-T-LEAD') as unknown as { name: string; lead?: { street: string } };
     expect(waiting).toMatchObject({ name: 'Ann', lead: { street: '1 Elm St' } });

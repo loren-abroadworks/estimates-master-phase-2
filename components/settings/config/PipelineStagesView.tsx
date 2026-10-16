@@ -9,10 +9,11 @@
   custom pipeline can be deleted (its leads leave that pipeline only; their
   Sales and Production progress stays), and "Add pipeline" makes one with
   Not Started and Done. Option A hides all three. Names: required, at most
-  40 characters, unique. "Lead sources" (D6) sits under the list.
+  40 characters, unique. Each row shows its stage colours; the chosen one is
+  renamed (and a custom one deleted) from the stages panel header.
+  Lead sources have their own page (Settings › Lead Sources).
 
-  Right: the chosen pipeline's stages, under a preview tracker that follows
-  every change. Each row: drag handle, colour (preset palette), name (saved
+  Right: the chosen pipeline's stages. Each row: drag handle, colour (preset palette), name (saved
   when the field loses focus), lead count, up/down, and a lock or Delete.
   Locked stages (Sales: New, Sold, Lost; Production: Confirmed, Closed) can
   be renamed and recoloured, never moved or deleted. New stages go before
@@ -22,12 +23,11 @@
   The rules are in features/lib/rules/lead-pipeline.ts.
 */
 import React, { useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, GripVertical, Lock, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, GripVertical, Lock, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { SettingsPage } from '@/components/settings/SettingsSidebar';
 import { Button } from '@/components/ui/button';
 import { Input, NativeSelect } from '@/components/ui/form';
 import { useToast } from '@/components/ui/toast';
-import { StageTracker } from '@/components/ui/StageTracker';
 import { useCollection, useCurrentUser, useLogActivity } from '@/lib/store';
 import type { Pipeline, PipelineStage } from '@/lib/types';
 import { createPipeline, move } from '@/lib/crm';
@@ -37,13 +37,11 @@ import { useDynamicPipelines } from '@/features/lib/feature-visibility';
 import { useCurrentUser as useFeatureUser } from '@/features/lib/store';
 import { can } from '@/features/lib/permissions';
 import { useVisiblePipelines } from '@/components/leads/usePipelines';
-import { LeadSourcesPanel } from './LeadSourcesPanel';
 import {
   MAX_STAGES, NAME_MAX, canStep, customColumnFor, deleteStageProblem, insertStage, moveStage, pipelineColumns, pipelineNameProblem, salesColumnFor,
   stageCounts, stageNameProblem, stagePipeline,
 } from '@/features/lib/rules/lead-pipeline';
 
-const LEAD_SOURCES_TAB = 'lead_sources';
 /** Preset palette: stage colours come only from here. */
 export const STAGE_COLORS = ['#3B82F6', '#A855F7', '#14B8A6', '#F59E0B', '#EC4899', '#0EA5E9', '#8B5CF6', '#22C55E', '#EF4444', '#6B7280'];
 
@@ -60,7 +58,7 @@ export function PipelineStagesView() {
   const admin = can(useFeatureUser(), 'settings.masterData');
   const visible = useVisiblePipelines();
   const [tabState, setTab] = useState(visible[0]?.id ?? 'sales');
-  const tab = tabState === LEAD_SOURCES_TAB || visible.some((p) => p.id === tabState) ? tabState : visible[0]?.id ?? 'sales';
+  const tab = visible.some((p) => p.id === tabState) ? tabState : visible[0]?.id ?? 'sales';
   const pipeline = visible.find((p) => p.id === tab);
   const liveCards = useMemo(() => cards.items.filter((c) => !c.removedAt), [cards.items]);
   const counts = useMemo(() => stageCounts(stages.items, pipelines.items, leads.items, liveCards), [stages.items, pipelines.items, leads.items, liveCards]);
@@ -178,7 +176,6 @@ export function PipelineStagesView() {
     toast(moved && target ? `${s.displayName} deleted. ${moved} moved to ${target.displayName}.` : `${s.displayName} deleted`);
   };
 
-  const preview = columns.length ? columns[Math.floor((columns.length - 1) / 2)]!.id : undefined;
 
   return (
     <SettingsPage wide title="Pipeline Configuration" subtitle="Your pipelines and their stages. Changes save as you make them.">
@@ -197,46 +194,34 @@ export function PipelineStagesView() {
                   key={p.id}
                   pipeline={p}
                   selected={tab === p.id}
-                  stageCount={pipelineColumns(stages.items, p.id).length}
-                  memberCount={leads.items.filter((l) => l.pipelineStages?.[p.id]).length}
+                  colors={pipelineColumns(stages.items, p.id).map((x) => x.color)}
                   admin={admin}
                   dynamic={dynamic}
                   first={i === 0}
                   last={i === visible.length - 1}
                   onSelect={() => setTab(p.id)}
-                  onRename={(name) => renamePipeline(p, name)}
                   onStep={(dir) => stepPipeline(p, dir)}
-                  onDelete={() => deletePipeline(p)}
                 />
               ))}
             </ul>
             {admin && dynamic && <AddByName label="Add pipeline" placeholder="New pipeline name" onAdd={addPipeline} />}
           </div>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === LEAD_SOURCES_TAB}
-            onClick={() => setTab(LEAD_SOURCES_TAB)}
-            className={cn('w-full rounded-2xl border px-4 py-3 text-left text-sm font-bold shadow-sm', tab === LEAD_SOURCES_TAB ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50')}
-          >
-            Lead sources
-          </button>
         </div>
 
         {/* Stages */}
         <div className="min-w-0">
-          {tab === LEAD_SOURCES_TAB ? <LeadSourcesPanel /> : pipeline && (
+          {pipeline && (
             <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm" data-tour="crm-stages">
-              <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-5 py-3">
-                <h2 className="font-heading text-base font-bold text-gray-900">{pipeline.name} stages</h2>
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{columns.length} of {MAX_STAGES}</span>
-              </div>
-              {columns.length > 0 && (
-                <div className="border-b border-gray-100 px-5 py-4">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">Preview</p>
-                  <StageTracker steps={columns.map((s) => ({ id: s.id, label: s.displayName, color: s.color }))} current={preview} label={`${pipeline.name} preview`} />
-                </div>
-              )}
+              <PipelineHeader
+                key={pipeline.id}
+                pipeline={pipeline}
+                stageCount={columns.length}
+                memberCount={leads.items.filter((l) => l.pipelineStages?.[pipeline.id]).length}
+                admin={admin}
+                dynamic={dynamic}
+                onRename={(name) => renamePipeline(pipeline, name)}
+                onDelete={() => deletePipeline(pipeline)}
+              />
               {columns.length === 0 ? (
                 <p className="px-5 py-8 text-center text-sm text-gray-500">No stages yet. Add the first one below.</p>
               ) : (
@@ -262,27 +247,28 @@ export function PipelineStagesView() {
 
 /* ---------- pipeline row ---------- */
 
-function PipelineRow({ pipeline: p, selected, stageCount, memberCount, admin, dynamic, first, last, onSelect, onRename, onStep, onDelete }: {
-  pipeline: Pipeline; selected: boolean; stageCount: number; memberCount: number; admin: boolean; dynamic: boolean; first: boolean; last: boolean;
-  onSelect: () => void; onRename: (name: string) => string | undefined; onStep: (dir: -1 | 1) => void; onDelete: () => void;
+function PipelineRow({ pipeline: p, selected, colors, admin, dynamic, first, last, onSelect, onStep }: {
+  pipeline: Pipeline; selected: boolean; colors: string[]; admin: boolean; dynamic: boolean; first: boolean; last: boolean;
+  onSelect: () => void; onStep: (dir: -1 | 1) => void;
 }) {
-  const [name, setName] = useState(p.name);
-  const [error, setError] = useState<string>();
-  const [confirming, setConfirming] = useState(false);
   const system = p.kind !== 'custom';
-  const save = () => {
-    const problem = onRename(name);
-    setError(problem);
-  };
   return (
-    <li className={cn('border-b border-gray-100 px-4 py-3 last:border-0', selected && 'bg-primary-50')}>
-      <div className="flex items-center gap-2">
-        <button type="button" role="tab" aria-selected={selected} onClick={onSelect} className="min-w-0 flex-1 text-left">
+    <li className={cn('relative border-b border-gray-100 last:border-0', selected ? 'bg-primary-50' : 'hover:bg-gray-50')}>
+      {/* The chosen pipeline is marked by a blue edge, like the active item in the main menu. */}
+      {selected && <span aria-hidden className="absolute inset-y-0 left-0 w-1 rounded-r bg-primary-600" />}
+      <div className="flex items-center gap-2 px-4 py-3.5">
+        <button type="button" role="tab" aria-selected={selected} onClick={onSelect} className="min-w-0 flex-1 cursor-pointer text-left">
           <span className="flex items-center gap-2">
             <span className={cn('truncate text-sm font-bold', selected ? 'text-primary-700' : 'text-gray-900')}>{p.name}</span>
             {system && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xxs font-bold uppercase tracking-wide text-gray-600">System</span>}
           </span>
-          <span className="text-xs text-gray-500">{stageCount} {stageCount === 1 ? 'stage' : 'stages'}</span>
+          <span className="mt-1.5 flex items-center gap-2">
+            {/* The stage colours in order: tells the pipelines apart at a glance. */}
+            <span aria-hidden className="flex h-1.5 w-24 overflow-hidden rounded-full bg-gray-100">
+              {colors.map((c, k) => <span key={k} className="h-full flex-1" style={{ backgroundColor: c }} />)}
+            </span>
+            <span className="text-xs text-gray-500">{colors.length} {colors.length === 1 ? 'stage' : 'stages'}</span>
+          </span>
         </button>
         {admin && dynamic && (
           <span className="flex shrink-0 gap-0.5">
@@ -291,32 +277,77 @@ function PipelineRow({ pipeline: p, selected, stageCount, memberCount, admin, dy
           </span>
         )}
       </div>
-      {admin && selected && (
-        <div className="mt-2 space-y-2">
-          <Input
-            aria-label={`${p.name} pipeline name`}
-            value={name}
-            maxLength={NAME_MAX + 10}
-            invalid={!!error}
-            onChange={(e) => { setName(e.target.value); setError(undefined); }}
-            onBlur={save}
-            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-          />
-          {error && <p className="text-xs text-red-600">{error}</p>}
-          {!system && dynamic && (confirming ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
-              <p>Delete {p.name}? {memberCount} {memberCount === 1 ? 'lead' : 'leads'} will be removed from this pipeline only.</p>
-              <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="danger" onClick={onDelete}>Delete</Button>
-                <Button size="sm" variant="secondary" onClick={() => setConfirming(false)}>Cancel</Button>
-              </div>
+    </li>
+  );
+}
+
+/* ---------- stages panel header: rename (and delete a custom pipeline) ---------- */
+
+function PipelineHeader({ pipeline: p, stageCount, memberCount, admin, dynamic, onRename, onDelete }: {
+  pipeline: Pipeline; stageCount: number; memberCount: number; admin: boolean; dynamic: boolean;
+  onRename: (name: string) => string | undefined; onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(p.name);
+  const [error, setError] = useState<string>();
+  const [confirming, setConfirming] = useState(false);
+  const custom = p.kind === 'custom';
+  const save = () => {
+    const problem = onRename(name);
+    setError(problem);
+    if (!problem) setEditing(false);
+  };
+  const cancel = () => { setName(p.name); setError(undefined); setEditing(false); };
+  return (
+    <div className="border-b border-gray-100 px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {editing ? (
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="min-w-0 flex-1 sm:max-w-xs">
+              <Input
+                autoFocus
+                aria-label={`${p.name} pipeline name`}
+                value={name}
+                maxLength={NAME_MAX + 10}
+                invalid={!!error}
+                onChange={(e) => { setName(e.target.value); setError(undefined); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); }}
+                className="h-10"
+              />
             </div>
-          ) : (
-            <Button size="sm" variant="ghost" icon={<Trash2 className="h-4 w-4" />} onClick={() => setConfirming(true)}>Delete pipeline</Button>
-          ))}
+            <IconButton label="Save name" onClick={save}><Check className="h-4 w-4" /></IconButton>
+            <IconButton label="Cancel" onClick={cancel}><X className="h-4 w-4" /></IconButton>
+          </div>
+        ) : (
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="truncate font-heading text-base font-bold text-gray-900">{p.name} stages</h2>
+            {admin && (
+              <button type="button" onClick={() => setEditing(true)} className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold text-primary-600 hover:bg-primary-50">
+                <Pencil className="h-3.5 w-3.5" /> Rename
+              </button>
+            )}
+          </div>
+        )}
+        <span className="flex items-center gap-3">
+          {admin && dynamic && custom && !confirming && (
+            <button type="button" onClick={() => setConfirming(true)} className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold text-gray-500 hover:bg-red-50 hover:text-red-600">
+              <Trash2 className="h-3.5 w-3.5" /> Delete pipeline
+            </button>
+          )}
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{stageCount} of {MAX_STAGES}</span>
+        </span>
+      </div>
+      {error && <p className="ml-3 mt-1 text-sm text-red-600">{error}</p>}
+      {confirming && (
+        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">
+          <p>Delete {p.name}? {memberCount} {memberCount === 1 ? 'lead' : 'leads'} will be removed from this pipeline only.</p>
+          <div className="mt-2 flex gap-2">
+            <Button size="sm" variant="danger" onClick={onDelete}>Delete</Button>
+            <Button size="sm" variant="secondary" onClick={() => setConfirming(false)}>Cancel</Button>
+          </div>
         </div>
       )}
-    </li>
+    </div>
   );
 }
 

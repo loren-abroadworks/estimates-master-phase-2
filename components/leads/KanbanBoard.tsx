@@ -28,6 +28,9 @@ import { followUpLockMessage, useFollowUpLocks } from './leadFeatures';
 
 const SOURCE_COLORS = ['#3B82F6', '#A855F7', '#14B8A6', '#F59E0B', '#EC4899', '#0EA5E9', '#22C55E', '#6B7280'];
 
+/** Phase-1 board: four columns fill the board (never under 280px); further stages scroll sideways. */
+const COLUMN = 'flex min-w-[280px] shrink-0 grow-0 basis-[calc((100%-4.5rem)/4)] flex-col rounded-2xl border bg-gray-100/60 transition-colors';
+
 export function KanbanBoard({
   leads, stages, groupBy = 'stage', emptyText, onMove, onMoveToStage, onArchive,
 }: {
@@ -135,20 +138,20 @@ export function KanbanBoard({
   );
 
   const header = (name: string, color: string, count: number) => (
-    <div className="mb-4 flex items-center justify-between rounded-t-2xl border-b-2 bg-white px-3 py-3.5 shadow-sm" style={{ borderBottomColor: color }}>
-      <h3 className="text-xs font-bold uppercase tracking-wide text-gray-900">{name}</h3>
-      <span className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold" style={{ backgroundColor: `${color}22`, color }}>{count}</span>
+    <div className="mb-4 flex items-center justify-between rounded-t-2xl border-b-4 bg-white p-4 shadow-sm" style={{ borderBottomColor: color }}>
+      <h3 className="text-sm font-bold uppercase tracking-wide text-gray-900">{name}</h3>
+      <span className="rounded-full px-2 py-1 text-xs font-bold" style={{ backgroundColor: `${color}22`, color }}>{count}</span>
     </div>
   );
 
   if (bySource) {
     return (
-      <div className="overflow-x-auto pb-8" data-tour="crm-board">
-        <div className="flex h-full gap-3" style={{ minWidth: Math.max(1040, sourceColumns.length * 190) }}>
+      <div className="custom-scrollbar overflow-x-auto pb-8" data-tour="crm-board">
+        <div className="flex h-full w-full gap-6">
           {sourceColumns.map((col) => {
             const list = leads.filter((l) => sourceOf(l) === col.name);
             return (
-              <div key={col.id} className="flex min-w-[170px] flex-1 basis-0 flex-col rounded-2xl border border-transparent bg-gray-100/60">
+              <div key={col.id} className={cn(COLUMN, 'border-transparent')}>
                 {header(col.name, col.color, list.length)}
                 <div className="flex-1 space-y-3 px-2 pb-4">{list.map((l) => card(l, false))}</div>
               </div>
@@ -161,8 +164,8 @@ export function KanbanBoard({
   }
 
   return (
-    <div ref={scrollRef} onDragOver={handleBoardDragOver} className="overflow-x-auto pb-8" data-tour="crm-board">
-      <div className="flex h-full gap-3" style={{ minWidth: Math.max(1040, stages.length * 175) }}>
+    <div ref={scrollRef} onDragOver={handleBoardDragOver} className="custom-scrollbar overflow-x-auto pb-8" data-tour="crm-board">
+      <div className="flex h-full w-full gap-6">
         {stages.map((stage) => {
           const stageLeads = leads.filter((l) => columnOf(l)?.id === stage.id);
           const canDrop = dragged ? !draggedLock && canEnter(dragged, stage) : canEnter(undefined, stage);
@@ -173,7 +176,7 @@ export function KanbanBoard({
               onDragOver={(e) => { e.preventDefault(); if (draggedId && overId !== stage.id) setOverId(stage.id); }}
               onDrop={(e) => handleDrop(e, stage)}
               className={cn(
-                'flex min-w-[170px] flex-1 basis-0 flex-col rounded-2xl border bg-gray-100/60 transition-colors',
+                COLUMN,
                 isOver && canDrop ? 'border-primary-300 bg-primary-50/80 ring-2 ring-primary-200' : 'border-transparent',
                 draggedId && !isOver && canDrop && 'border-dashed border-gray-300',
                 draggedId && !canDrop && 'opacity-60',
@@ -187,7 +190,7 @@ export function KanbanBoard({
                 {stageLeads.length === 0 && (
                   <div
                     className={cn(
-                      'flex h-16 items-center justify-center rounded-xl border-2 border-dashed text-xs font-medium italic text-gray-300',
+                      'flex h-24 items-center justify-center rounded-xl border-2 border-dashed text-sm font-medium italic text-gray-300',
                       isOver ? 'border-primary-300 bg-primary-50/50' : 'border-gray-200',
                     )}
                   >

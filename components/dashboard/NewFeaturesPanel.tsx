@@ -39,7 +39,7 @@ export function NewFeaturesPanel() {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const showing = v.showNew ? FEATURES.filter((f) => v.rows[f.key]?.minimal).length : 0;
 
-  // Opened from a switched-off screen or the Prototype bar (/dashboard#new-features).
+  // Opened from a switched-off screen or the Prototype bar (/prototype#new-features).
   useEffect(() => {
     if (window.location.hash === '#new-features') document.getElementById('new-features')?.scrollIntoView({ block: 'start' });
   }, []);

@@ -90,7 +90,7 @@ export function Sidebar() {
       >
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute top-8 -right-3 z-[70] flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-md opacity-0 transition-opacity group-hover:opacity-100 group-has-[:focus-visible]:opacity-100 hover:text-primary-600"
+          className="absolute top-8 -right-3 z-[70] flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-md opacity-0 transition-opacity group-hover:opacity-100 group-has-[:focus-visible]:opacity-100 hover:text-primary-600"
           title={collapsed ? 'Pin Sidebar' : 'Collapse Sidebar'}
         >
           {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
@@ -115,7 +115,7 @@ export function Sidebar() {
               {newNav.length > 0 && <div className="mx-4 my-2 h-px bg-gray-100" />}
               {newNav.length > 0 && <div
                 className={cn(
-                  'overflow-hidden whitespace-nowrap px-4 text-xxs font-black uppercase tracking-[0.2em] text-gray-500 transition-opacity',
+                  'overflow-hidden whitespace-nowrap px-4 text-xxs font-black uppercase tracking-[0.2em] text-gray-400 transition-opacity',
                   collapsed
                     ? 'h-0 opacity-0 group-hover:h-auto group-hover:pb-1 group-hover:opacity-100 group-has-[:focus-visible]:h-auto group-has-[:focus-visible]:pb-1 group-has-[:focus-visible]:opacity-100'
                     : 'pb-1 opacity-100',
@@ -133,7 +133,7 @@ export function Sidebar() {
           {/* Scroll cues: a fade at the top once scrolled, and a fade plus chevron while more items are below. */}
           <div aria-hidden className={cn('pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white to-transparent transition-opacity', scroll.edges.above ? 'opacity-100' : 'opacity-0')} />
           <div aria-hidden className={cn('pointer-events-none absolute inset-x-0 bottom-0 flex h-12 items-end justify-center bg-gradient-to-t from-white via-white/80 to-transparent pb-0.5 transition-opacity', scroll.edges.below ? 'opacity-100' : 'opacity-0')}>
-            <ChevronDown className="h-4 w-4 text-gray-500" />
+            <ChevronDown className="h-4 w-4 text-gray-400" />
           </div>
         </div>
 
@@ -168,7 +168,7 @@ function SidebarItem({ item, collapsed, active, onClick, isNew: newItem }: { ite
   );
   const content = (
     <>
-      <Icon className={cn('h-6 w-6 shrink-0', active ? 'text-primary-700' : 'text-gray-500 group-hover/item:text-gray-600')} />
+      <Icon className={cn('h-6 w-6 shrink-0', active ? 'text-primary-700' : 'text-gray-400 group-hover/item:text-gray-600')} />
       <span className={cn('flex items-center gap-2 transition-all duration-300', collapsed ? 'w-0 opacity-0 group-hover:w-auto group-hover:opacity-100 group-has-[:focus-visible]:w-auto group-has-[:focus-visible]:opacity-100' : 'w-auto opacity-100')}>
         {item.label}
         {isNew && <NewBadge feature={item.feature} />}
@@ -247,7 +247,7 @@ export function MobileSidebar() {
             return (
               <React.Fragment key={item.href}>
                 {/* Same group label as the desktop rail. */}
-                {group && <div className="px-4 pb-1 pt-3 text-xxs font-black uppercase tracking-[0.2em] text-gray-500">Operations</div>}
+                {group && <div className="px-4 pb-1 pt-3 text-xxs font-black uppercase tracking-[0.2em] text-gray-400">Operations</div>}
                 <button
                   onClick={() => go(item.href)}
                   aria-current={active ? 'page' : undefined}

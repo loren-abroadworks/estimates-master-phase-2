@@ -18,7 +18,7 @@ import { pressable } from '@/lib/a11y';
 
 export function Badge({ children, className, dot }: { children: React.ReactNode; className?: string; dot?: boolean }) {
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold whitespace-nowrap', className)}>
+    <span className={cn('inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold whitespace-nowrap', className)}>
       {dot && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
       {children}
     </span>
@@ -28,7 +28,7 @@ export function Badge({ children, className, dot }: { children: React.ReactNode;
 /** Small uppercase pill: "WEBSITE", "CLIENT", "INTERIOR" */
 export function Tag({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-xxs font-black uppercase tracking-wider whitespace-nowrap', className)}>
+    <span className={cn('inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider whitespace-nowrap', className)}>
       {children}
     </span>
   );
@@ -37,7 +37,7 @@ export function Tag({ children, className }: { children: React.ReactNode; classN
 /** Blue reference chip that links to a record: EST-2026-9, LEAD-2026-6 */
 export function RefChip({ href, kind = 'doc', children }: { href?: string; kind?: 'doc' | 'lead' | 'plain'; children: React.ReactNode }) {
   const cls = cn(
-    'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap',
+    'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap',
     kind === 'plain' ? 'border-gray-200 bg-gray-50 text-gray-500' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100',
   );
   const icon = kind === 'lead' ? <Users className="h-3 w-3" /> : kind === 'doc' ? <FileText className="h-3 w-3" /> : null;
@@ -63,7 +63,7 @@ export function Card({ children, className, onClick }: { children: React.ReactNo
 /** Uppercase card header with icon: "📋 MY TASKS" */
 export function CardTitle({ icon, children, href, right, className }: { icon?: React.ReactNode; children: React.ReactNode; href?: string; right?: React.ReactNode; className?: string }) {
   const label = (
-    <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-gray-600">
+    <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-gray-600">
       {icon && <span className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>}
       {children}
       {href && <ChevronRight className="h-3 w-3 text-gray-300" />}
@@ -79,27 +79,28 @@ export function CardTitle({ icon, children, href, right, className }: { icon?: R
 
 export function StatCard({ icon, label, value, sub, className }: { icon?: React.ReactNode; label: string; value: React.ReactNode; sub?: React.ReactNode; className?: string }) {
   return (
-    <Card className={cn('p-5', className)}>
-      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-gray-500 [&>svg]:h-4 [&>svg]:w-4">
+    <Card className={cn('p-6', className)}>
+      <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-500 [&>svg]:h-4 [&>svg]:w-4 [&>svg]:text-gray-400">
         {icon}
         {label}
       </div>
-      <div className="mt-2 font-heading text-2xl font-extrabold text-gray-900">{value}</div>
-      {sub && <div className="mt-1 text-sm text-gray-500">{sub}</div>}
+      <div className="font-heading text-3xl font-black text-gray-900">{value}</div>
+      {sub && <div className="mt-1 text-sm font-medium text-gray-400">{sub}</div>}
     </Card>
   );
 }
 
 /* ---------- Page header ---------- */
 
-export function PageHeader({ title, subtitle, actions, className }: { title: string; subtitle?: React.ReactNode; actions?: React.ReactNode; className?: string }) {
+/** Production list-page header: text-3xl md:text-4xl font-black title, then a lead line (docs/BRANDING.md). */
+export function PageHeader({ title, subtitle, actions, className, subtitleClassName }: { title: string; subtitle?: React.ReactNode; actions?: React.ReactNode; className?: string; subtitleClassName?: string }) {
   return (
-    <div className={cn('flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-8', className)}>
+    <div className={cn('flex flex-col items-start justify-between gap-6 md:flex-row md:items-end mb-10', className)}>
       <div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight text-gray-900">{title}</h1>
-        {subtitle && <p className="mt-2 text-base text-gray-500">{subtitle}</p>}
+        <h1 className="mb-4 text-3xl font-black tracking-tight text-gray-900 md:text-4xl">{title}</h1>
+        {subtitle && <p className={cn('text-lg font-medium text-gray-500', subtitleClassName)}>{subtitle}</p>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
+      {actions && <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">{actions}</div>}
     </div>
   );
 }
@@ -109,12 +110,12 @@ export function PageHeader({ title, subtitle, actions, className }: { title: str
 export function SearchInput({ value, onChange, placeholder = 'Search…', className }: { value: string; onChange: (v: string) => void; placeholder?: string; className?: string }) {
   return (
     <div className={cn('relative w-full md:w-80', className)}>
-      <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-10 w-full rounded-xl border border-gray-300 bg-white pl-10 pr-3 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400/40 focus:border-primary-400"
+        className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-[2.375rem] pr-3 text-sm font-medium text-gray-600 outline-none transition-all duration-200 placeholder:font-normal placeholder:text-gray-400 focus:border-primary-400 focus:ring-4 focus:ring-primary-100"
       />
     </div>
   );
@@ -125,7 +126,7 @@ export function SearchInput({ value, onChange, placeholder = 'Search…', classN
 export function EmptyState({ icon, title, message, action, className }: { icon?: React.ReactNode; title?: string; message: string; action?: React.ReactNode; className?: string }) {
   return (
     <div className={cn('flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center', className)}>
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 text-gray-500 [&>svg]:h-6 [&>svg]:w-6">{icon ?? <Inbox />}</div>
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-50 text-gray-400 [&>svg]:h-6 [&>svg]:w-6">{icon ?? <Inbox />}</div>
       {title && <h3 className="font-heading text-base font-bold text-gray-900">{title}</h3>}
       <p className="mt-1 max-w-sm text-sm text-gray-500">{message}</p>
       {action && <div className="mt-4">{action}</div>}
@@ -169,7 +170,7 @@ export function usePagination<T>(items: T[], initialSize = 10) {
 export function Pagination({
   page, totalPages, onPage, pageSize, onPageSize, shown, total,
 }: { page: number; totalPages: number; onPage: (p: number) => void; pageSize: number; onPageSize: (n: number) => void; shown: number; total: number }) {
-  const btn = 'flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:text-gray-700 disabled:opacity-40';
+  const btn = 'flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 hover:text-gray-700 disabled:opacity-40';
   return (
     <div className="mt-6 flex flex-col items-center justify-between gap-3 md:flex-row">
       <p className="text-sm text-gray-600">Showing {shown} out of {total} results</p>
@@ -206,15 +207,15 @@ export function DateTile({ iso, compact }: { iso: string; compact?: boolean }) {
   const t = dateTile(iso);
   return (
     <div className={cn('flex shrink-0 flex-col items-center justify-center rounded-lg border border-gray-200 bg-gray-50', compact ? 'h-10 w-10' : 'h-12 w-11')}>
-      <span className="text-xxs font-bold uppercase text-gray-500">{t.month}</span>
+      <span className="text-[8px] font-bold uppercase text-gray-500">{t.month}</span>
       <span className="font-heading text-sm font-extrabold leading-none text-gray-900">{t.day}</span>
-      {!compact && <span className="text-xs text-gray-500">{t.year}</span>}
+      {!compact && <span className="text-xs text-gray-400">{t.year}</span>}
     </div>
   );
 }
 
 export function Avatar({ name, color, size = 'md', className }: { name: string; color?: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
-  const s = size === 'sm' ? 'h-7 w-7 text-xs' : size === 'lg' ? 'h-14 w-14 text-lg' : 'h-9 w-9 text-xs';
+  const s = size === 'sm' ? 'h-7 w-7 text-[10px]' : size === 'lg' ? 'h-14 w-14 text-lg' : 'h-9 w-9 text-xs';
   return (
     <span
       className={cn('inline-flex shrink-0 items-center justify-center rounded-full font-bold', s, className)}
@@ -259,14 +260,14 @@ export function Tabs({
 /** Horizontal pill filter used on Jobs ("All Active", "Unscheduled", ...) */
 export function PillFilter<T extends string>({ options, value, onChange }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-2 md:pb-0">
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            'h-10 rounded-xl border px-3 text-xs font-bold transition-colors',
-            value === o.value ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50',
+            'whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-bold transition-all',
+            value === o.value ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50',
           )}
         >
           {o.label}

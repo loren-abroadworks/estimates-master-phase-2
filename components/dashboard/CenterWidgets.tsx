@@ -23,13 +23,13 @@ export function PendingSalesWidget({ rows, pipelineValue }: { rows: DashboardDat
       <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center md:mb-6">
         <SectionHeader title="Pending Sales" icon={Clock} colorClass="text-blue-600" href="/estimates" className="mb-0" />
         <div className="text-left sm:text-right">
-          <span className="mb-1 block text-xxs font-black uppercase tracking-widest text-gray-500">Pipeline Value</span>
+          <span className="mb-1 block text-xxs font-black uppercase tracking-widest text-gray-400">Pipeline Value</span>
           <span className="text-2xl font-black tracking-tight text-primary-600 md:text-3xl">{plainMoney(pipelineValue)}</span>
         </div>
       </div>
       <div className="rtable custom-scrollbar min-h-0 flex-1 overflow-auto rounded-xl border border-gray-100">
         <table className="w-full min-w-[420px] text-left">
-          <thead className="sticky top-0 z-10 bg-gray-50 text-xxs font-black uppercase tracking-widest text-gray-500">
+          <thead className="sticky top-0 z-10 bg-gray-50 text-xxs font-black uppercase tracking-widest text-gray-400">
             <tr>
               <th className="p-2 md:p-4">Customer</th>
               <th className="p-2 md:p-4">Value</th>
@@ -39,7 +39,7 @@ export function PendingSalesWidget({ rows, pipelineValue }: { rows: DashboardDat
           <tbody className="divide-y divide-gray-100">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={3} className="p-8 text-center italic text-gray-500">No pending estimates.</td>
+                <td colSpan={3} className="p-8 text-center italic text-gray-400">No pending estimates.</td>
               </tr>
             ) : (
               rows.map((r) => (
@@ -49,7 +49,7 @@ export function PendingSalesWidget({ rows, pipelineValue }: { rows: DashboardDat
                   </td>
                   <td className="p-2 text-sm font-black text-gray-900 md:p-4">{plainMoney(r.value)}</td>
                   <td className="p-2 md:p-4">
-                    <span className={cn('rounded-full border px-2 py-0.5 text-xs font-bold', ESTIMATE_STATUS_BADGE[r.status as EstimateStatus])}>{r.status}</span>
+                    <span className={cn('rounded-full border px-2 py-0.5 text-[9px] font-bold', ESTIMATE_STATUS_BADGE[r.status as EstimateStatus])}>{r.status}</span>
                   </td>
                 </tr>
               ))
@@ -80,24 +80,24 @@ export function WinRateWidget({ data }: { data: DashboardData['winRate'] }) {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
             <span className="text-4xl font-black leading-none tracking-tighter text-gray-900 lg:text-5xl">{Math.round(data.winRate)}%</span>
-            <span className="mt-1 flex items-center gap-1.5 text-xxs font-black uppercase tracking-[0.2em] text-gray-500 lg:mt-2">
+            <span className="mt-1 flex items-center gap-1.5 text-xxs font-black uppercase tracking-[0.2em] text-gray-400 lg:mt-2">
               <Flame className="h-3 w-3 text-orange-500" /> Win Rate
             </span>
           </div>
           <div className="absolute bottom-4 flex w-28 justify-between px-2 lg:bottom-8 lg:w-32">
-            <span className="text-xxs font-black uppercase text-gray-500">0%</span>
-            <span className="text-xxs font-black uppercase text-gray-500">100%</span>
+            <span className="text-xxs font-black uppercase text-gray-400">0%</span>
+            <span className="text-xxs font-black uppercase text-gray-400">100%</span>
           </div>
         </div>
       </div>
       <div className="mt-4 grid w-full grid-cols-2 gap-4 border-t border-gray-50 pt-4 text-center">
         <div>
           <div className="text-lg font-black text-gray-900">{data.accepted}/{data.total}</div>
-          <div className="text-xxs font-bold uppercase tracking-widest text-gray-500">Est. Sold</div>
+          <div className="text-xxs font-bold uppercase tracking-widest text-gray-400">Est. Sold</div>
         </div>
         <div>
           <div className="text-lg font-black text-gray-900">{kMoney1(data.avgJob)}</div>
-          <div className="text-xxs font-bold uppercase tracking-widest text-gray-500">Avg. Job</div>
+          <div className="text-xxs font-bold uppercase tracking-widest text-gray-400">Avg. Job</div>
         </div>
       </div>
     </Link>
@@ -115,15 +115,15 @@ export function RevenueWidget({ data }: { data: DashboardData['revenue'] }) {
       <div className="relative z-10">
         <span className="mb-1 flex items-center gap-2 text-xxs font-black uppercase tracking-[0.25em] text-primary-500 lg:mb-2 lg:text-xs">Revenue <VersionBadge item="RP-M4" withNew={false} /></span>
         <div className="text-2xl font-black tracking-tighter text-primary-600 lg:text-4xl">{plainMoney(data.total)}</div>
-        <div className="mt-1 text-xxs font-bold uppercase tracking-widest text-gray-500 lg:mt-2 lg:text-xxs">Verified Total Sales</div>
+        <div className="mt-1 text-xxs font-bold uppercase tracking-widest text-gray-400 lg:mt-2 lg:text-xxs">Verified Total Sales</div>
       </div>
       {data.annualTarget > 0 && (
         <div className="relative z-10 border-t border-gray-100 pt-3 lg:pt-6">
-          <span className="mb-1 block text-xxs font-black uppercase tracking-[0.25em] text-gray-500 lg:mb-2 lg:text-xs">Annual Target</span>
+          <span className="mb-1 block text-xxs font-black uppercase tracking-[0.25em] text-gray-400 lg:mb-2 lg:text-xs">Annual Target</span>
           <div className="text-xl font-black tracking-tighter text-gray-900 lg:text-3xl">
             ${data.annualTarget.toLocaleString('en-US', { maximumFractionDigits: 2 })}
           </div>
-          <div className="mt-1 text-xxs font-bold uppercase tracking-widest text-gray-500 lg:text-xxs">Company Goal</div>
+          <div className="mt-1 text-xxs font-bold uppercase tracking-widest text-gray-400 lg:text-xxs">Company Goal</div>
         </div>
       )}
     </Link>
@@ -211,7 +211,7 @@ export function ScheduleAgendaWidget({ items }: { items: AgendaItem[] }) {
           <button
             onClick={() => setFilterOpen((o) => !o)}
             className={cn(
-              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xxs font-bold uppercase tracking-wider transition-colors',
+              'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider transition-colors',
               types.length < ALL_TYPES.length ? 'border-primary-200 bg-primary-50 text-primary-600' : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300',
             )}
           >
@@ -240,7 +240,7 @@ export function ScheduleAgendaWidget({ items }: { items: AgendaItem[] }) {
       </div>
 
       <div className="mb-6 flex items-center gap-2">
-        <button onClick={() => setWeekOffset((w) => w - 1)} className="shrink-0 p-1 text-gray-500 hover:text-primary-600" aria-label="Previous week">
+        <button onClick={() => setWeekOffset((w) => w - 1)} className="shrink-0 p-1 text-gray-400 hover:text-primary-600" aria-label="Previous week">
           <ChevronLeft className="h-5 w-5" />
         </button>
         <div className="grid flex-1 grid-cols-7 gap-1">
@@ -260,7 +260,7 @@ export function ScheduleAgendaWidget({ items }: { items: AgendaItem[] }) {
                   isToday && !isSel && 'bg-primary-50 text-primary-600 ring-2 ring-primary-100',
                 )}
               >
-                <span className="mb-1 text-xxs font-black uppercase opacity-70">{d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}</span>
+                <span className="mb-1 text-[9px] font-black uppercase opacity-70">{d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0)}</span>
                 <span className="text-xs font-black">{d.getDate()}</span>
                 <div className="mt-1 flex h-1 gap-0.5">
                   {kinds.map((k) => (
@@ -271,13 +271,13 @@ export function ScheduleAgendaWidget({ items }: { items: AgendaItem[] }) {
             );
           })}
         </div>
-        <button onClick={() => setWeekOffset((w) => w + 1)} className="shrink-0 p-1 text-gray-500 hover:text-primary-600" aria-label="Next week">
+        <button onClick={() => setWeekOffset((w) => w + 1)} className="shrink-0 p-1 text-gray-400 hover:text-primary-600" aria-label="Next week">
           <ChevronRight className="h-5 w-5" />
         </button>
       </div>
 
       <div className="min-h-0 flex-1">
-        <div className="mb-4 text-xxs font-black uppercase tracking-widest text-gray-500">
+        <div className="mb-4 text-xxs font-black uppercase tracking-widest text-gray-400">
           {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
         </div>
         {selectedItems.length > 0 ? (
@@ -291,8 +291,8 @@ export function ScheduleAgendaWidget({ items }: { items: AgendaItem[] }) {
                   href={item.href}
                   className="group flex w-[280px] shrink-0 items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50/30 p-4 transition-all hover:border-primary-200 hover:bg-white hover:shadow-md md:w-[300px]"
                 >
-                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-100 bg-white text-gray-500 shadow-sm group-hover:text-primary-600">
-                    <span className="mb-1 text-xxs font-black uppercase leading-none opacity-60">{start.toLocaleDateString('en-US', { month: 'short' })}</span>
+                  <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border border-gray-100 bg-white text-gray-400 shadow-sm group-hover:text-primary-600">
+                    <span className="mb-1 text-[9px] font-black uppercase leading-none opacity-60">{start.toLocaleDateString('en-US', { month: 'short' })}</span>
                     <span className="text-lg font-black leading-none">{start.getDate()}</span>
                   </div>
                   <div className="min-w-0 flex-1">
@@ -300,17 +300,17 @@ export function ScheduleAgendaWidget({ items }: { items: AgendaItem[] }) {
                       <div className="flex min-w-0 flex-1 flex-col">
                         <h4 className="truncate text-sm font-bold text-gray-900 group-hover:text-primary-700">{item.title}</h4>
                         <div className="mt-1">
-                          <span className={cn('rounded-full border px-2 py-0.5 text-xs font-bold', badge.cls)}>{badge.label}</span>
+                          <span className={cn('rounded-full border px-2 py-0.5 text-[9px] font-bold', badge.cls)}>{badge.label}</span>
                         </div>
                       </div>
                       {item.time ? (
-                        <span className="ml-2 shrink-0 rounded border border-gray-100 bg-white px-2 py-1 text-xs font-black text-gray-500">{timeLabel(item.time)}</span>
+                        <span className="ml-2 shrink-0 rounded border border-gray-100 bg-white px-2 py-1 text-xs font-black text-gray-400">{timeLabel(item.time)}</span>
                       ) : item.status ? (
-                        <span className="ml-2 shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700">{item.status}</span>
+                        <span className="ml-2 shrink-0 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-bold text-amber-700">{item.status}</span>
                       ) : null}
                     </div>
                     {item.location && (
-                      <div className="mt-2 flex items-center gap-1 truncate text-xs font-medium text-gray-500">
+                      <div className="mt-2 flex items-center gap-1 truncate text-xs font-medium text-gray-400">
                         <MapPin className="h-3 w-3" /> {item.location.split(',')[0]}
                       </div>
                     )}
@@ -322,10 +322,10 @@ export function ScheduleAgendaWidget({ items }: { items: AgendaItem[] }) {
         ) : (
           <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 py-4 text-center">
             <CalendarIcon className="mb-2 h-8 w-8 text-gray-300" />
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
               {selected === todayKey ? 'No appointments today' : 'No appointments this day'}
             </p>
-            <Link href="/calendar?new=1" className="mt-2 text-xxs font-black uppercase tracking-widest text-primary-600 hover:underline">
+            <Link href="/calendar?new=1" className="mt-2 text-[10px] font-black uppercase tracking-widest text-primary-600 hover:underline">
               Schedule New
             </Link>
           </div>
@@ -333,7 +333,7 @@ export function ScheduleAgendaWidget({ items }: { items: AgendaItem[] }) {
       </div>
 
       <div className="mt-3 border-t border-gray-100 pt-3">
-        <Link href="/calendar" className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:underline">
+        <Link href="/calendar" className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-600 hover:underline">
           Go to Calendar <ArrowUpRight className="h-2.5 w-2.5" />
         </Link>
       </div>
@@ -349,7 +349,7 @@ export function InvoicesDueWidget({ invoices }: { invoices: DashboardData['invoi
       <SectionHeader title="Invoices Due" icon={DollarSign} colorClass="text-green-600" href="/invoices" />
       <div className="custom-scrollbar grid min-h-0 flex-1 grid-cols-1 content-start gap-4 overflow-y-auto pr-2 md:grid-cols-2">
         {invoices.length === 0 ? (
-          <p className="col-span-full py-8 text-center text-xs font-medium italic text-gray-500">All accounts up to date.</p>
+          <p className="col-span-full py-8 text-center text-xs font-medium italic text-gray-400">All accounts up to date.</p>
         ) : (
           invoices.slice(0, 4).map((inv) => (
             <Link
@@ -359,7 +359,7 @@ export function InvoicesDueWidget({ invoices }: { invoices: DashboardData['invoi
             >
               <div className="mr-2 min-w-0 flex-1">
                 <div className="truncate text-sm font-bold text-gray-900">{inv.customerName}</div>
-                <div className="text-xxs font-black uppercase tracking-widest text-gray-500">
+                <div className="text-xxs font-black uppercase tracking-widest text-gray-400">
                   {inv.isOverdue ? <span className="font-bold text-red-500">OVERDUE</span> : `Due ${shortDate(inv.dueDate)}`}
                 </div>
               </div>

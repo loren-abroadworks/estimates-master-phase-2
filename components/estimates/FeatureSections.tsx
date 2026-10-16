@@ -143,7 +143,7 @@ export function LineColourCell({ colour, painting, saved, editable, card, onAssi
       ) : painting ? (
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700"><PaintBucket className="h-3.5 w-3.5" /> Click to paint</span>
       ) : !editable ? (
-        <span className="text-xs italic text-gray-500">None</span>
+        <span className="text-xs italic text-gray-400">None</span>
       ) : null}
       {editable && !painting && (
         <input
@@ -158,8 +158,8 @@ export function LineColourCell({ colour, painting, saved, editable, card, onAssi
           className="h-7 w-20 rounded-md border border-gray-200 bg-white px-1.5 text-center text-xs focus:border-primary-400 focus:outline-none"
         />
       )}
-      {error && <span className="text-xs font-semibold text-red-600">{error}</span>}
-      {colour && colour.gal > 0 && <span className="text-xs font-semibold text-blue-600">{colour.gal.toFixed(2)} gal</span>}
+      {error && <span className="text-[10px] font-semibold text-red-600">{error}</span>}
+      {colour && colour.gal > 0 && <span className="text-[10px] font-semibold text-blue-600">{colour.gal.toFixed(2)} gal</span>}
     </div>
   );
 }
@@ -289,9 +289,9 @@ function MaterialsSummary({ estimate, job }: { estimate: PEstimate; job: PJob })
           </FButton>
         )}
       />
-      <div className="text-xs font-bold uppercase tracking-widest text-gray-500">Paint Products (Calculated)</div>
+      <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Paint Products (Calculated)</div>
       {lines.length === 0 ? (
-        <p className="mt-3 text-sm italic text-gray-500">Add a color with a product, then assign surfaces.</p>
+        <p className="mt-3 text-sm italic text-gray-400">Add a color with a product, then assign surfaces.</p>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full min-w-[600px] text-left text-sm">

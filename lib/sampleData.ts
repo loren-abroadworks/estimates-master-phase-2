@@ -82,6 +82,7 @@ export function createInitialDatabase(): Database {
       goalsProfit: cfg.goalsProfit,
       financialSettings: cfg.financialSettings,
       laborConfig: cfg.laborConfig,
+      schedulingSettings: { nonWorkingWeekdays: [0, 6], holidays: [], rainDays: [], workDayStartHour: 8, workDayEndHour: 17, crewDailyCapacityHours: 9 },
     },
   });
 }

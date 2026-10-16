@@ -762,8 +762,9 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
             tryIt: "Copy a link and open it in a new tab.",
           },
           {
-            target: "crm-review", kind: "view", title: "Likely duplicates wait for a person",
-            body: "Same phone or email: Likely the same person. Same name only: Possible match. Compare side by side, then Merge, Retain or Remove. Nothing is merged automatically.",
+            target: "crm-links", kind: "view", title: "Duplicates are turned away at the form",
+            body: "A submission whose email or phone number is already on file is rejected, and the form asks the person to contact you directly. An existing customer ticks \"I'm an existing customer\" and enters their Customer ID (shown on their estimates and invoices); the lead then joins that customer. Same name with a different email and phone comes in as a new lead.",
+            shows: "On the public form, before anything is sent. Google reCAPTCHA on the form blocks bots.",
           },
         ],
       },
@@ -856,7 +857,7 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
         steps: [
           {
             target: "crm-pipelines", kind: "view", version: "minimal", title: "Sales and Production boards",
-            body: "Switch between the Sales board and the Production board. Sales holds leads until they're sold; Production tracks the sold work.",
+            body: "Use the Pipeline menu beside the view switch to change between the Sales board and the Production board. Sales holds leads until they're sold; Production tracks the sold work.",
           },
           {
             target: "crm-board", kind: "update", version: "minimal", title: "Move a card; Sold creates the Production card",
@@ -866,16 +867,16 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
           },
           {
             target: "crm-source", kind: "view", version: "minimal", title: "Filter by source",
-            body: "Each card shows its source as a badge. Pick one or more sources, for example Instagram; every column and count follows.",
+            body: "Each card shows its source as a badge. Open the Sources menu and pick one or more sources, for example Instagram; every column and count follows.",
           },
           {
-            target: "crm-groupby", kind: "view", version: "complete", title: "Group by source",
-            body: "Group the Sales board by source instead of stage, to see the Facebook leads, Website leads and so on as columns.",
+            target: "crm-source", kind: "view", version: "complete", title: "Group by source",
+            body: "At the bottom of the Sources menu, switch on Group board by source. The Sales board then shows the Facebook leads, Website leads and so on as columns instead of stages.",
           },
           {
             target: "crm-pipelines", kind: "add", version: "complete", title: "Add a pipeline",
-            body: "With dynamic pipelines on, Add pipeline creates another board, for example Training. It starts with a Not Started stage and a Done stage.",
-            shows: "As a new tab beside Sales and Production, and in Settings › Pipeline Stages.",
+            body: "With dynamic pipelines on, Add pipeline at the bottom of the Pipeline menu creates another board, for example Training. It starts with a Not Started stage and a Done stage.",
+            shows: "In the Pipeline menu beside Sales and Production, and in Settings › Pipeline Stages.",
           },
         ],
       },

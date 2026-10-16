@@ -84,7 +84,7 @@ export function ActivityLogTab({ range, setRange }: { range: DateRange; setRange
         </div>
         <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
           <div className="relative w-full lg:w-80">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -124,7 +124,7 @@ export function ActivityLogTab({ range, setRange }: { range: DateRange; setRange
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center italic text-gray-500">No activity found for this filter.</td>
+                <td colSpan={6} className="px-6 py-12 text-center italic text-gray-400">No activity found for this filter.</td>
               </tr>
             )}
           </tbody>
@@ -161,7 +161,7 @@ export function ActivityLogTab({ range, setRange }: { range: DateRange; setRange
             <div className="border-t border-gray-100" />
             <div>
               <h5 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">Details</h5>
-              <p className="text-sm italic text-gray-500">No additional details.</p>
+              <p className="text-sm italic text-gray-400">No additional details.</p>
             </div>
             <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
               {selected.entity && selected.entityId && (

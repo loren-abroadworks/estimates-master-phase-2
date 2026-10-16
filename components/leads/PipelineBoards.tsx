@@ -28,15 +28,15 @@ function Column({ stage, count, over, onOver, onDrop, emptyText, children }: {
     <div
       onDragOver={(e) => { e.preventDefault(); onOver(); }}
       onDrop={(e) => { e.preventDefault(); onDrop(); }}
-      className={cn('flex min-w-[170px] flex-1 basis-0 flex-col rounded-2xl border bg-gray-100/60 transition-colors', over ? 'border-primary-300 bg-primary-50/80 ring-2 ring-primary-200' : 'border-transparent')}
+      className={cn('flex min-w-[280px] shrink-0 grow-0 basis-[calc((100%-4.5rem)/4)] flex-col rounded-2xl border bg-gray-100/60 transition-colors', over ? 'border-primary-300 bg-primary-50/80 ring-2 ring-primary-200' : 'border-transparent')}
     >
-      <div className="mb-4 flex items-center justify-between rounded-t-2xl border-b-2 bg-white px-3 py-3.5 shadow-sm" style={{ borderBottomColor: stage.color }}>
-        <h3 className="text-xs font-bold uppercase tracking-wide text-gray-900">{stage.displayName}</h3>
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold" style={{ backgroundColor: `${stage.color}22`, color: stage.color }}>{count}</span>
+      <div className="mb-4 flex items-center justify-between rounded-t-2xl border-b-4 bg-white p-4 shadow-sm" style={{ borderBottomColor: stage.color }}>
+        <h3 className="text-sm font-bold uppercase tracking-wide text-gray-900">{stage.displayName}</h3>
+        <span className="rounded-full px-2 py-1 text-xs font-bold" style={{ backgroundColor: `${stage.color}22`, color: stage.color }}>{count}</span>
       </div>
       <div className="flex-1 space-y-3 px-2 pb-4">
         {children}
-        {count === 0 && <div className="flex h-16 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-xs font-medium italic text-gray-300">{emptyText ?? 'Drop cards here'}</div>}
+        {count === 0 && <div className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 text-sm font-medium italic text-gray-300">{emptyText ?? 'Drop cards here'}</div>}
       </div>
     </div>
   );
@@ -66,8 +66,8 @@ export function ProductionBoard({ stages, search, filter, emptyText }: { stages:
   };
 
   return (
-    <div className="overflow-x-auto pb-8" data-tour="crm-production" onDragEnd={() => { setDragId(undefined); setOverId(undefined); }}>
-      <div className="flex h-full gap-3" style={{ minWidth: Math.max(1040, stages.length * 175) }}>
+    <div className="custom-scrollbar overflow-x-auto pb-8" data-tour="crm-production" onDragEnd={() => { setDragId(undefined); setOverId(undefined); }}>
+      <div className="flex h-full w-full gap-6">
         {stages.map((s) => {
           const list = shown.filter((c) => c.stageId === s.id);
           return (
@@ -126,8 +126,8 @@ export function LeadPipelineBoard({ pipelineId, stages, leads, onMove, emptyText
     if (lead && customColumnFor(lead, stages, pipelineId)?.id !== stage.id) onMove(lead, stage);
   };
   return (
-    <div className="overflow-x-auto pb-8" onDragEnd={() => { setDragId(undefined); setOverId(undefined); }}>
-      <div className="flex h-full gap-3" style={{ minWidth: Math.max(1040, stages.length * 175) }}>
+    <div className="custom-scrollbar overflow-x-auto pb-8" onDragEnd={() => { setDragId(undefined); setOverId(undefined); }}>
+      <div className="flex h-full w-full gap-6">
         {stages.map((s) => {
           const list = leads.filter((l) => customColumnFor(l, stages, pipelineId)?.id === s.id);
           return (

@@ -138,11 +138,17 @@ export function checkSubmission(body: unknown, opts: { siteKey: string; now: num
 }
 
 /** CRM Part 1 (2): the form-link form. Same rules the browser shows inline. */
+/** reCAPTCHA (prototype): the demo widget hands this token to the form once ticked; a real build verifies Google's token server-side. */
+export const CAPTCHA_DEMO_TOKEN = 'demo-recaptcha-pass';
+export const CAPTCHA_REQUIRED = "Please tick “I'm not a robot” before sending.";
+
 function checkLeadForm(b: Record<string, unknown>, now: number, newRef: () => string): FormCheck {
   const lead = Object.fromEntries(Object.keys(EMPTY_FORM_LEAD).map((k) => [k, str(b[k], k === 'notes' ? MESSAGE_MAX : 200)])) as unknown as FormLeadInput;
   const errors = formLeadErrors(lead);
   const field = Object.keys(errors)[0] as keyof FormLeadInput | undefined;
   if (field) return { ok: false, status: 422, error: errors[field]!, field };
+  // Oct 14 call: Google reCAPTCHA on the public form (prototype: the demo widget's token).
+  if (str(b.captcha, 80) !== CAPTCHA_DEMO_TOKEN) return { ok: false, status: 422, error: CAPTCHA_REQUIRED, field: 'captcha' };
   const linkId = str(b.l, 40).replace(/[^A-Za-z0-9_-]/g, '');
   const given = str(b.ref, MAX.ref).replace(/[^A-Za-z0-9_.:-]/g, '');
   return {

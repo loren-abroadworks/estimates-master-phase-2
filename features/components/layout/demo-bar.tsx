@@ -93,10 +93,10 @@ export function DemoBar() {
               <span className="text-xxs font-bold uppercase tracking-[0.14em] text-gray-400">Dark mode</span>
               <Switch checked={theme === "dark"} onCheckedChange={(on) => setTheme(on ? "dark" : "light")} label={<span className="sr-only">Dark mode</span>} />
             </div>
-            <Button size="sm" variant="secondary" className="w-full justify-center" onClick={() => { setOpen(false); router.push("/dashboard#new-features"); }}>
+            <Button size="sm" variant="secondary" className="w-full justify-center" onClick={() => { setOpen(false); router.push("/prototype#new-features"); }}>
               <Sparkles className="h-3.5 w-3.5" /> New features panel
             </Button>
-            <Button size="sm" variant="primary" className="w-full justify-center" onClick={() => { setOpen(false); router.push("/dashboard#feature-tours"); }}>
+            <Button size="sm" variant="primary" className="w-full justify-center" onClick={() => { setOpen(false); router.push("/prototype#feature-tours"); }}>
               <Compass className="h-3.5 w-3.5" /> Feature tours
             </Button>
             {left && (

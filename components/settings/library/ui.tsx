@@ -91,7 +91,7 @@ export function EmptyBox({ children }: { children: React.ReactNode }) {
 
 /** Plain centered "No results" line shown when a search matches nothing. */
 export function NoMatches({ children }: { children: React.ReactNode }) {
-  return <div className="col-span-full py-12 text-center text-sm text-gray-500">{children}</div>;
+  return <div className="col-span-full py-12 text-center text-sm text-gray-400">{children}</div>;
 }
 
 const PILL = {
@@ -103,7 +103,7 @@ const PILL = {
 } as const;
 
 export function Pill({ children, color = 'gray', className }: { children: React.ReactNode; color?: keyof typeof PILL; className?: string }) {
-  return <span className={cn('inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-bold', PILL[color], className)}>{children}</span>;
+  return <span className={cn('inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold', PILL[color], className)}>{children}</span>;
 }
 
 export function FormActions({
@@ -127,7 +127,7 @@ export function FormActions({
 export function SectionHeading({ icon, children, right }: { icon?: React.ReactNode; children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="mb-2 flex items-center justify-between">
-      <h4 className="flex items-center gap-2 text-xxs font-bold uppercase tracking-widest text-gray-500 [&>svg]:h-3.5 [&>svg]:w-3.5">
+      <h4 className="flex items-center gap-2 text-xxs font-bold uppercase tracking-widest text-gray-400 [&>svg]:h-3.5 [&>svg]:w-3.5">
         {icon}
         {children}
       </h4>

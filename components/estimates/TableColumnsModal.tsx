@@ -58,7 +58,7 @@ export function TableColumnsModal({ open, onOpenChange }: { open: boolean; onOpe
     >
       {[{ title: 'Estimate fields', list: group(true) }, { title: 'Preparation activities', list: group(false) }].map((g) => (
         <div key={g.title} className="mb-5 last:mb-0">
-          <div className="mb-2 text-xs font-bold uppercase tracking-widest text-gray-500">{g.title}</div>
+          <div className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gray-500">{g.title}</div>
           <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {g.list.map((c) => {
               const locked = c.id === 'tcol_surface';
@@ -72,13 +72,13 @@ export function TableColumnsModal({ open, onOpenChange }: { open: boolean; onOpe
                     aria-label={`${c.isVisible ? 'Hide' : 'Show'} ${c.name}`}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed',
-                      c.isVisible ? 'border-primary-200 bg-primary-50/60 text-gray-900' : 'border-gray-200 bg-white text-gray-500',
+                      c.isVisible ? 'border-primary-200 bg-primary-50/60 text-gray-900' : 'border-gray-200 bg-white text-gray-400',
                     )}
                     title={locked ? 'The Item column is always shown' : undefined}
                   >
                     {c.isVisible ? <Eye className="h-4 w-4 shrink-0 text-primary-600" /> : <EyeOff className="h-4 w-4 shrink-0" />}
                     <span className="min-w-0 flex-1 truncate font-semibold">{c.name}</span>
-                    <span className="shrink-0 text-xs text-gray-500">
+                    <span className="shrink-0 text-xs text-gray-400">
                       {TYPE_LABEL[c.columnType]}
                       {c.prepRate ? ` · ${c.prepRate}/h` : ''}
                     </span>

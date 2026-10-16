@@ -10,7 +10,7 @@ import { AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
-const SIZES = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl', full: 'max-w-6xl' } as const;
+const SIZES = { sm: 'md:max-w-md', md: 'md:max-w-lg', lg: 'md:max-w-2xl', xl: 'md:max-w-4xl', full: 'md:max-w-6xl' } as const;
 
 export function Modal({
   open, onOpenChange, title, description, children, footer, size = 'md', className,
@@ -27,30 +27,31 @@ export function Modal({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-gray-900/40 backdrop-blur-[2px]" />
+        <Dialog.Overlay className="fixed inset-0 z-[100] bg-gray-900/50 backdrop-blur-sm animate-in-fade" />
         <Dialog.Content
           className={cn(
-            'fixed left-1/2 top-1/2 z-[101] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2',
-            'max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl border border-gray-100 focus:outline-none',
+            // Phase-1 modal: bottom sheet on phones, centered card from md up.
+            'fixed inset-x-0 bottom-0 z-[101] w-full max-h-[95vh] md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-[calc(100vw-2rem)] md:-translate-x-1/2 md:-translate-y-1/2',
+            'md:max-h-[90vh] flex flex-col overflow-hidden rounded-t-3xl md:rounded-3xl bg-white shadow-2xl border border-gray-100 focus:outline-none',
             SIZES[size],
             className,
           )}
         >
-          <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-4">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-100 bg-white px-6 py-5 md:px-8 md:py-6">
             <div>
-              <Dialog.Title className="font-heading text-lg font-bold text-gray-900">{title}</Dialog.Title>
+              <Dialog.Title className="font-heading text-xl font-bold leading-snug text-gray-900 md:text-2xl">{title}</Dialog.Title>
               {description ? (
                 <Dialog.Description className="mt-0.5 text-sm text-gray-500">{description}</Dialog.Description>
               ) : (
                 <Dialog.Description className="sr-only">{typeof title === 'string' ? title : 'Dialog'}</Dialog.Description>
               )}
             </div>
-            <Dialog.Close className="rounded-full p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Close">
-              <X className="h-5 w-5" />
+            <Dialog.Close className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600" aria-label="Close">
+              <X className="h-6 w-6" />
             </Dialog.Close>
           </div>
-          <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
-          {footer && <div className="flex items-center justify-end gap-2 border-t border-gray-100 bg-gray-50/60 px-6 py-3 rounded-b-2xl">{footer}</div>}
+          <div className="custom-scrollbar flex-1 overflow-y-auto p-6 md:p-8">{children}</div>
+          {footer && <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/60 px-6 py-4 md:px-8">{footer}</div>}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -68,19 +69,22 @@ export function ConfirmDialog({
   onConfirm: () => void;
   variant?: 'danger' | 'primary';
 }) {
+  // Phase-1 ConfirmationModal: centered icon, title, message, then Cancel and Confirm side by side.
   return (
-    <Modal
-      open={open}
-      onOpenChange={onOpenChange}
-      size="sm"
-      title={title}
-      footer={
-        <>
-          <Button variant="secondary" onClick={() => onOpenChange(false)}>
+    <Modal open={open} onOpenChange={onOpenChange} size="sm" title={title}>
+      <div className="flex flex-col items-center p-4 text-center">
+        <div className={cn('mb-4 flex h-16 w-16 items-center justify-center rounded-full', variant === 'primary' ? 'bg-primary-50' : 'bg-red-50')}>
+          <AlertTriangle className={cn('h-8 w-8', variant === 'primary' ? 'text-primary-500' : 'text-red-500')} />
+        </div>
+        <h3 className="mb-2 text-xl font-bold text-gray-900">{title}</h3>
+        <div className="mb-8 leading-relaxed text-gray-500">{message ?? 'This action cannot be undone.'}</div>
+        <div className="flex w-full gap-3">
+          <Button variant="secondary" className="flex-1" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
             variant={variant}
+            className={cn('flex-1 shadow-lg', variant === 'danger' ? 'shadow-red-500/20' : 'shadow-primary-500/20')}
             onClick={() => {
               onConfirm();
               onOpenChange(false);
@@ -88,16 +92,7 @@ export function ConfirmDialog({
           >
             {confirmLabel}
           </Button>
-        </>
-      }
-    >
-      <div className="flex gap-3">
-        {variant === 'danger' && (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
-          </div>
-        )}
-        <div className="text-sm text-gray-600">{message ?? 'This action cannot be undone.'}</div>
+        </div>
       </div>
     </Modal>
   );

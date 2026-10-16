@@ -134,7 +134,7 @@ function ClientView() {
       <div className="sticky top-0 z-10 border-b border-gray-200 bg-white/90 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
           {session ? (
-            <Link href={`/estimates/${e.id}`} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-700">
+            <Link href={`/estimates/${e.id}`} className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-gray-700">
               <ArrowLeft className="h-3.5 w-3.5" /> Back to app{staffPreview ? ' (preview: not counted as a customer view)' : ''}
             </Link>
           ) : (
@@ -227,7 +227,7 @@ function ClientView() {
             <Input placeholder="e.g. John Smith" value={name} invalid={!!errors.name} onChange={(ev) => setName(ev.target.value)} autoFocus />
           </Field>
           <div>
-            <div className="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-600">E-Signature</div>
+            <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-600">E-Signature</div>
             <div className="relative flex h-32 items-center justify-center rounded-xl border border-gray-200 bg-white">
               {name.trim() ? (
                 <span className="font-[cursive] text-4xl italic text-gray-800">{name}</span>

@@ -1,177 +1,183 @@
 'use client';
 
 /*
-  Job Scheduling board (reference: features/(main)/job-scheduling/v2/templates).
+  Job Scheduling: the phase-1 prototype board (estimates-master-phase-1,
+  components/views/JobSchedulingView), ported as is under
+  components/scheduling/phase1 and wired to the app store here.
 
-  Job view: Day / Week / Month calendar of jobs plus the Unscheduled Jobs
-  backlog. Crew view: one row per crew member (Board) or per-day hours
-  (Hours), with an Availability toggle that shows each member's weekly load
-  against capacity. Click a job to open its details panel; drag a job onto a
-  day to schedule or move it; Bulk Reschedule shifts many jobs at once.
+  Job view and Crew view; Day / Week / Month; Board and Hours modes; shifts,
+  per-member daily hours, breaks, availability, rain days, weather, cascade
+  reschedules with preview, bulk reschedule and undo.
+
+  Every save goes through the adapter (components/scheduling/phase1/adapter.ts),
+  which keeps the job's dates, shifts, crew hours and status in step for the
+  rest of the app, then tells the crew-notification feature (Unsent changes).
 */
 import { useCallback, useMemo, useState } from 'react';
-import { Briefcase, Eye, EyeOff, Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { PageShell } from '@/components/Navigation';
-import { NativeSelect } from '@/components/ui/form';
-import { ConfirmDialog } from '@/components/Modals/Modal';
-import { useToast } from '@/components/ui/toast';
-import { ScheduleJobModal } from '@/components/jobs/ScheduleJobModal';
-import { CrewModal } from '@/components/jobs/CrewModal';
-import { useJobActions } from '@/components/jobs/useJobActions';
-import { CrewBoard, CrewHoursGrid, JobBoard, MonthBoard, ScheduleToolbar, UnscheduledPanel, tabCls } from '@/components/scheduling/Boards';
-import { BulkRescheduleModal, JobDetailsPanel } from '@/components/scheduling/Panels';
-import { UnsentChangesButton, UnsentJobsProvider, useScheduleSaved } from '@/components/scheduling/NotifyCrew';
+import { JobSchedulingView } from '@/components/scheduling/phase1/components/views/JobSchedulingView';
+import { Toast } from '@/components/scheduling/phase1/components/UI';
+import type { CrewMember, GlobalSettings, Job as P1Job } from '@/components/scheduling/phase1/types';
+import type { ProposedChange } from '@/components/scheduling/phase1/services/scheduleEngine';
+import { configFromSettings, toLocalDateKey } from '@/components/scheduling/phase1/services/scheduleEngine';
+import { applyChangeToJobPinningPast } from '@/components/scheduling/phase1/services/shifts';
+import { applyAvailabilityTrims, availabilityTrims } from '@/components/scheduling/phase1/services/availabilityTrim';
+import { companyStandardDay } from '@/components/scheduling/phase1/services/crewAvailability';
 import {
-  ACTIVE_JOB_STATUSES, addDays, daysInclusive, defaultDurationDays, jobColor, monthWeeks, stepDate, weekDays, type ScheduleRange,
-} from '@/components/scheduling/schedule-utils';
-import { useCollection, useLookups } from '@/lib/store';
+  DEFAULT_SCHEDULING, fromP1Job, fromP1Member, mockWeather, toP1Client, toP1Job, toP1Member, toP1WorkOrder,
+} from '@/components/scheduling/phase1/adapter';
+import { SendEmailsButton, UnsentChangesButton, UnsentJobsProvider, useScheduleSaved } from '@/components/scheduling/NotifyCrew';
+import { useCollection, useLogActivity, useSingleton } from '@/lib/store';
 import { useCurrentUser as useFeatureUser } from '@/features/lib/store';
 import { can } from '@/features/lib/permissions';
+import { useIsOn } from '@/features/lib/feature-visibility';
 import type { Job } from '@/lib/types';
-import { cn, fullName, shortDate, toISODate } from '@/lib/utils';
 
-type View = 'job' | 'crew';
+interface ToastState { id: number; message: string; onUndo?: () => void }
 
 export default function JobSchedulingPage() {
-  const { items: jobs, get } = useCollection('jobs');
-  const { items: team } = useCollection('team');
-  const look = useLookups();
-  const actions = useJobActions();
-  const { toast } = useToast();
+  const router = useRouter();
+  const { items: jobs, get, update } = useCollection('jobs');
+  const { items: team, get: getMember, update: updateMember } = useCollection('team');
+  const { items: customers } = useCollection('customers');
+  const { items: workOrders } = useCollection('workOrders');
+  const [savedScheduling, setScheduling] = useSingleton('schedulingSettings');
+  const [currentUserId] = useSingleton('currentUserId');
   const featureUser = useFeatureUser();
+  const log = useLogActivity();
   const scheduleSaved = useScheduleSaved();
+  const crewEmailsOn = useIsOn({ featureKey: 'js' });
+  const [toast, setToast] = useState<ToastState | null>(null);
 
-  const [view, setView] = useState<View>('job');
-  const [range, setRange] = useState<ScheduleRange>('week');
-  const [crewMode, setCrewMode] = useState<'board' | 'hours'>('board');
-  const [availability, setAvailability] = useState(true);
-  const [memberFilter, setMemberFilter] = useState('');
-  const [refDate, setRefDate] = useState(() => new Date());
+  // QA D-03: only schedulers (office manager, owner) change the schedule (spec 04).
+  const canReschedule = can(featureUser, 'workOrder.manageSchedule');
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [scheduleJob, setScheduleJob] = useState<{ id: string; start?: string } | null>(null);
-  const [crewJobId, setCrewJobId] = useState<string | null>(null);
-  const [cancelId, setCancelId] = useState<string | null>(null);
-  const [bulkOpen, setBulkOpen] = useState(false);
+  const scheduling = savedScheduling ?? DEFAULT_SCHEDULING;
+  const nonWorkingWeekdays = scheduling.nonWorkingWeekdays ?? [0, 6];
+  const settings = useMemo(
+    () => ({ scheduling: { ...scheduling, mockWeather: scheduling.mockWeather && Object.keys(scheduling.mockWeather).length ? scheduling.mockWeather : mockWeather() } }) as GlobalSettings,
+    [scheduling],
+  );
 
-  // Crew view lists crew members (active or invited), optionally one member.
-  const crew = team.filter((t) => t.isCrew && t.status !== 'Inactive' && (!memberFilter || t.id === memberFilter));
-  const boardJobs = useMemo(() => jobs.filter((j) => j.startDate && j.status !== 'Cancelled'), [jobs]);
-  const unscheduled = useMemo(() => jobs.filter((j) => !j.startDate && ACTIVE_JOB_STATUSES.includes(j.status)), [jobs]);
-  const monthJobs = view === 'crew' && memberFilter ? boardJobs.filter((j) => j.crew.some((c) => c.memberId === memberFilter)) : boardJobs;
+  const p1Jobs = useMemo(() => jobs.map((j) => toP1Job(j, workOrders, team)), [jobs, workOrders, team]);
+  const p1Staff = useMemo(() => team.filter((m) => m.isCrew && m.status !== 'Inactive').map((m) => toP1Member(m)), [team]);
+  const p1Clients = useMemo(() => customers.map(toP1Client), [customers]);
+  const p1WorkOrders = useMemo(() => {
+    const names = new Map(p1Clients.map((c) => [c.id, c.name]));
+    return jobs.map((j) => toP1WorkOrder(j, workOrders, names.get(j.customerId) ?? ''));
+  }, [jobs, workOrders, p1Clients]);
 
-  const dayKeys = range === 'day' ? [toISODate(refDate)] : weekDays(refDate);
-  const colorOf = useCallback((j: Job) => jobColor(j, look.member), [look]);
+  const showToast = useCallback((message: string, onUndo?: () => void) => setToast({ id: Date.now(), message, onUndo }), []);
+  const dismissToast = useCallback(() => setToast(null), []);
 
-  // QA D-03: only schedulers (office manager, owner) change the schedule or tell the crew (spec 04).
-  const scheduler = can(featureUser, 'workOrder.manageSchedule');
+  /** Writes edited phase-1 jobs back to the app store; returns the previous records for undo. */
+  const writeJobs = useCallback((edited: P1Job[], historyText?: string) => {
+    const before: Job[] = [];
+    for (const p1 of edited) {
+      const prev = get(p1.id);
+      if (!prev) continue;
+      before.push(prev);
+      const patch = fromP1Job(p1, prev, { team, currentUserId, nonWorkingWeekdays });
+      const history = historyText ? [...prev.history, { date: new Date().toISOString(), text: historyText }] : prev.history;
+      update(prev.id, { ...patch, history });
+    }
+    return before;
+  }, [get, update, team, currentUserId, nonWorkingWeekdays]);
 
-  /** Drop on a day: move a scheduled job there (same length) or schedule a backlog job. */
-  const handleDrop = (jobId: string, day: string) => {
-    if (!scheduler) {
-      toast('Only the office manager or owner changes the schedule.', 'error');
+  const restore = useCallback((snapshots: Job[]) => {
+    for (const s of snapshots) update(s.id, s);
+  }, [update]);
+
+  // Oct 14 rules (NotifyCrew): a first schedule or someone taken off a shift is emailed; anything else waits for Send Emails.
+  const afterSave = useCallback((jobIds: string[], before: Job[]) => {
+    if (jobIds.length && crewEmailsOn) scheduleSaved(jobIds, before);
+  }, [crewEmailsOn, scheduleSaved]);
+
+  const onUpdateJob = useCallback((updated: P1Job) => {
+    const prev = p1Jobs.find((j) => j.id === updated.id);
+    const scheduleChanged = !prev || JSON.stringify([prev.startDate, prev.endDate, prev.allocations, prev.dailyHours]) !== JSON.stringify([updated.startDate, updated.endDate, updated.allocations, updated.dailyHours]);
+    const before = writeJobs([updated], scheduleChanged ? 'Schedule updated on the Job Scheduling board' : undefined);
+    if (scheduleChanged) afterSave([updated.id], before);
+  }, [p1Jobs, writeJobs, afterSave]);
+
+  // Same as the phase-1 app: apply every change (pinning worked days), record the
+  // previous records for undo, log it, and toast with Undo.
+  const onApplySchedule = useCallback((changes: ProposedChange[], label: string, extraUndo?: () => void) => {
+    if (!canReschedule) {
+      showToast('Only the office manager or owner changes the schedule.');
       return;
     }
-    const j = get(jobId);
-    if (!j || j.status === 'Completed') return;
-    if (j.startDate === day) return;
-    setScheduleJob({ id: j.id, start: day });
-  };
+    const applied = changes.filter((c) => !c.skipped);
+    if (applied.length === 0 && !extraUndo) return;
+    const todayKey = toLocalDateKey(new Date());
+    const weekendDays = configFromSettings(settings.scheduling, false).weekendDays;
+    const ids = [...new Set(applied.map((c) => c.jobId))];
+    const edited = ids.flatMap((id) => {
+      const job = p1Jobs.find((j) => j.id === id);
+      if (!job) return [];
+      return [applied.filter((c) => c.jobId === id).reduce((acc, ch) => applyChangeToJobPinningPast(acc, ch, { todayKey, nonWorkingWeekdays: weekendDays }), job)];
+    });
+    const before = writeJobs(edited, label);
+    if (ids.length) log(`${label} (${ids.length} job${ids.length === 1 ? '' : 's'})`, ids.length === 1 ? 'job' : undefined, ids.length === 1 ? ids[0] : undefined);
+    afterSave(ids, before);
+    showToast(label, () => {
+      restore(before);
+      extraUndo?.();
+      log(`Undid: ${label}`);
+    });
+  }, [canReschedule, settings.scheduling, p1Jobs, writeJobs, log, afterSave, showToast, restore]);
 
-  const selected = selectedId ? get(selectedId) ?? null : null;
-  const scheduling = scheduleJob ? get(scheduleJob.id) : undefined;
-  const crewJob = crewJobId ? get(crewJobId) : undefined;
-  const cancelJob = cancelId ? get(cancelId) : undefined;
+  // Saving a member's schedule trims bookings that no longer fit it (phase-1 rule).
+  const onEditEmployee = useCallback((emp: CrewMember) => {
+    const prevMember = getMember(emp.id);
+    if (!prevMember) return;
+    const prev = p1Staff.find((s) => s.id === emp.id);
+    updateMember(emp.id, fromP1Member(emp, prevMember));
+    const trims = availabilityTrims(p1Jobs, emp, prev, scheduling.defaultBreaks ?? []);
+    if (!trims.length) return;
+    const affected = new Set(trims.map((t) => t.jobId));
+    const trimmed = applyAvailabilityTrims(p1Jobs, trims, nonWorkingWeekdays, companyStandardDay(scheduling)).filter((j) => affected.has(j.id));
+    const before = writeJobs(trimmed, `Bookings trimmed to ${emp.name}'s availability`);
+    log(`Trimmed bookings to ${emp.name}'s availability`);
+    afterSave([...affected], before);
+    showToast(
+      trims.length === 1 ? `Trimmed 1 booking to fit ${emp.name}'s availability` : `Trimmed ${trims.length} bookings to fit ${emp.name}'s availability`,
+      () => restore(before),
+    );
+  }, [getMember, p1Staff, updateMember, p1Jobs, scheduling, nonWorkingWeekdays, writeJobs, log, afterSave, showToast, restore]);
 
-  const renderBoard = () => {
-    if (range === 'month') {
-      return <MonthBoard jobs={monthJobs} weeks={monthWeeks(refDate)} month={refDate.getMonth()} colorOf={colorOf} onSelect={setSelectedId} onDrop={handleDrop} />;
-    }
-    if (view === 'crew') {
-      return crewMode === 'hours' ? (
-        <CrewHoursGrid jobs={boardJobs} crew={crew} dayKeys={dayKeys} onSelect={setSelectedId} />
-      ) : (
-        <CrewBoard jobs={boardJobs} crew={crew} dayKeys={dayKeys} availability={availability} onSelect={setSelectedId} onDrop={handleDrop} />
-      );
-    }
-    return <JobBoard jobs={boardJobs} dayKeys={dayKeys} colorOf={colorOf} onSelect={setSelectedId} onDrop={handleDrop} />;
-  };
-
-  const track = 'flex rounded-xl border border-gray-200 bg-gray-100 p-1';
+  const onUpdateSettings = useCallback((s: GlobalSettings) => {
+    if (s.scheduling) setScheduling({ ...s.scheduling, mockWeather: undefined });
+  }, [setScheduling]);
 
   return (
-    <PageShell title="Job Scheduling">
-      <div className="mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <div>
-          <h1 className="mb-4 font-heading text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Job Scheduling</h1>
-          <p className="text-lg text-gray-500 md:text-xl">Manage staff availability and crew assignments.</p>
-        </div>
-        <div className={cn(track, 'w-full md:w-auto')}>
-          {(['job', 'crew'] as const).map((v) => (
-            <button key={v} type="button" onClick={() => setView(v)}
-              className={cn('flex flex-1 items-center justify-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all md:flex-none', view === v ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-900')}>
-              {v === 'job' ? <Briefcase className="h-4 w-4" /> : <Users className="h-4 w-4" />} {v === 'job' ? 'Job' : 'Crew'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <ScheduleToolbar
-        range={range}
-        onRange={setRange}
-        refDate={refDate}
-        onStep={(d) => setRefDate((r) => stepDate(r, range, d))}
-        onToday={() => setRefDate(new Date())}
-        onBulk={scheduler ? () => setBulkOpen(true) : undefined}
-        actions={scheduler ? <UnsentChangesButton /> : undefined}
-      />
-
-      {view === 'crew' && (
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <div className={track}>
-            {(['board', 'hours'] as const).map((m) => (
-              <button key={m} type="button" disabled={range === 'month'} onClick={() => setCrewMode(m)} className={cn(tabCls(crewMode === m), range === 'month' && 'opacity-40')}>{m}</button>
-            ))}
-          </div>
-          <div className={track}>
-            <button type="button" onClick={() => setAvailability((v) => !v)} title={availability ? 'Hide availability' : 'Show availability'}
-              className={cn('flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold', availability ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-900')}>
-              {availability ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />} Availability
-            </button>
-          </div>
-          <div className="w-56 md:ml-auto">
-            <NativeSelect value={memberFilter} onChange={(e) => setMemberFilter(e.target.value)} className="h-10">
-              <option value="">All members</option>
-              {team.filter((t) => t.isCrew).map((m) => <option key={m.id} value={m.id}>{fullName(m)}</option>)}
-            </NativeSelect>
-          </div>
-        </div>
-      )}
-
+    <PageShell title="Job Scheduling" noPadding>
       <UnsentJobsProvider>
-        {renderBoard()}
-
-        {view === 'job' && <UnscheduledPanel jobs={unscheduled} customerName={(j) => fullName(look.customer(j.customerId))} onSelect={setSelectedId} />}
+        <JobSchedulingView
+          jobs={p1Jobs}
+          clients={p1Clients}
+          workOrders={p1WorkOrders}
+          allStaff={p1Staff}
+          onUpdateJob={onUpdateJob}
+          onEditEmployee={onEditEmployee}
+          onViewJob={(id) => router.push(`/jobs/${id}`)}
+          onViewWorkOrder={(id) => {
+            const wo = workOrders.find((w) => w.id === id);
+            const job = p1Jobs.find((j) => j.workOrderId === id);
+            if (wo) router.push(`/work-orders/${wo.id}`);
+            else if (job) router.push(`/jobs/${job.id}`);
+          }}
+          onApplySchedule={onApplySchedule}
+          onToast={(m) => showToast(m)}
+          settings={settings}
+          onUpdateSettings={onUpdateSettings}
+          canReschedule={canReschedule}
+          headerActions={<UnsentChangesButton />}
+          renderJobActions={(jobId) => <SendEmailsButton jobId={jobId} />}
+        />
       </UnsentJobsProvider>
-
-      <JobDetailsPanel
-        job={selected}
-        onClose={() => setSelectedId(null)}
-        onReschedule={scheduler ? () => { if (selected) { setScheduleJob({ id: selected.id }); setSelectedId(null); } } : undefined}
-        onManageCrew={can(featureUser, 'workOrder.manageCrew') ? () => selected && setCrewJobId(selected.id) : undefined}
-        onCancel={scheduler ? () => selected && setCancelId(selected.id) : undefined}
-      />
-      {scheduling && scheduler && <ScheduleJobModal job={scheduling} open onOpenChange={(v) => !v && setScheduleJob(null)} initialStart={scheduleJob?.start} />}
-      {crewJob && <CrewModal job={crewJob} open onOpenChange={(v) => !v && setCrewJobId(null)} />}
-      <ConfirmDialog
-        open={!!cancelJob}
-        onOpenChange={(v) => !v && setCancelId(null)}
-        title="Cancel Schedule"
-        confirmLabel="Cancel schedule"
-        message={<>This clears the dates for <b>{cancelJob?.title}</b> and moves it back to the Unscheduled backlog. Crew assignments are kept.</>}
-        onConfirm={() => { if (cancelJob && actions.cancelSchedule(cancelJob.id) !== false) scheduleSaved([cancelJob.id]); }}
-      />
-      {scheduler && <BulkRescheduleModal open={bulkOpen} onOpenChange={setBulkOpen} />}
+      {toast && <Toast key={toast.id} message={toast.message} onUndo={toast.onUndo} onDismiss={dismissToast} />}
     </PageShell>
   );
 }

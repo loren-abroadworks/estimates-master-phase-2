@@ -62,9 +62,11 @@ export interface FormLeadInput {
   zip: string;
   serviceType: string;
   notes: string;
+  /** Oct 14 call: an existing customer ticks the box and enters their Customer ID (customerCode). Empty = new customer. */
+  customerCode: string;
 }
 
-export const EMPTY_FORM_LEAD: FormLeadInput = { firstName: '', lastName: '', companyName: '', phone: '', email: '', street: '', city: '', state: '', zip: '', serviceType: '', notes: '' };
+export const EMPTY_FORM_LEAD: FormLeadInput = { firstName: '', lastName: '', companyName: '', phone: '', email: '', street: '', city: '', state: '', zip: '', serviceType: '', notes: '', customerCode: '' };
 
 export const phoneDigits = (v: string) => v.replace(/\D/g, '');
 export const cleanEmail = (v: string) => v.trim().toLowerCase();
@@ -173,3 +175,56 @@ export const MATCH_LABEL: Record<LeadReview['level'], string> = {
   strong: 'Likely the same person',
   possible: 'Possible match, please review',
 };
+
+/* ---------- Duplicates and Customer ID (Oct 14 call, CRM Part 1) ---------- */
+/*
+  Lead Review is dropped. A form submission whose email or phone number is
+  already on file (a lead or a contact) is rejected with a message to contact
+  the company directly, unless the person ticks "I'm an existing customer" and
+  enters a valid Customer ID; then the lead joins that customer. Same name with
+  a different email and phone comes in as a new lead.
+*/
+
+export const CUSTOMER_ID_HINT = 'You can find your Customer ID on any estimate or invoice we have emailed you.';
+export const UNKNOWN_ID_COPY = "We couldn't find that Customer ID. Check a past estimate or invoice email, or leave the box unticked.";
+
+export function duplicateCopy(business: { companyName?: string; phone?: string }) {
+  const who = business.companyName || 'us';
+  return `Your email or phone number is already on file with ${who}. Please contact ${business.companyName ? 'them' : 'us'} directly${business.phone ? ` at ${business.phone}` : ''}, or tick "I'm an existing customer" and enter your Customer ID.`;
+}
+
+/**
+ * The Customer ID shown on contacts, estimates and invoices: "CUST-" and six
+ * characters derived from the record id, so it is stable without a new field.
+ */
+export function customerCode(c: Pick<Customer, 'id'>): string {
+  let h = 2166136261;
+  for (const ch of c.id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return `CUST-${h.toString(36).toUpperCase().padStart(6, '0').slice(-6)}`;
+}
+
+export const findByCustomerCode = (code: string, customers: Customer[]) => {
+  const want = code.trim().toUpperCase().replace(/^(CUST-)?/, 'CUST-');
+  return customers.find((c) => customerCode(c) === want);
+};
+
+/** True when the email or phone number is already on a lead or contact. */
+export function isOnFile(f: Pick<FormLeadInput, 'email' | 'phone'>, leads: Pick<Lead, 'email' | 'phone' | 'secondaryEmail' | 'secondaryPhone'>[], customers: Pick<Customer, 'email' | 'phone' | 'secondaryEmail' | 'secondaryPhone'>[]): boolean {
+  const email = cleanEmail(f.email);
+  const phone = phoneDigits(f.phone);
+  const hit = (p: { email?: string; phone?: string; secondaryEmail?: string; secondaryPhone?: string }) =>
+    (!!email && [p.email, p.secondaryEmail].some((e) => e && cleanEmail(e) === email)) ||
+    (phone.length >= 7 && [p.phone, p.secondaryPhone].some((v) => v && phoneDigits(v) === phone));
+  return leads.some(hit) || customers.some(hit);
+}
+
+export type SubmissionCheck = { ok: true; customer?: Customer } | { ok: false; reason: 'duplicate' | 'unknownId' };
+
+/** The duplicate rule for one submission. */
+export function checkFormSubmission(f: FormLeadInput, leads: Lead[], customers: Customer[]): SubmissionCheck {
+  if (f.customerCode.trim()) {
+    const customer = findByCustomerCode(f.customerCode, customers);
+    return customer ? { ok: true, customer } : { ok: false, reason: 'unknownId' };
+  }
+  return isOnFile(f, leads, customers) ? { ok: false, reason: 'duplicate' } : { ok: true };
+}

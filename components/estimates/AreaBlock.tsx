@@ -112,7 +112,7 @@ export function AreaBlock(p: AreaBlockProps) {
               ))}
             </select>
             {l.unit !== 'sqft' && (
-              <label className="block px-1.5 text-xs text-gray-500">
+              <label className="block px-1.5 text-[11px] text-gray-500">
                 Coating area (sq ft)
                 <input type="number" min={0} aria-label="Coating area in square feet" disabled={readOnly} className={cellInput} value={l.coatingAreaSqft ?? ''} onChange={(e) => up({ coatingAreaSqft: num(e.target.value) })} />
               </label>
@@ -174,7 +174,7 @@ export function AreaBlock(p: AreaBlockProps) {
                 {access.map((t) => <option key={t.id} value={t.id}>{t.name} ×{t.multiplier}</option>)}
               </select>
             </div>
-            {l.difficultyMultiplier !== 1 && <div className="px-1.5 text-xs font-bold text-amber-600">×{l.difficultyMultiplier}</div>}
+            {l.difficultyMultiplier !== 1 && <div className="px-1.5 text-[10px] font-bold text-amber-600">×{l.difficultyMultiplier}</div>}
           </div>
         );
       case 'tcol_prephours':
@@ -190,7 +190,7 @@ export function AreaBlock(p: AreaBlockProps) {
             <span className="inline-flex flex-col items-end">
               <span className="font-semibold text-blue-600" title="Gallons of paint">{(l.gallons ?? 0).toFixed(2)}</span>
               {usesCoverageFallback(paint) && (
-                <span className="mt-0.5 whitespace-nowrap rounded bg-amber-50 px-1 text-xs font-semibold text-amber-700" title={`No coverage is set for ${paint?.name ?? 'this product'} in the Paint Library or on this surface rate, so ${FALLBACK_COVERAGE} sq ft per gallon is assumed.`}>
+                <span className="mt-0.5 whitespace-nowrap rounded bg-amber-50 px-1 text-[10px] font-semibold text-amber-700" title={`No coverage is set for ${paint?.name ?? 'this product'} in the Paint Library or on this surface rate, so ${FALLBACK_COVERAGE} sq ft per gallon is assumed.`}>
                   Coverage not set
                 </span>
               )}
@@ -206,7 +206,7 @@ export function AreaBlock(p: AreaBlockProps) {
       case 'tcol_matcost':
         return <span title="Material cost">{money(cost.material)}</span>;
       case 'tcol_total':
-        return <span className={cn('font-black', includedLine(l) ? 'text-gray-900' : 'text-gray-500')}>{money(l.total)}</span>;
+        return <span className={cn('font-black', includedLine(l) ? 'text-gray-900' : 'text-gray-400')}>{money(l.total)}</span>;
       default:
         return <PrepInput col={col} line={l} readOnly={readOnly} onChange={up} />;
     }
@@ -226,7 +226,7 @@ export function AreaBlock(p: AreaBlockProps) {
           className="w-full border-b-2 border-transparent bg-transparent font-heading text-lg font-bold text-gray-900 outline-none transition-all placeholder:text-gray-400 hover:border-gray-400 focus:border-primary-400 disabled:hover:border-transparent md:w-auto md:text-xl"
         />
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xxs font-bold uppercase tracking-wider text-gray-500">L x W x H</span>
+          <span className="text-xxs font-bold uppercase tracking-wider text-gray-400">L x W x H</span>
           {(['length', 'width', 'height'] as const).map((k) => (
             <label key={k} className={cn('flex items-center gap-1 rounded-md border bg-white px-2 py-0.5 shadow-sm', !area[k] && !readOnly ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-gray-200')}>
               <input
@@ -239,7 +239,7 @@ export function AreaBlock(p: AreaBlockProps) {
                 className="w-12 rounded bg-transparent text-right text-sm font-bold text-gray-900 outline-none placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-primary-400/60"
                 aria-label={k}
               />
-              <span className="text-xxs font-bold uppercase text-gray-500">{k[0]}</span>
+              <span className="text-[9px] font-bold uppercase text-gray-500">{k[0]}</span>
             </label>
           ))}
           <div className="border-l border-gray-200 pl-2">
@@ -276,7 +276,7 @@ export function AreaBlock(p: AreaBlockProps) {
                   <th
                     key={c.id}
                     className={cn(
-                      'whitespace-nowrap px-2 py-2 text-xs font-bold uppercase tracking-wider text-gray-500',
+                      'whitespace-nowrap px-2 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-500',
                       c.id === 'tcol_surface' ? 'border-r-2 border-r-gray-200 px-4' : 'text-center',
                       NUMERIC.has(c.id) && 'text-right',
                       !c.isSystem && 'bg-amber-50/60 text-amber-700',
@@ -286,7 +286,7 @@ export function AreaBlock(p: AreaBlockProps) {
                     {c.name}
                   </th>
                 ))}
-                <th className="whitespace-nowrap px-2 py-2 text-center text-xs font-bold uppercase tracking-wider text-gray-500">Scope</th>
+                <th className="whitespace-nowrap px-2 py-2 text-center text-[11px] font-bold uppercase tracking-wider text-gray-500">Scope</th>
                 {!readOnly && <th className="w-10" />}
               </tr>
             </thead>
@@ -392,7 +392,7 @@ function PrepInput({ col, line, readOnly, onChange }: { col: TableColumn; line: 
   return (
     <div className="flex items-center justify-center gap-0.5">
       <input type="number" min={0} step="0.25" disabled={readOnly} value={typeof v === 'number' ? v : ''} placeholder="0" onChange={(e) => set(num(e.target.value) || undefined)} className={cn(cellInput, 'w-16 text-center')} aria-label={col.name} />
-      <span className="text-xs text-gray-500">{col.columnType === 'HOURS' ? 'h' : col.unit === 'Percent' ? '%' : col.unit}</span>
+      <span className="text-xs text-gray-400">{col.columnType === 'HOURS' ? 'h' : col.unit === 'Percent' ? '%' : col.unit}</span>
     </div>
   );
 }
@@ -409,13 +409,13 @@ function PrepCell({ line, columns, readOnly, onChange }: { line: EstimateLineIte
           className="flex min-w-[130px] max-w-[200px] items-center justify-between gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-left text-xs hover:border-primary-300"
           aria-label="Preparation"
         >
-          <span className={cn('truncate', summary.length ? 'text-gray-800' : 'italic text-gray-500')}>{summary.length ? summary.join(', ') : 'No prep'}</span>
+          <span className={cn('truncate', summary.length ? 'text-gray-800' : 'italic text-gray-400')}>{summary.length ? summary.join(', ') : 'No prep'}</span>
           <span className="shrink-0 font-semibold text-gray-500">{(line.prepHours ?? 0).toFixed(1)}h</span>
         </button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content align="start" sideOffset={4} className="z-[120] w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-          <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Surface type</div>
+          <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Surface type</div>
           <select
             disabled={readOnly}
             value={line.condition ?? 'smooth'}
@@ -425,7 +425,7 @@ function PrepCell({ line, columns, readOnly, onChange }: { line: EstimateLineIte
           >
             {CONDITIONS.map((c) => <option key={c} value={c}>{SURFACE_CONDITIONS[c].label}</option>)}
           </select>
-          <div className="mt-3 text-xs font-bold uppercase tracking-wide text-gray-500">Preparation</div>
+          <div className="mt-3 text-[11px] font-bold uppercase tracking-wide text-gray-500">Preparation</div>
           {columns.length === 0 ? (
             <p className="mt-1 text-xs text-gray-500">Add preparation activities in Settings › Table Columns.</p>
           ) : (
@@ -434,7 +434,7 @@ function PrepCell({ line, columns, readOnly, onChange }: { line: EstimateLineIte
                 <li key={c.id} className="flex items-center justify-between gap-2 text-sm">
                   <span className="text-gray-700">
                     {c.name}
-                    {c.prepRate ? <span className="ml-1 text-xs text-gray-500">{c.prepRate}/h</span> : null}
+                    {c.prepRate ? <span className="ml-1 text-xs text-gray-400">{c.prepRate}/h</span> : null}
                   </span>
                   <PrepInput col={c} line={line} readOnly={readOnly} onChange={onChange} />
                 </li>

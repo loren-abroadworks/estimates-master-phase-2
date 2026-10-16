@@ -157,7 +157,7 @@ export function PropertyMapCard({ address, known, compact }: { address: AddressP
 
 function MapFrame({ address, known }: { address: AddressParts; known?: { lat?: number; lng?: number } }) {
   const point = useGeocoded(address, known);
-  if (point === undefined) return <div className="mt-2 flex h-40 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-500">Finding the address…</div>;
+  if (point === undefined) return <div className="mt-2 flex h-40 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-400">Finding the address…</div>;
   if (point === null) {
     return (
       <div className="mt-2 rounded-lg border border-dashed border-gray-300 bg-white p-3 text-xs text-gray-500">
@@ -169,7 +169,7 @@ function MapFrame({ address, known }: { address: AddressParts; known?: { lat?: n
   return (
     <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
       <iframe title={`Map of ${addressText(address)}`} src={mapEmbedUrl(point)} className="h-44 w-full" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
-      <a href={mapPageUrl(address, point)} target="_blank" rel="noreferrer" className="flex items-center justify-end gap-1 bg-gray-50 px-2 py-1 text-xs font-semibold text-gray-500 hover:text-primary-600">
+      <a href={mapPageUrl(address, point)} target="_blank" rel="noreferrer" className="flex items-center justify-end gap-1 bg-gray-50 px-2 py-1 text-[10px] font-semibold text-gray-500 hover:text-primary-600">
         Larger map <ExternalLink className="h-3 w-3" />
       </a>
     </div>

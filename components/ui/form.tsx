@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 export function Label({ children, required, className, htmlFor }: { children: React.ReactNode; required?: boolean; className?: string; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className={cn('block text-xs font-bold uppercase tracking-wide text-gray-600 mb-1.5', className)}>
+    <label htmlFor={htmlFor} className={cn('block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2', className)}>
       {children}
       {required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
@@ -34,14 +34,15 @@ export function Field({
     <div className={className}>
       {label && <Label required={required} htmlFor={id}>{label}</Label>}
       {child && !child.props.id ? React.cloneElement(child, { id }) : children}
-      {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : hint ? <p className="mt-1 text-xs text-gray-500">{hint}</p> : null}
+      {error ? <p className="ml-3 mt-1 text-sm text-red-600">{error}</p> : hint ? <p className="ml-3 mt-1 text-sm text-gray-500">{hint}</p> : null}
     </div>
   );
 }
 
+// Production input (packages/ui/src/input, size sm): 48px, 0.63rem corners, gray-300 border, primary focus ring.
 const inputBase =
-  'w-full h-10 rounded-lg border bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 transition-colors ' +
-  'focus:outline-none focus:ring-2 focus:ring-primary-400/40 focus:border-primary-400 disabled:bg-gray-50 disabled:text-gray-500';
+  'w-full h-12 rounded-[0.63rem] border bg-white px-3 text-sm font-medium text-gray-600 placeholder:font-normal placeholder:text-gray-400 transition-all duration-200 outline-none ' +
+  'focus:ring-4 focus:ring-primary-100 focus:border-primary-400 disabled:cursor-not-allowed disabled:opacity-50';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;
@@ -58,13 +59,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
   const hasValue = rest.value !== undefined && rest.value !== '' && rest.value !== null;
   return (
     <div className="relative">
-      {leftIcon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{leftIcon}</span>}
+      {leftIcon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{leftIcon}</span>}
       <input
         ref={ref}
         className={cn(
           inputBase,
-          invalid ? 'border-red-400 focus:ring-red-300/40 focus:border-red-400' : 'border-gray-200',
-          leftIcon && 'pl-9',
+          invalid ? 'border-red-600 focus:ring-red-100 focus:border-red-600' : 'border-gray-300',
+          leftIcon && 'pl-[2.375rem]',
           (onClear || suffix) && 'pr-9',
           className,
         )}
@@ -72,11 +73,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(function Inp
         {...rest}
       />
       {onClear && hasValue && !rest.disabled && (
-        <button type="button" onClick={onClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700" aria-label="Clear">
+        <button type="button" onClick={onClear} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700" aria-label="Clear">
           <X className="w-4 h-4" />
         </button>
       )}
-      {suffix && !onClear && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">{suffix}</span>}
+      {suffix && !onClear && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{suffix}</span>}
     </div>
   );
 });
@@ -86,7 +87,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
     return (
       <textarea
         ref={ref}
-        className={cn(inputBase, 'h-auto min-h-[96px] py-2', invalid ? 'border-red-400' : 'border-gray-200', className)}
+        className={cn(inputBase, 'h-auto min-h-[96px] py-3', invalid ? 'border-red-600' : 'border-gray-300', className)}
         {...rest}
       />
     );
@@ -97,10 +98,10 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
 export function NativeSelect({ className, children, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <div className="relative">
-      <select className={cn(inputBase, 'border-gray-200 appearance-none pr-8', className)} {...rest}>
+      <select className={cn(inputBase, 'border-gray-300 appearance-none cursor-pointer pr-9 hover:bg-gray-50', className)} {...rest}>
         {children}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
     </div>
   );
 }
@@ -133,10 +134,11 @@ export function Select({
         id={id}
         aria-label={ariaLabel}
         className={cn(
-          'inline-flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 text-sm text-gray-800 shadow-sm',
-          'focus:outline-none focus:ring-2 focus:ring-primary-400/40 data-[placeholder]:text-gray-400 disabled:opacity-60',
-          invalid ? 'border-red-400' : 'border-gray-200',
-          size === 'sm' ? 'h-9 text-xs font-semibold' : 'h-10',
+          // Production Select.Form trigger (packages/ui/src/select/form).
+          'inline-flex w-full items-center justify-between gap-2 border bg-white px-3 text-sm font-medium text-gray-600 transition-all hover:bg-gray-50',
+          'outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 data-[placeholder]:font-normal data-[placeholder]:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50',
+          invalid ? 'border-red-600' : 'border-gray-300',
+          size === 'sm' ? 'h-9 rounded-lg' : 'h-12 rounded-[0.625rem]',
           className,
         )}
       >
@@ -145,17 +147,17 @@ export function Select({
           <RSelect.Value placeholder={placeholder} />
         </span>
         <RSelect.Icon>
-          <ChevronDown className="w-4 h-4 text-gray-500" />
+          <ChevronDown className="w-4 h-4 text-gray-400" />
         </RSelect.Icon>
       </RSelect.Trigger>
       <RSelect.Portal>
-        <RSelect.Content position="popper" sideOffset={4} className="z-[200] min-w-[var(--radix-select-trigger-width)] max-h-72 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl">
+        <RSelect.Content position="popper" sideOffset={4} className="z-[200] min-w-[var(--radix-select-trigger-width)] max-h-72 overflow-hidden rounded-[0.625rem] border border-gray-200 bg-white shadow-xl">
           <RSelect.Viewport className="p-1">
             {options.map((o) => (
               <RSelect.Item
                 key={o.value}
                 value={o.value}
-                className="relative flex cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-3 text-sm text-gray-700 outline-none data-[highlighted]:bg-primary-50 data-[highlighted]:text-primary-800"
+                className="relative flex cursor-pointer select-none items-center rounded-lg py-3 pl-8 pr-4 text-sm text-gray-700 outline-none data-[highlighted]:bg-primary-50 data-[highlighted]:text-primary-800"
               >
                 <RSelect.ItemIndicator className="absolute left-2">
                   <Check className="w-4 h-4 text-primary-600" />
@@ -177,9 +179,9 @@ export function Switch({ checked, onChange, disabled, label }: { checked: boolea
       onCheckedChange={onChange}
       disabled={disabled}
       aria-label={label}
-      className="relative h-5 w-9 shrink-0 rounded-full bg-gray-200 transition-colors data-[state=checked]:bg-primary-600 disabled:opacity-50"
+      className="relative inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent bg-gray-200 shadow-xs transition-all data-[state=checked]:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      <RSwitch.Thumb className="block h-4 w-4 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[18px]" />
+      <RSwitch.Thumb className="block size-4 rounded-full bg-white transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0" />
     </RSwitch.Root>
   );
 }

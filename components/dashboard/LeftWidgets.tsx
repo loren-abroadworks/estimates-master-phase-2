@@ -56,7 +56,7 @@ export function TasksWidget() {
           <CheckSquare className="h-4 w-4 text-primary-500" />
           <h3 className="text-xs font-black uppercase tracking-[0.15em] text-gray-500">My Tasks</h3>
         </div>
-        <span className="text-xs font-bold text-gray-500">{completed}/{tasks.length}</span>
+        <span className="text-xs font-bold text-gray-400">{completed}/{tasks.length}</span>
       </div>
 
       <div className="relative mb-4">
@@ -80,7 +80,7 @@ export function TasksWidget() {
 
       <div className="custom-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
         {tasks.length === 0 ? (
-          <div className="py-6 text-center text-xs italic text-gray-500">No tasks yet. Add one above!</div>
+          <div className="py-6 text-center text-xs italic text-gray-400">No tasks yet. Add one above!</div>
         ) : (
           tasks.map((task) => (
             <div
@@ -109,7 +109,7 @@ export function TasksWidget() {
                   toast('Task deleted');
                 }}
                 aria-label="Delete task"
-                className="rounded p-1 text-gray-500 transition-all hover:bg-red-50 hover:text-red-500 lg:opacity-0 lg:group-hover:opacity-100"
+                className="rounded p-1 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500 lg:opacity-0 lg:group-hover:opacity-100"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -156,7 +156,7 @@ export function MessagesWidget({ items }: { items: Message[] }) {
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
                       {m.unread && <span className="h-1.5 w-1.5 rounded-full bg-primary-500" role="img" aria-label="Unread" />}
-                      <span className="text-xs font-bold text-gray-500">{relativeTime(m.date, false)}</span>
+                      <span className="text-xs font-bold text-gray-400">{relativeTime(m.date, false)}</span>
                     </div>
                   </div>
                   <p className={cn('truncate text-xs', m.unread ? 'font-semibold text-gray-700' : 'text-gray-500')}>{m.preview}</p>
@@ -200,17 +200,17 @@ export function RecentLeadsWidget({ leads }: { leads: Lead[] }) {
             return (
               <Link key={lead.id} href={`/leads/${lead.id}`} className="group flex items-center gap-3 rounded-xl border border-transparent p-2 transition-all hover:border-gray-100 hover:bg-gray-50">
                 <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-gray-200 bg-gray-100">
-                  <span className="text-xxs font-bold uppercase leading-none text-gray-500">{d.toLocaleDateString('en-US', { month: 'short' })}</span>
+                  <span className="text-[8px] font-bold uppercase leading-none text-gray-500">{d.toLocaleDateString('en-US', { month: 'short' })}</span>
                   <span className="mt-0.5 text-sm font-black leading-none text-gray-900">{d.getDate()}</span>
                 </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="truncate text-sm font-bold text-gray-900">{lead.firstName} {lead.lastName}</h4>
-                  <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+                  <div className="mt-0.5 flex items-center gap-1 text-[10px] text-gray-500">
                     <MapPin className="h-3 w-3" />
                     <span className="truncate">{lead.leadSource || 'N/A'}</span>
                   </div>
                 </div>
-                <span className={cn('rounded-full border px-2 py-0.5 text-xxs font-bold uppercase tracking-wide', sourceBadge(lead.leadSource))}>
+                <span className={cn('rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide', sourceBadge(lead.leadSource))}>
                   {lead.leadSource || 'N/A'}
                 </span>
               </Link>
@@ -231,16 +231,16 @@ export function JobsToDoWidget({ jobs }: { jobs: DashboardData['jobsToDo'] }) {
       <div className="custom-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto pb-1 pr-1">
         {jobs.length === 0 ? (
           <div className="flex min-h-[120px] items-center justify-center">
-            <p className="text-xs italic text-gray-500">No active jobs.</p>
+            <p className="text-xs italic text-gray-400">No active jobs.</p>
           </div>
         ) : (
           jobs.map((job) => (
             <Link key={job.id} href={`/jobs/${job.id}`} className="group block space-y-2 rounded-xl border border-gray-100 bg-white p-3 shadow-sm transition-all hover:border-primary-300 hover:shadow-md">
               <div className="flex items-center justify-between">
-                <span className={cn('rounded-full border px-2 py-0.5 text-xxs font-black uppercase leading-none tracking-wider', JOB_STATUS_BADGE[job.status])}>
+                <span className={cn('rounded-full border px-2 py-0.5 text-[9px] font-black uppercase leading-none tracking-wider', JOB_STATUS_BADGE[job.status])}>
                   {usText(job.status)}
                 </span>
-                <span className="text-xs font-black text-gray-500">{job.startDate ? shortDate(job.startDate) : 'TBD'}</span>
+                <span className="text-xs font-black text-gray-400">{job.startDate ? shortDate(job.startDate) : 'TBD'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <h4 className="truncate text-sm font-black leading-tight text-gray-900 group-hover:text-primary-700">{job.customerName}</h4>
@@ -267,13 +267,13 @@ export function ActivityWidget({ items }: { items: Activity[] }) {
       <div className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto">
         {items.length === 0 ? (
           <div className="flex flex-1 items-center justify-center">
-            <p className="text-xs italic text-gray-500">No recent activity.</p>
+            <p className="text-xs italic text-gray-400">No recent activity.</p>
           </div>
         ) : (
           items.map((a) => {
             const inner = (
               <>
-                <div className="mb-1 text-xxs font-bold uppercase text-gray-500">{relativeTime(a.date, true)}</div>
+                <div className="mb-1 text-xxs font-bold uppercase text-gray-400">{relativeTime(a.date, true)}</div>
                 <div className="text-sm font-bold leading-tight text-gray-900">{a.text}</div>
               </>
             );

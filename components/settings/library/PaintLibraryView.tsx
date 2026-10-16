@@ -65,10 +65,10 @@ export function PaintLibraryView() {
           <LibraryCard key={p.id} className={cn(!p.isActive && 'opacity-60')}>
             <div className="mb-3 flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="mb-0.5 truncate text-xxs font-bold uppercase tracking-widest text-gray-500">{lookups.brand(p.brandId)?.name ?? 'Unknown brand'}</div>
+                <div className="mb-0.5 truncate text-[9px] font-bold uppercase tracking-widest text-gray-500">{lookups.brand(p.brandId)?.name ?? 'Unknown brand'}</div>
                 <h3 className="break-words font-heading text-base font-bold leading-tight text-gray-900">{p.name}</h3>
-                <span className="mt-1 inline-block rounded border border-gray-100 bg-gray-50 px-1.5 py-0.5 text-xs font-bold text-gray-500">{p.category}</span>
-                {!p.isActive && <span className="ml-1 inline-block rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-xs font-bold text-gray-500">Inactive</span>}
+                <span className="mt-1 inline-block rounded border border-gray-100 bg-gray-50 px-1.5 py-0.5 text-xs font-bold text-gray-400">{p.category}</span>
+                {!p.isActive && <span className="ml-1 inline-block rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold text-gray-500">Inactive</span>}
               </div>
               <div className="-mr-1 flex shrink-0 items-center">
                 <button
@@ -227,7 +227,7 @@ function PaintModal({
             icon={<Droplets />}
             right={
               <span className="flex items-center gap-2">
-                <Wand2 className={cn('h-3 w-3', multOn ? 'text-indigo-600' : 'text-gray-500')} />
+                <Wand2 className={cn('h-3 w-3', multOn ? 'text-indigo-600' : 'text-gray-400')} />
                 <span className="text-xs font-medium text-gray-600">Multipliers</span>
                 <Switch checked={multOn} onChange={setMultOn} label="Use multipliers" />
               </span>
@@ -236,7 +236,7 @@ function PaintModal({
             Coverage &amp; Pricing
           </SectionHeading>
           <div className="rounded-xl border border-gray-200 p-3">
-            <div className="mb-2 text-xxs font-bold uppercase tracking-wider text-gray-500">Smooth</div>
+            <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">Smooth</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label required>Coat 1 (Base)</Label>
@@ -246,7 +246,7 @@ function PaintModal({
                 <div>
                   <Label>Coat 2 Mult.</Label>
                   <Input type="number" step={0.05} value={mult} onChange={(e) => setMult(num(e.target.value, 1))} />
-                  <div className="mt-1 text-xs font-bold text-indigo-700">= {Math.round(form.coverageCoat1 * mult)}</div>
+                  <div className="mt-1 text-[10px] font-bold text-indigo-700">= {Math.round(form.coverageCoat1 * mult)}</div>
                 </div>
               ) : (
                 <div>
@@ -269,7 +269,7 @@ function PaintModal({
                 <div key={row.label} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
                   <span className="flex-1 text-sm font-medium text-gray-700">
                     {row.label}
-                    {row.badge && <span className="ml-2 rounded border border-primary-200 bg-primary-100 px-1.5 py-0.5 text-xs text-primary-600">{row.badge}</span>}
+                    {row.badge && <span className="ml-2 rounded border border-primary-200 bg-primary-100 px-1.5 py-0.5 text-[10px] text-primary-600">{row.badge}</span>}
                   </span>
                   <div className="w-32">
                     <Input type="number" min={0} step="0.01" value={row.value} invalid={row.invalid} onChange={(e) => row.onChange(e.target.value)} leftIcon={<span className="text-xs font-bold">$</span>} placeholder="0.00" />
@@ -290,12 +290,12 @@ function PaintModal({
                 <span className="h-6 w-6 shrink-0 rounded-md border border-gray-200" style={{ backgroundColor: c.hex }} />
                 <span className="flex-1 text-sm font-semibold text-gray-800">{c.name}</span>
                 <span className="text-xs text-gray-500">{c.code}</span>
-                <button type="button" className="rounded p-1 text-gray-500 hover:bg-red-50 hover:text-red-600" aria-label={`Remove ${c.name}`} onClick={() => set('colors', (form.colors ?? []).filter((_, j) => j !== i))}>
+                <button type="button" className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label={`Remove ${c.name}`} onClick={() => set('colors', (form.colors ?? []).filter((_, j) => j !== i))}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             ))}
-            {(form.colors ?? []).length === 0 && <p className="text-xs italic text-gray-500">No colors added yet.</p>}
+            {(form.colors ?? []).length === 0 && <p className="text-xs italic text-gray-400">No colors added yet.</p>}
             <div className="flex items-center gap-2">
               <input type="color" value={newColor.hex} onChange={(e) => setNewColor({ ...newColor, hex: e.target.value })} className="h-10 w-10 shrink-0 cursor-pointer rounded-lg border border-gray-200 bg-white p-1" aria-label="Color swatch" />
               <div className="flex-1"><Input value={newColor.name} onChange={(e) => setNewColor({ ...newColor, name: e.target.value })} placeholder="Color name" onKeyDown={(e) => e.key === 'Enter' && addColor()} /></div>

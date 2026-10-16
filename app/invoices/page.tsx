@@ -87,7 +87,8 @@ export default function InvoicesPage() {
       <PageHeader
         title="Invoices"
         subtitle="Track payments and outstanding balances."
-        actions={<Button icon={<Plus className="h-5 w-5" />} onClick={() => router.push('/invoices/new')}>Create Invoice</Button>}
+        actions={<Button icon={<Plus className="h-5 w-5" />} onClick={() => router.push('/invoices/new')} className="w-full shadow-xl shadow-primary-500/20 md:w-auto">Create Invoice</Button>}
+        className="mb-8"
       />
 
       {/* Summary cards */}
@@ -119,10 +120,10 @@ export default function InvoicesPage() {
             trigger={
               <button className={cn(filterBtn, status !== 'All' ? 'border-primary-200 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300')}>
                 <span className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-gray-500" />
+                  <Filter className="h-4 w-4 text-gray-400" />
                   {status === 'All' ? 'All' : INVOICE_STATUS_LABEL[status]}
                 </span>
-                <ChevronDown className="h-3 w-3 text-gray-500" />
+                <ChevronDown className="h-3 w-3 text-gray-400" />
               </button>
             }
           />
@@ -134,10 +135,10 @@ export default function InvoicesPage() {
             trigger={
               <button className={cn(filterBtn, sort !== 'newest' ? 'border-primary-200 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300')}>
                 <span className="flex items-center gap-2">
-                  <SortIcon className={cn('h-4 w-4', sort !== 'newest' ? 'text-primary-500' : 'text-gray-500')} />
+                  <SortIcon className={cn('h-4 w-4', sort !== 'newest' ? 'text-primary-500' : 'text-gray-400')} />
                   {sortOpt.label}
                 </span>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-4 w-4 text-gray-400" />
               </button>
             }
           />

@@ -114,7 +114,7 @@ function TourRunner() {
     complete(key);
     finish();
     toast.success(`${def.name}: tour complete`, "Pick another feature from Feature tours on the dashboard.");
-    nav.push("/dashboard#feature-tours");
+    nav.push("/prototype#feature-tours");
   };
   const startNext = () => {
     if (!nextFeature) return done();

@@ -46,11 +46,11 @@ function StatCards({ items }: { items: Estimate[]; }) {
     <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
       {cards.map(({ label, value, sub, Icon }) => (
         <Card key={label} className="flex flex-col p-5">
-          <div className="mb-2 flex items-center gap-2 text-xxs font-bold uppercase tracking-widest text-gray-500">
-            <Icon className="h-4 w-4 text-gray-500" /> {label}
+          <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+            <Icon className="h-4 w-4 text-gray-400" /> {label}
           </div>
           <div className="font-heading text-2xl font-black text-gray-900">{value}</div>
-          <div className="mt-1 text-xs font-medium text-gray-500">{sub}</div>
+          <div className="mt-1 text-xs font-medium text-gray-400">{sub}</div>
         </Card>
       ))}
     </div>
@@ -126,12 +126,12 @@ export default function EstimatesPage() {
 
   return (
     <PageShell title="Estimates">
-      <div className="mb-8 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+      <div className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
         <div>
-          <h1 className="mb-3 font-heading text-3xl font-bold tracking-tight text-gray-900">Estimates</h1>
-          <p className="text-base text-gray-500">Manage your proposals, track status, and win more work.</p>
+          <h1 className="mb-4 text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Estimates</h1>
+          <p className="text-lg font-medium text-gray-500">Manage your proposals, track status, and win more work.</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} icon={<Plus className="h-5 w-5" />} className="w-full shadow-xl md:w-auto">
+        <Button onClick={() => setCreateOpen(true)} icon={<Plus className="h-5 w-5" />} className="w-full shadow-xl shadow-primary-500/20 md:w-auto">
           Create New Estimate
         </Button>
       </div>
@@ -153,7 +153,7 @@ export default function EstimatesPage() {
         <ListSkeleton rows={5} />
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-300 bg-white py-20">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 text-gray-500">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50 text-gray-400">
             <ClipboardList className="h-8 w-8" />
           </div>
           <h3 className="text-lg font-bold text-gray-900">{items.length === 0 ? "No estimates yet" : "No estimates found"}</h3>

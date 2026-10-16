@@ -57,7 +57,8 @@ export interface NotifySnapshot {
   notifiedAt: string;
 }
 
-export type ChangeKind = "new" | "changed" | "removed";
+/** "current": the job as it stands, sent from Send Emails when nothing changed since the person was last told (Oct 14 call). */
+export type ChangeKind = "new" | "changed" | "current" | "removed";
 
 export interface PersonChange {
   kind: ChangeKind;
@@ -131,6 +132,38 @@ function peopleOn(jobs: NotifyJob[], snapshots: NotifySnapshot[]): string[] {
 }
 
 /**
+ * The latest schedule of one job for one person (Send Emails, Oct 14 call):
+ * their waiting change on it, or the job as it stands when nothing changed.
+ * Empty when they are not on the job and were never told about it.
+ */
+export function latestForJob(memberId: string, job: NotifyJob, snapshots: NotifySnapshot[]): PersonChange[] {
+  const pending = personChanges(memberId, [job], snapshots.filter((x) => x.jobId === job.id));
+  if (pending.length) return pending;
+  const view = personView(job, memberId);
+  return view ? [{ kind: "current", jobId: job.id, jobNumber: job.jobNumber, title: job.title, after: view }] : [];
+}
+
+/** People assigned to a job: its crew and everyone on one of its shifts. */
+export function jobCrewIds(job: NotifyJob): string[] {
+  return [...new Set([...job.crew.map((c) => c.memberId), ...(job.shifts ?? []).flatMap((x) => x.memberIds)])];
+}
+
+/**
+ * Oct 14 call: people taken off a shift that is still on the job (auto-send).
+ * Deleting a whole shift, or changing the job's crew elsewhere, is a manual send.
+ */
+export function removedFromShifts(before: Pick<NotifyJob, "shifts">, after: Pick<NotifyJob, "shifts"> | undefined): string[] {
+  const now = new Map((after?.shifts ?? []).map((x) => [x.id, new Set(x.memberIds)]));
+  const out = new Set<string>();
+  for (const x of before.shifts ?? []) {
+    const kept = now.get(x.id);
+    if (!kept) continue;
+    for (const m of x.memberIds) if (!kept.has(m)) out.add(m);
+  }
+  return [...out];
+}
+
+/**
  * People waiting for a schedule update, with their changes.
  * `jobIds` limits it to changes on those jobs (Send Email on one job, after Bulk Reschedule).
  */
@@ -190,6 +223,7 @@ const WORDS = {
     intro: "Your work schedule has changed. Here is what is new.",
     new: "New jobs",
     changed: "Changed jobs",
+    current: "Your current schedule",
     removed: "Removed from",
     was: "was",
     outro: "Reply to this email if you have a question.",
@@ -199,6 +233,7 @@ const WORDS = {
     intro: "Su horario de trabajo ha cambiado. Esto es lo nuevo.",
     new: "Trabajos nuevos",
     changed: "Trabajos cambiados",
+    current: "Su horario actual",
     removed: "Ya no está en",
     was: "antes",
     outro: "Responda a este correo si tiene alguna pregunta.",
@@ -243,7 +278,7 @@ export function scheduleUpdateMessage(
 ): ScheduleMessage {
   const lang = opts.lang ?? "en";
   const w = WORDS[lang];
-  const order: ChangeKind[] = ["new", "changed", "removed"];
+  const order: ChangeKind[] = ["new", "changed", "current", "removed"];
   const jobs = new Set(changes.map((c) => c.jobId)).size;
   const company = opts.company ?? "";
   // D7: the default subject, or the template's own English words with the company and job count filled in.

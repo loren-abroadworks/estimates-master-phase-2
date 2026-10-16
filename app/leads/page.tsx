@@ -22,11 +22,11 @@
 */
 import React, { Suspense, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Archive, Globe, LayoutGrid, List, Plus, UserPlus } from 'lucide-react';
+import { Archive, Globe, LayoutGrid, List, UserPlus } from 'lucide-react';
 import type { Lead, LeadStatus } from '@/lib/types';
 import { PageShell } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
-import { SourceChips, useSourceFilter } from '@/components/leads/SourceFilter';
+import { PipelineMenu, SourceChips, useSourceFilter } from '@/components/leads/SourceFilter';
 import { SearchInput, Skeleton } from '@/components/ui/display';
 import { ConfirmDialog, Modal } from '@/components/Modals/Modal';
 import { useCollection, useCurrentUser, useLogActivity } from '@/lib/store';
@@ -46,7 +46,6 @@ import { AddPipelineModal } from '@/components/settings/config/PipelineStagesVie
 import { NewBadge, VersionBadge, FeatureGate } from '@/features/components/ui';
 import { useDynamicPipelines, useIsOn } from '@/features/lib/feature-visibility';
 import { leavesSold, pipelineColumns } from '@/features/lib/rules/lead-pipeline';
-import { LeadReviewPanel, useOpenReviews } from '@/components/leads/LeadReviewPanel';
 
 export default function LeadsPage() {
   return (
@@ -70,9 +69,10 @@ function LeadPipeline() {
   const websiteOn = websiteReviewOn || crmOn;
   const view = viewParam === 'table' ? 'table' : viewParam === 'website' && websiteOn ? 'website' : 'kanban';
   // CRM Part 1 (5): the Website tab shows how many leads wait on Lead Review.
-  const openReviews = useOpenReviews().length;
   // CRM Complete (New Features panel): added pipelines and Group by Source.
   const complete = useIsOn({ featureKey: 'crm', part: 'complete' });
+  // CRM-C1 Group by Source, offered at the foot of the Sources menu.
+  const groupByOn = useIsOn({ item: 'CRM-C1' });
 
   const { items: leads } = useCollection('leads');
   const stagesCol = useCollection('pipelineStages');
@@ -173,16 +173,14 @@ function LeadPipeline() {
     setParam('pipeline', made.pipeline.id);
   };
 
-  const track = 'flex rounded-xl border border-gray-200 bg-gray-100 p-1';
-  const seg = (on: boolean) => cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all', on ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-500 hover:text-gray-700');
 
   return (
     <>
       {/* Header */}
       <div className="mb-8 flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-end">
         <div>
-          <h1 className="mb-3 font-heading text-3xl font-extrabold tracking-tight text-gray-900">Lead Pipeline</h1>
-          <p className="text-base text-gray-600">Manage potential customers from initial contact to booked job.</p>
+          <h1 className="mb-4 text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Lead Pipeline</h1>
+          <p className="text-lg text-gray-600">Manage potential customers from initial contact to booked job.</p>
         </div>
         <div className="flex w-full flex-wrap gap-3 lg:w-auto">
           <Button
@@ -190,7 +188,7 @@ function LeadPipeline() {
             size="lg"
             onClick={() => setViewArchived((v) => !v)}
             icon={<Archive className="h-5 w-5" />}
-            className={cn('h-12 w-full text-sm lg:w-auto', viewArchived && 'border-gray-300 bg-gray-200 shadow-inner')}
+            className={cn('h-14 w-full lg:w-auto', viewArchived && 'border-gray-300 bg-gray-200 shadow-inner')}
           >
             {viewArchived ? 'View Active' : 'View Archived'}
           </Button>
@@ -198,17 +196,38 @@ function LeadPipeline() {
             size="lg"
             onClick={() => { setEditing(null); setFormOpen(true); }}
             icon={<UserPlus className="h-5 w-5" />}
-            className="h-12 w-full text-sm shadow-xl shadow-primary-500/20 lg:w-auto"
+            className="h-14 w-full shadow-xl shadow-primary-500/20 lg:w-auto"
           >
             Add New Lead
           </Button>
         </div>
       </div>
 
-      {/* Toolbar: search + view switch */}
-      <div className="mb-4 flex flex-col items-center justify-between gap-4 lg:flex-row">
+      {/* Toolbar: one row, as on the live page (search left, view switch right).
+          The Phase 2 pipeline and source controls fold in as compact menus beside the view switch. */}
+      <div className="mb-6 flex flex-col items-stretch justify-between gap-3 lg:flex-row lg:items-center">
         <SearchInput value={search} onChange={setSearch} placeholder="Search leads by name, email, or city..." className="md:w-full lg:max-w-[300px]" />
-        <div className="flex w-full self-start rounded-xl border border-gray-200 bg-gray-100 p-1 lg:w-auto lg:self-auto">
+        <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:justify-end">
+          {view === 'kanban' && !viewArchived && crmOn && (
+            <PipelineMenu
+              pipelines={pipelines}
+              value={pipelineId}
+              onChange={(id) => setParam('pipeline', id === 'sales' ? undefined : id)}
+              onAdd={dynamic ? () => setAddingPipeline(true) : undefined}
+              badge={<VersionBadge item="CRM-M1" />}
+            />
+          )}
+          {view !== 'website' && !viewArchived && crmOn && (
+            <SourceChips
+              sources={sources}
+              value={sourceFilter}
+              onChange={setSource}
+              {...(view === 'kanban' && pipeline?.kind === 'sales' && groupByOn
+                ? { groupBySource: groupBy === 'source', onGroupBySource: (v: boolean) => setGroupBy(v ? 'source' : 'stage'), groupBadge: <VersionBadge item="CRM-C1" /> }
+                : {})}
+            />
+          )}
+        <div className="flex w-full rounded-xl border border-gray-200 bg-gray-100 p-1 sm:w-auto">
           {([
             { mode: 'kanban', label: 'Board', icon: LayoutGrid, title: 'Kanban Board View' },
             { mode: 'table', label: 'Table', icon: List, title: 'Table View' },
@@ -224,12 +243,12 @@ function LeadPipeline() {
               )}
             >
               <b.icon className="h-4 w-4" />
-              <span className="text-xxs font-bold uppercase">{b.label}</span>
+              <span className="text-[10px] font-bold uppercase">{b.label}</span>
             </button>
           ))}
           {websiteOn && <button
             type="button"
-            title="Form links and Lead Review"
+            title="Website form links"
             data-tour="leads-website"
             onClick={() => setView('website')}
             className={cn(
@@ -238,49 +257,12 @@ function LeadPipeline() {
             )}
           >
             <Globe className="h-4 w-4" />
-            <span className="text-xxs font-bold uppercase">Website</span>
-            {openReviews > 0 && <span className="rounded-full bg-amber-100 px-1.5 text-xs font-bold text-amber-700">{openReviews}</span>}
+            <span className="text-[10px] font-bold uppercase">Website</span>
             <NewBadge feature={34} />
           </button>}
         </div>
-      </div>
-
-      {/* 30 Sep call: pipeline switch, source filter, group by */}
-      {view === 'kanban' && !viewArchived && crmOn && (
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <div className={track} role="tablist" aria-label="Pipeline" data-tour="crm-pipelines">
-            {pipelines.map((p) => (
-              <button key={p.id} type="button" role="tab" aria-selected={pipelineId === p.id} onClick={() => setParam('pipeline', p.id === 'sales' ? undefined : p.id)} className={seg(pipelineId === p.id)}>
-                {p.name}
-              </button>
-            ))}
-            {dynamic && (
-              <button type="button" onClick={() => setAddingPipeline(true)} className={seg(false)} title="Add a pipeline, e.g. Training">
-                <Plus className="h-3.5 w-3.5" /> Add pipeline
-              </button>
-            )}
-          </div>
-          <VersionBadge item="CRM-M1" />
-          {pipeline?.kind === 'sales' && (
-            <FeatureGate item="CRM-C1">
-              <div className="flex items-center gap-2" data-tour="crm-groupby">
-                <span className="text-xs font-bold uppercase tracking-wide text-gray-500">Group by</span>
-                <div className={track}>
-                  {(['stage', 'source'] as const).map((g) => (
-                    <button key={g} type="button" onClick={() => setGroupBy(g)} className={seg(groupBy === g)}>{g === 'stage' ? 'Stage' : 'Source'}</button>
-                  ))}
-                </div>
-                <VersionBadge item="CRM-C1" />
-              </div>
-            </FeatureGate>
-          )}
         </div>
-      )}
-
-      {/* CRM Part 1 (4): Sources chips, for every pipeline on the board and the table. */}
-      {view !== 'website' && !viewArchived && crmOn && (
-        <div className="mb-6"><SourceChips sources={sources} value={sourceFilter} onChange={setSource} /></div>
-      )}
+      </div>
 
       {viewArchived && view !== 'website' && (
         <div className="mb-4 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-100 p-4">
@@ -292,7 +274,6 @@ function LeadPipeline() {
       {view === 'website' ? (
         <div className="space-y-6">
           <div data-tour="crm-links"><TrackedLinksCard /></div>
-          <LeadReviewPanel />
           <FeatureGate item="CRM-C6"><div data-tour="crm-fb-ads"><FacebookLeadAdsCard /></div></FeatureGate>
         </div>
       ) : viewArchived ? (

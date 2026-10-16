@@ -52,11 +52,12 @@ export default function PresentationsPage() {
 
   return (
     // The live page has no top bar here, so we skip PageShell's header.
-    <main className="flex-1 overflow-auto px-4 py-8 md:px-6 lg:px-8">
+    <main className="flex-1 overflow-auto px-4 py-8 md:px-8 lg:px-12">
       <PageHeader
         title="Presentation Builder"
         subtitle="Create stunning proposals and portfolios to win more clients."
-        actions={<Button icon={<Plus className="h-4 w-4" />} onClick={() => setCreating(true)}>Create Presentation</Button>}
+        subtitleClassName="text-base"
+        actions={<Button icon={<Plus className="h-4 w-4" />} onClick={() => setCreating(true)} className="w-full md:w-auto">Create Presentation</Button>}
       />
       <div className="mb-8">
         <SearchInput value={search} onChange={setSearch} placeholder="Search presentations..." className="md:w-full md:max-w-md" />
@@ -113,11 +114,11 @@ export default function PresentationsPage() {
                 </div>
                 <div className="mt-auto space-y-3">
                   <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-xxs font-bold uppercase tracking-wider text-blue-700">
+                    <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
                       {p.scopes.length ? p.scopes.join(', ') : 'No type'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500">
+                  <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-400">
                     <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />{shortDate(p.updatedAt)}</span>
                     {p.views > 0 && <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" />{p.views}</span>}
                   </div>

@@ -14,8 +14,8 @@ type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "dange
 type Size = "xs" | "sm" | "md" | "lg" | "icon" | "icon-sm";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/20 border border-primary-600",
-  secondary: "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm",
+  primary: "bg-primary-600 text-white hover:bg-primary-700 shadow-sm border border-transparent hover:shadow-primary-500/20",
+  secondary: "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300 shadow-sm",
   outline: "bg-transparent text-primary-700 hover:bg-primary-50 border border-primary-200",
   ghost: "bg-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100 border border-transparent",
   danger: "bg-white text-red-600 hover:bg-red-50 border border-red-200",
@@ -53,7 +53,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        "inline-flex items-center justify-center rounded-lg font-semibold whitespace-nowrap transition-colors",
+        "inline-flex items-center justify-center rounded-md font-medium whitespace-nowrap transition-all duration-200 active:scale-95",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/60",
         "disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],

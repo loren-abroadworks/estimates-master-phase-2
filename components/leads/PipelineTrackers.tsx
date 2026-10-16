@@ -16,6 +16,8 @@
   - Custom pipelines (dynamicPipelines on): clicking a stage puts the lead on it.
   - A lead driven by an open repaint follow-up can't be moved (NEW, 29).
   A long pipeline scrolls sideways inside its own card.
+  Oct 14 call: Tim's arrow-style bar (components/ui/ArrowStageTracker.tsx),
+  in Estimate Master brand colours (Tim's choice).
 */
 import { useState } from 'react';
 import type { Lead, PipelineStage } from '@/lib/types';
@@ -23,12 +25,13 @@ import { NativeSelect } from '@/components/ui/form';
 import { useFollowUpLocks } from './leadFeatures';
 import { useCollection } from '@/lib/store';
 import { cn, fullName } from '@/lib/utils';
-import { StageTracker } from '@/components/ui/StageTracker';
+import { ArrowStageTracker } from '@/components/ui/ArrowStageTracker';
 import { customColumnFor, pipelineColumns, salesColumnFor } from '@/features/lib/rules/lead-pipeline';
 import { useVisiblePipelines } from './usePipelines';
 import { useLeadActions } from './useLeadActions';
 
 const steps = (cols: PipelineStage[]) => cols.map((s) => ({ id: s.id, label: s.displayName, color: s.color }));
+
 
 /**
  * The contact page: the trackers of the contact's most recent lead, with a
@@ -104,13 +107,14 @@ export function PipelineTrackers({ lead, locked, className }: { lead: Lead; lock
               <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-gray-900">{p.name}</h3>
               <span className="flex items-center gap-3">
                 {extra}
-                <span className="text-sm font-semibold" style={current ? { color: current.color } : undefined}>
+                <span className="text-sm font-semibold text-primary-700">
                   {current ? current.displayName : <span className="text-gray-500">Not started</span>}
                 </span>
               </span>
             </div>
             {shown.length ? (
-              <StageTracker
+              <ArrowStageTracker
+                palette="brand"
                 steps={steps(shown)}
                 current={current?.id}
                 label={`${p.name} stages`}

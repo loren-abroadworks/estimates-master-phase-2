@@ -133,7 +133,7 @@ export function SupplierOrderExceptionsWidget() {
           list.slice(0, 4).map((p) => (
             <Link key={p.id} href={`/supplier-orders?po=${p.id}`} className="flex items-center justify-between gap-2 rounded-lg border border-gray-100 px-3 py-2 text-sm hover:border-primary-200">
               <span className="inline-flex min-w-0 items-center gap-1.5 truncate font-bold text-gray-900"><AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-500" />{p.id}</span>
-              <span className="shrink-0 text-xs text-gray-500">{p.uncertainSend ? 'Send uncertain' : p.status === 'problem' ? 'Problem' : 'Not acknowledged'}</span>
+              <span className="shrink-0 text-xs text-gray-400">{p.uncertainSend ? 'Send uncertain' : p.status === 'problem' ? 'Problem' : 'Not acknowledged'}</span>
             </Link>
           ))
         )}
@@ -182,7 +182,7 @@ export function DemoWalkthroughCard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-green-800">
           <Sparkles className="h-4 w-4" /> Feature tours
-          <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs tracking-wider">Prototype only</span>
+          <span className="rounded bg-green-100 px-1.5 py-0.5 text-[9px] tracking-wider">Prototype only</span>
         </div>
         {left && (
           <button onClick={() => startTour(left, true)} className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary-600 px-3 text-xs font-bold text-white shadow-sm hover:bg-primary-700">

@@ -84,7 +84,7 @@ export function QuickBooksCell({ invoiceId }: { invoiceId: string }) {
   const q = qboState(db, invoiceId);
   return (
     <div className="md:w-40" onClick={(e) => e.stopPropagation()}>
-      <div className="mb-1 text-xxs font-bold uppercase tracking-wider text-gray-500">QuickBooks</div>
+      <div className="mb-1 text-xxs font-bold uppercase tracking-wider text-gray-400">QuickBooks</div>
       <StatusPill tone={q.tone}>{q.state}</StatusPill>
     </div>
   );

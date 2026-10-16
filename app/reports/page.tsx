@@ -95,7 +95,7 @@ function ReportsInner() {
     <PageShell title="Reports" contentClassName="min-h-full bg-gray-50/50 px-4 py-8 pb-32 md:px-8 lg:px-12">
       <div className="mb-10 flex flex-col gap-6">
         <div>
-          <h1 className="mb-2 font-heading text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Reports &amp; Analytics</h1>
+          <h1 className="mb-2 text-3xl font-black tracking-tight text-gray-900 md:text-4xl">Reports &amp; Analytics</h1>
           <p className="text-base font-medium text-gray-500 md:text-lg">Performance metrics, job logs, and financial forecasting.</p>
         </div>
         <AreaNav label="Report areas" replace areas={areas} elsewhere={[{ href: hrefFor('activity'), label: 'Activity Log', active: tab === 'activity' }]} />

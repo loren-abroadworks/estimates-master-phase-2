@@ -35,6 +35,7 @@ import { PropertyMapCard, ServiceLocationModal, useAddServiceLocation } from '@/
 import { NewBadge, FeatureGate } from '@/features/components/ui';
 import { useFeatureFilter } from '@/features/lib/feature-visibility';
 import { QuickBooksContactCard, QuickBooksUpdatedNote } from '@/components/contacts/QuickBooksContact';
+import { customerCode } from '@/lib/lead-capture';
 
 type TabKey = 'leads' | 'estimates' | 'invoices' | 'jobs' | 'conversations' | 'notes' | 'paint-history';
 const TABS: { key: TabKey; label: string; isNew?: boolean }[] = [
@@ -150,16 +151,20 @@ function ContactDetail() {
                 )}
               </div>
               <span className={cn('rounded-full border px-2.5 py-0.5 text-xs font-bold uppercase', CONTACT_TYPE_COLORS[customer.type])}>{customer.type}</span>
+              {/* Oct 14 call: the Customer ID existing customers enter on the website form. */}
+              <span title="Customers enter this on the website form to send a new request" className="rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 font-mono text-xs font-bold text-gray-600">
+                Customer ID {customerCode(customer)}
+              </span>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 pl-1 text-sm font-medium text-gray-500 md:text-base">
-              <a href={`tel:${customer.phone}`} className="flex items-center gap-2 hover:text-gray-800"><Phone className="h-4 w-4 text-gray-500" /> {formatPhone(customer.phone) || '-'}</a>
+              <a href={`tel:${customer.phone}`} className="flex items-center gap-2 hover:text-gray-800"><Phone className="h-4 w-4 text-gray-400" /> {formatPhone(customer.phone) || '-'}</a>
               <FeatureGate item="QB-C2"><QuickBooksUpdatedNote customerId={customer.id} field="phone" /></FeatureGate>
-              <a href={`mailto:${customer.email}`} className="flex items-center gap-2 hover:text-gray-800"><Mail className="h-4 w-4 text-gray-500" /> {customer.email || '-'}</a>
+              <a href={`mailto:${customer.email}`} className="flex items-center gap-2 hover:text-gray-800"><Mail className="h-4 w-4 text-gray-400" /> {customer.email || '-'}</a>
               <FeatureGate item="QB-C2"><QuickBooksUpdatedNote customerId={customer.id} field="email" /></FeatureGate>
-              <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-gray-500" /> {address}</span>
+              <span className="flex items-center gap-2"><MapPin className="h-4 w-4 text-gray-400" /> {address}</span>
             </div>
             {(customer.companyName || customer.secondaryPhone) && (
-              <div className="flex flex-wrap gap-x-6 pl-1 text-sm text-gray-500">
+              <div className="flex flex-wrap gap-x-6 pl-1 text-sm text-gray-400">
                 {customer.companyName && <span>{customer.companyName}</span>}
                 {customer.secondaryPhone && <span>Alt: {formatPhone(customer.secondaryPhone)}</span>}
                 <span>Source: {customer.source}</span>
@@ -183,7 +188,7 @@ function ContactDetail() {
               ]}
               trigger={
                 <button type="button" aria-label="More actions" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white shadow-sm hover:border-gray-300">
-                  <MoreVertical className="h-5 w-5 text-gray-500" />
+                  <MoreVertical className="h-5 w-5 text-gray-400" />
                 </button>
               }
             />
@@ -207,11 +212,11 @@ function ContactDetail() {
               {locations.map((loc) => (
                 <div key={loc.key} className="group relative rounded-xl border border-gray-100 bg-gray-50 p-4">
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500"><MapPin className="h-4 w-4" /></div>
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400"><MapPin className="h-4 w-4" /></div>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-bold text-gray-900">{[loc.street, loc.unit].filter(Boolean).join(' ') || '-'}</div>
                       <div className="text-xs text-gray-500">{[loc.city, [loc.state, loc.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ')}</div>
-                      <div className="mt-1 flex items-center gap-2 text-xxs font-bold uppercase tracking-wider text-gray-500">
+                      <div className="mt-1 flex items-center gap-2 text-xxs font-bold uppercase tracking-wider text-gray-400">
                         {loc.label}
                         {loc.street && (
                           <Link
@@ -222,7 +227,7 @@ function ContactDetail() {
                           </Link>
                         )}
                         {loc.removable && (
-                          <button type="button" onClick={() => setLocationToRemove(loc.key)} className="normal-case tracking-normal text-gray-500 hover:text-red-600">Remove</button>
+                          <button type="button" onClick={() => setLocationToRemove(loc.key)} className="normal-case tracking-normal text-gray-400 hover:text-red-600">Remove</button>
                         )}
                       </div>
                       <LocationPaintChips customerId={customer.id} street={loc.street} />
@@ -243,7 +248,7 @@ function ContactDetail() {
               </div>
               <button type="button" onClick={() => setTab('jobs')} className="group flex w-full items-center justify-between rounded border-b border-gray-100 pb-2 text-left">
                 <span className="flex items-center gap-1 font-medium text-gray-500 group-hover:text-primary-700">Active Jobs <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100" /></span>
-                <span className={cn('font-bold', stats.activeJobs > 0 ? 'text-amber-600' : 'text-gray-500')}>{stats.activeJobs}</span>
+                <span className={cn('font-bold', stats.activeJobs > 0 ? 'text-amber-600' : 'text-gray-400')}>{stats.activeJobs}</span>
               </button>
               <button type="button" onClick={() => setTab('invoices')} className="group flex w-full items-center justify-between rounded text-left">
                 <span className="flex items-center gap-1 font-medium text-gray-500 group-hover:text-primary-700">Total Value <Eye className="h-3 w-3 opacity-0 group-hover:opacity-100" /></span>
@@ -290,7 +295,7 @@ function ContactDetail() {
               <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
                 <div className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-500">Activity Log</div>
                 {activity.length === 0 ? (
-                  <div className="py-8 text-center text-sm italic text-gray-500">No activity recorded yet.</div>
+                  <div className="py-8 text-center text-sm italic text-gray-400">No activity recorded yet.</div>
                 ) : (
                   <ul className="space-y-4">
                     {activity.map((a) => (
@@ -298,7 +303,7 @@ function ContactDetail() {
                         <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary-400" />
                         <div>
                           <div className="text-sm text-gray-700">{a.text}</div>
-                          <div className="text-xs text-gray-500">{new Date(a.date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+                          <div className="text-xs text-gray-400">{new Date(a.date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</div>
                         </div>
                       </li>
                     ))}

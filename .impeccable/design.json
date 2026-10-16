@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T00:00:00Z",
+  "title": "Design System: Estimate Master",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Command Blue", "canonical": "#2563eb", "tonalRamp": ["#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"] },
+      "primary-deep": { "role": "primary", "displayName": "Pressed Blue", "canonical": "#1d4ed8", "tonalRamp": ["#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"] },
+      "primary-wash": { "role": "primary", "displayName": "Blue Wash", "canonical": "#eff6ff" },
+      "primary-halo": { "role": "primary", "displayName": "Blue Halo", "canonical": "#dbeafe" },
+      "primary-focus": { "role": "primary", "displayName": "Focus Edge", "canonical": "#60a5fa" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#111827", "tonalRamp": ["#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6"] },
+      "graphite": { "role": "neutral", "displayName": "Graphite", "canonical": "#374151" },
+      "slate-text": { "role": "neutral", "displayName": "Slate Text", "canonical": "#4b5563" },
+      "muted-label": { "role": "neutral", "displayName": "Muted Label", "canonical": "#6b7280" },
+      "quiet": { "role": "neutral", "displayName": "Quiet", "canonical": "#9ca3af" },
+      "field-line": { "role": "neutral", "displayName": "Field Line", "canonical": "#d1d5db" },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#e5e7eb" },
+      "wash": { "role": "neutral", "displayName": "Wash", "canonical": "#f3f4f6" },
+      "canvas": { "role": "neutral", "displayName": "Canvas", "canonical": "#f9fafb" },
+      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "#ffffff" },
+      "danger": { "role": "state", "displayName": "Danger Red", "canonical": "#dc2626" },
+      "danger-wash": { "role": "state", "displayName": "Danger Wash", "canonical": "#fef2f2" },
+      "brand-purple": { "role": "tertiary", "displayName": "Brand Purple", "canonical": "#7A5FFF", "tonalRamp": ["#3E2DA3", "#513CCB", "#6249D4", "#6F54EB", "#7A5FFF", "#A394FF", "#C2B7FF", "#F6F4FF"] },
+      "brand-green": { "role": "tertiary", "displayName": "Brand Green", "canonical": "#5ED4B2", "tonalRamp": ["#0C3C2E", "#2E826B", "#3BA98B", "#4AC3A1", "#5ED4B2", "#6FE3C1", "#A1E7D3", "#F5FDFA"] },
+      "brand-yellow": { "role": "tertiary", "displayName": "Brand Yellow", "canonical": "#EAD94C", "tonalRamp": ["#9B8629", "#BFA634", "#BFAE34", "#D5C43F", "#EAD94C", "#E6D95F", "#F1E58C", "#FEFCF2"] },
+      "brand-red": { "role": "tertiary", "displayName": "Brand Red", "canonical": "#D62839", "tonalRamp": ["#801823", "#A41F2C", "#A71C2B", "#BF2232", "#D62839", "#E46B78", "#F1A6AD", "#FCF0F1"] },
+      "brand-orange": { "role": "tertiary", "displayName": "Brand Orange", "canonical": "#FF9F1C", "tonalRamp": ["#9E5D12", "#C37616", "#CC8017", "#E68F1A", "#FF9F1C", "#FFAB3D", "#FFC27A", "#FFF8EF"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "List-page titles: 30px on phones, 36px from tablet up, black weight." },
+      "headline": { "displayName": "Headline", "purpose": "Modal and section titles." },
+      "title": { "displayName": "Title", "purpose": "Names on cards and list rows." },
+      "body": { "displayName": "Body", "purpose": "Typed values, table cells, card details." },
+      "lead": { "displayName": "Lead", "purpose": "The line under a page title saying what the page is for." },
+      "label": { "displayName": "Label", "purpose": "Uppercase field, stat and form-section labels." },
+      "micro": { "displayName": "Micro", "purpose": "Chips on cards, schedule eyebrows, board metadata." }
+    },
+    "shadows": [
+      { "name": "rest", "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)", "purpose": "Cards, secondary buttons, header bar, column headers." },
+      { "name": "lift", "value": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)", "purpose": "Clickable card or row on hover." },
+      { "name": "main-action-glow", "value": "0 20px 25px -5px rgb(59 130 246 / 0.2), 0 8px 10px -6px rgb(59 130 246 / 0.2)", "purpose": "The page's primary button only." },
+      { "name": "float", "value": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)", "purpose": "Dropdowns, popovers, menus." },
+      { "name": "overlay", "value": "0 25px 50px -12px rgb(0 0 0 / 0.25)", "purpose": "Modals and the expanded sidebar." }
+    ],
+    "motion": [
+      { "name": "state", "value": "200ms ease", "purpose": "Color, border, shadow and ring changes on controls." },
+      { "name": "press", "value": "scale(0.95) on :active", "purpose": "Buttons press in when clicked." },
+      { "name": "rail", "value": "300ms ease-in-out (width)", "purpose": "Sidebar rail expanding from 104px to 320px." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The page's main action and form submit.",
+      "html": "<button class=\"ds-btn-primary\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"M12 5v14\"/></svg>Create New Estimate</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; background: #2563eb; color: #fff; border: 1px solid transparent; border-radius: 6px; padding: 10px 20px; font: 500 14px/1.25 Roboto, system-ui, sans-serif; box-shadow: 0 20px 25px -5px rgb(59 130 246 / 0.2), 0 8px 10px -6px rgb(59 130 246 / 0.2); cursor: pointer; transition: all 200ms ease; } .ds-btn-primary:hover { background: #1d4ed8; } .ds-btn-primary:active { transform: scale(0.95); } .ds-btn-primary:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Every other action: View Archived, Cancel, Customize.",
+      "html": "<button class=\"ds-btn-secondary\">View Archived</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #374151; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 20px; font: 500 14px/1.25 Roboto, system-ui, sans-serif; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); cursor: pointer; transition: all 200ms ease; } .ds-btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; } .ds-btn-secondary:active { transform: scale(0.95); } .ds-btn-secondary:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive actions and confirms: soft red, never solid.",
+      "html": "<button class=\"ds-btn-danger\">Delete</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; gap: 8px; background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; border-radius: 6px; padding: 10px 20px; font: 500 14px/1.25 Roboto, system-ui, sans-serif; cursor: pointer; transition: all 200ms ease; } .ds-btn-danger:hover { background: #fee2e2; border-color: #fecaca; } .ds-btn-danger:active { transform: scale(0.95); } .ds-btn-danger:focus-visible { outline: 2px solid #f87171; outline-offset: 2px; }"
+    },
+    {
+      "name": "Labeled Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Every form field: uppercase label above a 48px outlined input.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">First Name <b>*</b></span><input class=\"ds-input\" placeholder=\"Jane\" /></label>",
+      "css": ".ds-field { display: block; width: 280px; } .ds-field-label { display: block; margin-bottom: 8px; font: 700 12px/1 Roboto, system-ui, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; color: #6b7280; } .ds-field-label b { color: #ef4444; margin-left: 2px; } .ds-input { width: 100%; height: 48px; padding: 0 12px; border: 1px solid #d1d5db; border-radius: 10px; background: #fff; font: 500 14px Roboto, system-ui, sans-serif; color: #4b5563; outline: none; transition: all 200ms ease; } .ds-input::placeholder { color: #9ca3af; font-weight: 400; } .ds-input:focus { border-color: #60a5fa; box-shadow: 0 0 0 4px #dbeafe; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Record status and type pills.",
+      "html": "<span class=\"ds-badge ds-badge-blue\">Scheduled</span> <span class=\"ds-badge ds-badge-green\">Completed</span> <span class=\"ds-badge ds-badge-amber\">Pending</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; border: 1px solid; font: 700 12px/1.5 Roboto, system-ui, sans-serif; } .ds-badge-blue { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; } .ds-badge-green { background: #dcfce7; color: #15803d; border-color: #bbf7d0; } .ds-badge-amber { background: #fef3c7; color: #b45309; border-color: #fde68a; }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The row of figures at the top of list pages.",
+      "html": "<div class=\"ds-stat\"><div class=\"ds-stat-label\">Sent / Pending</div><div class=\"ds-stat-value\">12</div><div class=\"ds-stat-sub\">Awaiting approval</div></div>",
+      "css": ".ds-stat { width: 240px; padding: 24px; background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); transition: all 200ms ease; cursor: pointer; } .ds-stat:hover { border-color: #93c5fd; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); } .ds-stat-label { margin-bottom: 8px; font: 700 12px/1 Roboto, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; } .ds-stat-value { font: 900 30px/1.2 Manrope, Roboto, sans-serif; color: #111827; } .ds-stat-sub { margin-top: 4px; font: 500 14px Roboto, system-ui, sans-serif; color: #9ca3af; }"
+    },
+    {
+      "name": "Sidebar Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Main navigation rail items, idle and active.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item is-active\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M6 5v11\"/><path d=\"M12 5v6\"/><path d=\"M18 5v14\"/></svg>Lead Pipeline</a><a class=\"ds-nav-item\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>Contacts</a></nav>",
+      "css": ".ds-nav { display: flex; flex-direction: column; gap: 4px; width: 260px; padding: 16px; background: #fff; border-right: 1px solid #e5e7eb; } .ds-nav-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 12px; border: 1px solid transparent; font: 500 16px Roboto, system-ui, sans-serif; color: #6b7280; text-decoration: none; cursor: pointer; transition: all 200ms ease; } .ds-nav-item svg { color: #9ca3af; } .ds-nav-item:hover { background: #f9fafb; color: #111827; } .ds-nav-item.is-active { background: #eff6ff; color: #1d4ed8; border-color: #dbeafe; font-weight: 700; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); } .ds-nav-item.is-active svg { color: #1d4ed8; }"
+    },
+    {
+      "name": "Board Column Header",
+      "kind": "custom",
+      "description": "Pipeline stage header with count pill and a 4px stage-colored rule.",
+      "html": "<div class=\"ds-col\"><div class=\"ds-col-head\"><span>New Leads</span><span class=\"ds-col-count\">3</span></div></div>",
+      "css": ".ds-col { width: 280px; border-radius: 16px; background: rgb(243 244 246 / 0.6); } .ds-col-head { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #fff; border-radius: 16px 16px 0 0; border-bottom: 4px solid #3b82f6; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); font: 700 14px Roboto, system-ui, sans-serif; letter-spacing: 0.025em; text-transform: uppercase; color: #111827; } .ds-col-count { padding: 4px 8px; border-radius: 9999px; background: rgb(59 130 246 / 0.13); color: #3b82f6; font-size: 12px; }"
+    },
+    {
+      "name": "Segmented View Switch",
+      "kind": "custom",
+      "description": "Job/Crew, Day/Week/Month, Board/Table switches.",
+      "html": "<div class=\"ds-seg\"><button class=\"is-on\">Week</button><button>Day</button><button>Month</button></div>",
+      "css": ".ds-seg { display: inline-flex; padding: 4px; gap: 2px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 12px; } .ds-seg button { padding: 8px 16px; border: 0; border-radius: 8px; background: transparent; font: 700 14px Roboto, system-ui, sans-serif; color: #6b7280; cursor: pointer; transition: all 200ms ease; } .ds-seg button:hover { color: #111827; } .ds-seg button.is-on { background: #fff; color: #1d4ed8; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Contractor's Command Desk",
+    "overview": "Estimate Master is the one desk where a painting company's office runs the whole job chain: the lead comes in, the estimate goes out, the crew is booked, the work order is printed and the invoice is paid. The system is built for someone who sits at it all day and also for the crew lead checking a work order from a truck. It is calm, dependable and dense where density helps: boards, lists and records carry a lot of information at a glance, and nothing on the screen is there to be admired.\n\nBlue is the only voice that says \"act here.\" Everything else is gray working surface: a light gray page, white cards with hairline borders, and gray text in four weights of importance. Components are sturdy and plain-spoken. Targets are big, labels are bold and uppercase, and states are obvious, so the interface reads the same at 8 a.m. on a laptop and at noon on a phone in the sun. Depth is flat with a soft lift: things sit on the page and only rise when they are being touched or float above it.\n\nThe visual system is the live production app's (see docs/BRANDING.md, taken from the production source). New screens extend it; they never introduce a second look.",
+    "keyCharacteristics": [
+      "One accent: royal blue for actions, links, focus and the active place in the navigation.",
+      "Gray working surfaces with white cards and hairline borders.",
+      "Manrope for the big titles, Roboto for everything you read and type.",
+      "Bold uppercase micro labels over every field and stat.",
+      "Large, obvious controls (48px fields, padded buttons) suitable for office and field use.",
+      "Flat at rest, lifted on hover and for overlays."
+    ],
+    "rules": [
+      { "name": "The Blue Means Go Rule", "body": "Command Blue appears only on things you can act on or on the place you are. A blue that is just decoration breaks the rule.", "section": "colors" },
+      { "name": "The Brand Palette Stays In The Data Rule", "body": "Purple, green, yellow, orange and the other brand hues color stages, crews and charts. They never become a button, a link or a page accent.", "section": "colors" },
+      { "name": "The Label Before Value Rule", "body": "Every field and every number has a bold uppercase label above it. Values are never left to explain themselves.", "section": "typography" },
+      { "name": "The Heavy Title, Plain Body Rule", "body": "Only page titles are heavy display type; everything below the title stays in Roboto at 14–18px.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "Nothing casts more than the rest shadow until it is hovered, opened or floating. A heavy shadow on a resting card is wrong.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Command Blue (#2563eb) only for actions, links, focus and the current place.",
+      "Do put a bold uppercase 12px label above every field and stat.",
+      "Do build fields at 48px with 10px corners, a field-line outline and the 4px Blue Halo on focus.",
+      "Do give every list page the same header: a 36px black-weight title, an 18px lead line and the main action at the right, full width on phones.",
+      "Do keep surfaces flat with a hairline border and rest shadow, lifting only on hover or for overlays.",
+      "Do use the brand palette for stage, crew and chart colors only.",
+      "Do let boards scroll sideways (four 280px+ columns visible) instead of shrinking columns."
+    ],
+    "donts": [
+      "Don't introduce a second accent color, gradients or decorative color on buttons and links.",
+      "Don't use solid red for destructive buttons; use the soft red danger style.",
+      "Don't round buttons beyond 6px or put pill shapes on buttons.",
+      "Don't use the 60px display size for list-page titles; it belongs to documents and hero sections (invoice document, client estimate preview).",
+      "Don't give resting cards a heavy shadow.",
+      "Don't create new class strings when a shared kit component (components/ui, components/Modals/Modal.tsx, features/components/ui) already covers it."
+    ]
+  }
+}

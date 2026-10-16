@@ -52,7 +52,7 @@ export function SmsTemplatesView() {
     <SettingsPage wide title="SMS Templates" subtitle="Customize the default SMS templates sent to clients.">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="space-y-3 lg:col-span-4">
-          {items.length === 0 && <p className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">No SMS templates.</p>}
+          {items.length === 0 && <p className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">No SMS templates.</p>}
           {items.map((t) => (
             <TemplateListItem key={t.id} active={t.id === activeId} icon={<MessageSquare />} title={t.name} subtitle={t.body} onClick={() => select(t.id)} />
           ))}
@@ -62,11 +62,11 @@ export function SmsTemplatesView() {
             <div className="rounded-2xl bg-white p-6 shadow-lg md:p-7">
               <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
                 <h3 className="font-heading text-lg font-bold text-gray-900">{active.name}</h3>
-                <span className="rounded-full bg-gray-100 px-3 py-1 text-xxs font-bold uppercase tracking-wider text-gray-500">SMS</span>
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">SMS</span>
               </div>
               <div className="mb-1.5 flex items-center justify-between">
                 <Label className="mb-0">Message Body</Label>
-                <span className={cn('text-xs', body.length > MAX ? 'font-bold text-red-600' : 'text-gray-500')}>
+                <span className={cn('text-xs', body.length > MAX ? 'font-bold text-red-600' : 'text-gray-400')}>
                   {body.length} / {MAX} chars · {segments(body.length)} segment{segments(body.length) === 1 ? '' : 's'}
                 </span>
               </div>
@@ -84,7 +84,7 @@ export function SmsTemplatesView() {
               </div>
             </div>
           ) : (
-            <div className="flex min-h-[300px] items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 text-gray-500">Select a template to edit</div>
+            <div className="flex min-h-[300px] items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 text-gray-400">Select a template to edit</div>
           )}
         </div>
       </div>

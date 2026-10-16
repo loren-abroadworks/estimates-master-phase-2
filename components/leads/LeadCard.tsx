@@ -32,14 +32,14 @@ export function LeadCard({
 }) {
   const lifecycle = LEAD_LIFECYCLE[lead.status];
   const next = followUpId ? null : NEXT_STAGE_MAP[lead.status];
-  const chip = 'inline-flex items-center rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600';
+  const chip = 'inline-flex items-center rounded border border-gray-200 bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600';
 
   return (
     <div
       draggable={draggable && !followUpId}
       onDragStart={(e) => onDragStart?.(e, lead.id)}
       className={cn(
-        'group relative cursor-pointer rounded-xl border border-gray-200 bg-white p-3 shadow-sm transition-all hover:border-primary-300 hover:shadow-md active:cursor-grabbing',
+        'group relative cursor-pointer rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-primary-300 hover:shadow-md active:cursor-grabbing',
         dragging && 'opacity-50',
       )}
     >
@@ -51,7 +51,7 @@ export function LeadCard({
       </div>
 
       <div className="mb-3">
-        <div className="mb-1 truncate pr-5 font-heading text-sm font-bold leading-tight text-gray-900">
+        <div className="mb-1 pr-6 text-lg font-bold leading-tight text-gray-900">
           {lead.firstName} {lead.lastName}
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -59,16 +59,16 @@ export function LeadCard({
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{lead.city}, {lead.state}</span>
           </span>
-          <span className={cn('shrink-0 rounded-full px-1.5 py-0.5 text-xxs font-bold uppercase tracking-wide', lifecycle.color)}>{lifecycle.label}</span>
+          <span className={cn('shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide', lifecycle.color)}>{lifecycle.label}</span>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          <span className="whitespace-nowrap text-xs font-bold text-gray-700">{lead.leadNumber}</span>
+          <span className="whitespace-nowrap text-[10px] font-bold text-gray-700">{lead.leadNumber}</span>
           {estimate && (
             <Link
               href={`/estimates/${estimate.id}`}
               onClick={(e) => e.stopPropagation()}
               title="View Estimate"
-              className="relative z-20 inline-flex items-center whitespace-nowrap rounded border border-primary-100 bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 hover:bg-primary-100"
+              className="relative z-20 inline-flex items-center whitespace-nowrap rounded border border-primary-100 bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-700 hover:bg-primary-100"
             >
               <FileText className="mr-1 h-3 w-3" />
               {estimate.estimateNumber}
@@ -77,8 +77,8 @@ export function LeadCard({
         </div>
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        <span className={chip}><Calendar className="mr-1 h-3 w-3 text-gray-500" />{longDate(lead.date)}</span>
+      <div className="mb-4 flex flex-wrap gap-2">
+        <span className={chip}><Calendar className="mr-1 h-3 w-3 text-gray-400" />{longDate(lead.date)}</span>
         {/* CRM-M6: every card shows its source. */}
         <LeadSourceChip lead={lead} className="text-xs" fallback={<Badge tone="blue">{lead.leadSource || 'Unknown'}</Badge>} />
         <PossibleDuplicateChip lead={lead} />
@@ -108,13 +108,13 @@ export function LeadCard({
 
       {followUpId && <FollowUpLockNote fu={{ id: followUpId }} compact className="mb-3" />}
 
-      <div className="relative z-20 flex items-center justify-between border-t border-gray-100 pt-3">
+      <div className="relative z-20 flex items-center justify-between border-t border-gray-50 pt-3">
         <div className="flex gap-1">
           <a aria-label="Call" role={lead.phone ? undefined : 'link'} aria-disabled={!lead.phone || undefined}
             href={lead.phone ? `tel:${lead.phone}` : undefined}
             title={formatPhone(lead.phone)}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
+            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
           >
             <Phone className="h-4 w-4" />
           </a>
@@ -122,7 +122,7 @@ export function LeadCard({
             href={lead.email ? `mailto:${lead.email}` : undefined}
             title={lead.email}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
+            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
           >
             <Mail className="h-4 w-4" />
           </a>
@@ -133,7 +133,7 @@ export function LeadCard({
               type="button"
               title="Archive Lead"
               onClick={(e) => { e.stopPropagation(); onArchive?.(lead); }}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-600"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
             >
               <Archive className="h-4 w-4" />
             </button>
@@ -143,7 +143,7 @@ export function LeadCard({
               type="button"
               title={`Move to ${next}`}
               onClick={(e) => { e.stopPropagation(); onAdvance?.(lead); }}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200"
             >
               <ArrowRight className="h-4 w-4" />
             </button>

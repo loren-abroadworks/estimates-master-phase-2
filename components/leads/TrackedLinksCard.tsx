@@ -6,14 +6,13 @@
   Columns: Link name, Source, Status, Submissions, Created, Actions.
   - Create Link / Edit: name (required, at most 60 characters, unique), source,
     and the Sales stage new leads start in (CRM Part 2, 8: not Sold or Lost).
-  - Copy Link ("Link copied"), QR Code (with Download PNG), Pause / Resume.
+  - Copy Link ("Link copied"), Pause / Resume. QR codes were dropped (Oct 14 call).
   - Delete asks inline. A deleted link stops working (the form says it is no
     longer available); leads it already captured stay.
   Only Admin Master Data (Owner and Admin) creates, edits, pauses or deletes.
 */
-import { useRef, useState } from 'react';
-import { Copy, Download, Link2, Pause, Pencil, Play, Plus, QrCode, Trash2 } from 'lucide-react';
-import { QRCodeCanvas } from 'qrcode.react';
+import { useState } from 'react';
+import { Copy, Link2, Pause, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { useCollection, useCurrentUser, useLogActivity } from '@/lib/store';
 import { fullName, shortDate, uid } from '@/lib/utils';
 import { formLinkPath, linkNameProblem, liveLinks, LINK_NAME_MAX } from '@/lib/lead-capture';
@@ -33,7 +32,6 @@ export function TrackedLinksCard() {
   const [confirming, setConfirming] = useState<string>();
   // Tab 2: managing lead capture links is for Admin Master Data (Owner and Admin).
   const admin = can(useFeatureUser(), 'settings.masterData');
-  const [qr, setQr] = useState<TrackedLink>();
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
   const list = liveLinks(links.items);
 
@@ -74,7 +72,7 @@ export function TrackedLinksCard() {
       <CardTitle icon={<Link2 />} badge={<VersionBadge item="CRM-M5" />} right={admin ? <Button variant="primary" size="sm" onClick={() => setEditing('new')}><Plus className="h-4 w-4" /> Create Link</Button> : undefined}>
         Form links
       </CardTitle>
-      <p className="-mt-3 mb-4 text-sm text-gray-500">Share a link or its QR code. Each lead it captures gets the link&apos;s source.</p>
+      <p className="-mt-3 mb-4 text-sm text-gray-500">Copy a link and share it. Each lead it captures gets the link&apos;s source.</p>
       {!list.length ? (
         <p className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-500">No form links yet. Create one to start capturing website leads.</p>
       ) : (
@@ -102,7 +100,6 @@ export function TrackedLinksCard() {
                   ) : (
                     <span className="inline-flex flex-wrap items-center justify-end gap-1 lg:flex-nowrap">
                       <Button size="sm" variant="secondary" onClick={() => void copy(l)} aria-label={`Copy link for ${l.name}`}><Copy className="h-3.5 w-3.5" /> Copy Link</Button>
-                      <Button size="sm" variant="secondary" onClick={() => setQr(l)} aria-label={`QR code for ${l.name}`}><QrCode className="h-3.5 w-3.5" /> QR Code</Button>
                       {admin && <>
                         <Button size="sm" variant="secondary" onClick={() => togglePause(l)} className="min-w-[5.5rem]">
                           {l.status === 'active' ? <><Pause className="h-3.5 w-3.5" /> Pause</> : <><Play className="h-3.5 w-3.5" /> Resume</>}
@@ -125,36 +122,7 @@ export function TrackedLinksCard() {
       )}
 
       {editing && <LinkModal link={editing === 'new' ? undefined : editing} onClose={() => setEditing(undefined)} onSave={save} />}
-      {qr && <QrModal link={qr} url={origin + formLinkPath(qr.id)} onClose={() => setQr(undefined)} />}
     </Card>
-  );
-}
-
-function QrModal({ link, url, onClose }: { link: TrackedLink; url: string; onClose: () => void }) {
-  const box = useRef<HTMLDivElement>(null);
-  const download = () => {
-    const canvas = box.current?.querySelector('canvas');
-    if (!canvas) return;
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
-    a.download = `${link.name.replace(/[^\w-]+/g, '_')}_QR.png`;
-    a.click();
-  };
-  return (
-    <Modal
-      open
-      onOpenChange={(v) => !v && onClose()}
-      title={link.name}
-      description={`Leads from this code get the source ${link.source}.`}
-      size="sm"
-      footer={<><Button variant="secondary" onClick={onClose}>Close</Button><Button variant="primary" onClick={download}><Download className="h-4 w-4" /> Download PNG</Button></>}
-    >
-      <div className="flex flex-col items-center gap-3 py-2">
-        {/* White box so the code scans in dark mode too. */}
-        <div ref={box} className="rounded-xl bg-[#fff] p-3"><QRCodeCanvas value={url} size={200} marginSize={1} /></div>
-        <code className="break-all text-center text-xs text-gray-500">{url}</code>
-      </div>
-    </Modal>
   );
 }
 

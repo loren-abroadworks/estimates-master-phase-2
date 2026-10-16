@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Field, Input, NativeSelect } from '@/components/ui/form';
 import { cn, fullName, longDate, toISODate } from '@/lib/utils';
 import { pressable } from '@/lib/a11y';
+import { customerCode } from '@/lib/lead-capture';
 
 export function CompanyBlock({ bp }: { bp: BusinessProfile }) {
   return (
@@ -26,7 +27,7 @@ export function CompanyBlock({ bp }: { bp: BusinessProfile }) {
         <div className="font-heading text-2xl font-black uppercase leading-none tracking-tight text-gray-900">{bp.companyName || 'Estimate Master'}</div>
         <div className="mt-1 space-y-0.5 text-xs font-medium text-gray-500 md:text-sm">
           <p>{[bp.street, bp.city, bp.state].filter(Boolean).join(', ')}</p>
-          {bp.licenseNumber && <p className="text-gray-500">license #{bp.licenseNumber}</p>}
+          {bp.licenseNumber && <p className="text-gray-400">license #{bp.licenseNumber}</p>}
         </div>
       </div>
     </div>
@@ -41,12 +42,12 @@ export function DocHeader({
     <div className="p-4 pb-4 md:p-12 md:pb-8">
       <div className="mb-6 text-center md:mb-10">
         <h2 className="mb-2 font-heading text-3xl font-extrabold tracking-tight text-gray-900 md:text-5xl">{estimate.estimateType} Estimate</h2>
-        <p className="text-sm font-medium text-gray-500 md:text-lg">Detailed Proposal &amp; Scope of Work</p>
+        <p className="text-sm font-medium text-gray-400 md:text-lg">Detailed Proposal &amp; Scope of Work</p>
       </div>
       <div className="flex flex-col items-center justify-between gap-6 lg:flex-row">
         <CompanyBlock bp={bp} />
         <div className="flex w-full shrink-0 flex-col items-center lg:w-auto lg:items-end">
-          <div className="mb-2 text-xxs font-bold uppercase tracking-widest text-gray-500 md:text-xs">Estimator</div>
+          <div className="mb-2 text-xxs font-bold uppercase tracking-widest text-gray-400 md:text-xs">Estimator</div>
           <button
             type="button"
             onClick={readOnly ? undefined : () => setOpen(true)}
@@ -70,7 +71,7 @@ export function DocHeader({
               </span>
             )}
           </button>
-          {estimator && <div className="mt-2 hidden text-xs font-medium text-gray-500 lg:block">{estimator.email}</div>}
+          {estimator && <div className="mt-2 hidden text-xs font-medium text-gray-400 lg:block">{estimator.email}</div>}
         </div>
       </div>
       <div className="mt-8 h-px w-full bg-gray-100" />
@@ -110,7 +111,7 @@ function Column({ title, editable, onEdit, children, className }: { title: strin
       onClick={editable ? onEdit : undefined}
     >
       <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2">
-        <h4 className="text-xxs font-bold uppercase tracking-widest text-gray-500 md:text-xs">{title}</h4>
+        <h4 className="text-xxs font-bold uppercase tracking-widest text-gray-400 md:text-xs">{title}</h4>
         {editable && (
           <div className="rounded-lg p-1.5 text-gray-300 group-hover:bg-primary-50 group-hover:text-primary-600">
             <Edit2 className="h-3.5 w-3.5" />
@@ -152,9 +153,10 @@ export function ClientInfo({
               <div className="text-xs text-gray-600 md:text-base">{customer.city}{customer.city && customer.state ? ', ' : ''}{customer.state} {customer.zip}</div>
               {customer.email && <div className="truncate pt-1.5 text-xs text-gray-500 md:text-sm">{customer.email}</div>}
               {customer.phone && <div className="text-xs text-gray-500 md:text-sm">{customer.phone}</div>}
+              <div className="pt-1.5 text-xs text-gray-500 md:text-sm">Customer ID <span className="font-mono font-bold text-gray-700">{customerCode(customer)}</span></div>
             </div>
           ) : (
-            <div className="text-sm text-gray-500">No client selected</div>
+            <div className="text-sm text-gray-400">No client selected</div>
           )}
         </Column>
         <Column title="Job Site" editable={!readOnly} onEdit={() => open('site')}>
@@ -166,11 +168,11 @@ export function ClientInfo({
         <Column title="Dates" editable={!readOnly} onEdit={() => open('dates')} className="col-span-2 lg:col-span-1">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="mb-1 text-xxs font-semibold uppercase text-gray-500 md:text-xs">Estimate Date</div>
+              <div className="mb-1 text-xxs font-semibold uppercase text-gray-400 md:text-xs">Estimate Date</div>
               <div className="text-sm font-bold text-gray-900 md:text-lg">{longDate(estimate.date)}</div>
             </div>
             <div>
-              <div className="mb-1 text-xxs font-semibold uppercase text-gray-500 md:text-xs">Valid Until</div>
+              <div className="mb-1 text-xxs font-semibold uppercase text-gray-400 md:text-xs">Valid Until</div>
               <div className="text-sm font-bold text-gray-900 md:text-lg">{longDate(estimate.validUntil)}</div>
             </div>
           </div>

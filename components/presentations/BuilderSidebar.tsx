@@ -33,8 +33,8 @@ export interface SidebarProps {
   onSelect: (id: string) => void;
 }
 
-const heading = 'text-xxs font-black uppercase tracking-widest text-gray-500';
-const hint = 'text-xs font-medium italic leading-relaxed text-gray-500';
+const heading = 'text-xxs font-black uppercase tracking-widest text-gray-400';
+const hint = 'text-xs font-medium italic leading-relaxed text-gray-400';
 
 export function BuilderSidebar(props: SidebarProps) {
   const [tab, setTab] = useState<Tab>('Blocks');
@@ -46,8 +46,8 @@ export function BuilderSidebar(props: SidebarProps) {
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              'relative border-b border-gray-100 py-3 text-xxs font-black uppercase tracking-widest transition-all lg:border-r',
-              tab === t ? 'bg-white text-primary-700' : 'bg-gray-50/50 text-gray-500 hover:text-gray-600',
+              'relative border-b border-gray-100 py-3 text-[10px] font-black uppercase tracking-widest transition-all lg:border-r',
+              tab === t ? 'bg-white text-primary-700' : 'bg-gray-50/50 text-gray-400 hover:text-gray-600',
             )}
           >
             {t}
@@ -93,7 +93,7 @@ function BlocksTab({ addSection }: SidebarProps) {
               onClick={() => setCollapsed((c) => (c.includes(type) ? c.filter((x) => x !== type) : [...c, type]))}
               className="flex w-full items-center justify-between rounded-lg px-2 py-3 hover:bg-gray-50"
             >
-              <span className="flex items-center gap-2 text-xs font-bold text-gray-700"><Icon className="h-4 w-4 text-gray-500" />{m.label}</span>
+              <span className="flex items-center gap-2 text-xs font-bold text-gray-700"><Icon className="h-4 w-4 text-gray-400" />{m.label}</span>
               {isCollapsed ? <ChevronRight className="h-4 w-4 text-gray-300" /> : <ChevronDown className="h-4 w-4 text-gray-300" />}
             </button>
             {!isCollapsed && (
@@ -105,7 +105,7 @@ function BlocksTab({ addSection }: SidebarProps) {
                     className="group flex flex-col items-center rounded-lg border border-gray-100 bg-gray-50 p-2 transition-all hover:border-primary-300 hover:bg-white hover:shadow-sm"
                   >
                     <MiniPreview v={v} />
-                    <span className="mt-1.5 text-xxs font-black uppercase text-gray-300 group-hover:text-primary-600">Style {v}</span>
+                    <span className="mt-1.5 text-[9px] font-black uppercase text-gray-300 group-hover:text-primary-600">Style {v}</span>
                   </button>
                 ))}
               </div>
@@ -147,8 +147,8 @@ function SectionsTab({ p, updateSection, moveSection, removeSection, selectedId,
           <div key={s.id} className={cn('rounded-xl border bg-white', open ? 'border-primary-300 shadow-sm' : 'border-gray-200')}>
             <div className="flex items-center gap-2 px-3 py-2.5">
               <button onClick={() => onSelect(open ? '' : s.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                <Icon className="h-4 w-4 shrink-0 text-gray-500" />
-                <span className={cn('truncate text-xs font-bold', s.enabled ? 'text-gray-800' : 'text-gray-500 line-through')}>{s.title || m.label}</span>
+                <Icon className="h-4 w-4 shrink-0 text-gray-400" />
+                <span className={cn('truncate text-xs font-bold', s.enabled ? 'text-gray-800' : 'text-gray-400 line-through')}>{s.title || m.label}</span>
               </button>
               <IconBtn label={s.enabled ? 'Hide section' : 'Show section'} onClick={() => updateSection(s.id, { enabled: !s.enabled })}>
                 {s.enabled ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
@@ -196,7 +196,7 @@ function IconBtn({ children, onClick, label, disabled, danger, arrow }: { childr
       className={cn(
         'rounded-md p-1 disabled:opacity-25',
         // The move arrows are red, as in the live builder.
-        arrow ? 'text-red-500 hover:bg-red-50 hover:text-red-600' : 'text-gray-500',
+        arrow ? 'text-red-500 hover:bg-red-50 hover:text-red-600' : 'text-gray-400',
         !arrow && (danger ? 'hover:bg-red-50 hover:text-red-600' : 'hover:bg-gray-100 hover:text-gray-700'),
       )}
     >
@@ -219,7 +219,7 @@ function BrandingTab({ p, change }: SidebarProps) {
         <p className={hint}>Customize the look and feel.</p>
       </div>
       <div className="space-y-3 px-2">
-        <div className="text-xs font-bold uppercase tracking-wide text-gray-600">Theme</div>
+        <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Theme</div>
         <div className="grid grid-cols-2 gap-2">
           {(Object.keys(THEMES) as Presentation['theme'][]).map((k) => (
             <button
@@ -228,13 +228,13 @@ function BrandingTab({ p, change }: SidebarProps) {
               className={cn('overflow-hidden rounded-lg border-2 text-left', p.theme === k ? 'border-gray-900' : 'border-gray-100 hover:border-gray-300')}
             >
               <div className="h-8" style={{ background: THEMES[k].cover }} />
-              <div className="px-2 py-1 text-xs font-bold text-gray-700">{THEMES[k].label}</div>
+              <div className="px-2 py-1 text-[11px] font-bold text-gray-700">{THEMES[k].label}</div>
             </button>
           ))}
         </div>
       </div>
       <div className="space-y-3 px-2">
-        <div className="text-xs font-bold uppercase tracking-wide text-gray-600">Primary Brand Color</div>
+        <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Primary Brand Color</div>
         <div className="grid grid-cols-5 gap-2">
           {BRAND_COLORS.map((c) => {
             const active = !custom && c.value.toLowerCase() === color.toLowerCase();
@@ -255,8 +255,8 @@ function BrandingTab({ p, change }: SidebarProps) {
             className={cn('flex aspect-square flex-col items-center justify-center rounded-lg border-2 bg-white', custom ? 'scale-110 border-gray-900' : 'border-gray-200')}
             title="Other Color"
           >
-            <Plus className="h-3.5 w-3.5 text-gray-500" />
-            <span className="text-xxs font-black uppercase leading-none text-gray-500">Other</span>
+            <Plus className="h-3.5 w-3.5 text-gray-400" />
+            <span className="text-xxs font-black uppercase leading-none text-gray-400">Other</span>
           </button>
         </div>
         {custom && (
@@ -296,7 +296,7 @@ function SettingsTab({ p, change }: SidebarProps) {
         <Textarea rows={3} value={p.description} onChange={(e) => change({ description: e.target.value })} placeholder="Internal description" />
       </Field>
       <div>
-        <div className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-600">Estimate Types (Scopes)</div>
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-gray-600">Estimate Types (Scopes)</div>
         <div className="space-y-1 rounded-xl border border-gray-200 p-2">
           {types.map((t) => (
             <div key={t.id} className={cn('rounded-lg p-2', p.scopes.includes(t.name) && 'bg-primary-50')}>
@@ -306,7 +306,7 @@ function SettingsTab({ p, change }: SidebarProps) {
         </div>
       </div>
       <div>
-        <div className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-600">Used for Estimate Templates</div>
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-gray-600">Used for Estimate Templates</div>
         <EstimateTemplateChecklist value={p.templateIds ?? []} onChange={(templateIds) => change({ templateIds, isTemplate: templateIds.length > 0 || p.isTemplate })} />
         <p className={cn(hint, 'mt-1')}>Client Preview offers this presentation for estimates made from these templates (or, when none are ticked, for the estimate types above).</p>
       </div>
@@ -375,7 +375,7 @@ function LinksTab({ p, change, kind }: SidebarProps & { kind: 'header' | 'footer
         ))}
         <button
           onClick={() => set([...links, { label: 'New Link', targetId: '' }])}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-3 text-xs font-bold text-gray-500 hover:border-primary-300 hover:text-primary-600"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 py-3 text-xs font-bold text-gray-400 hover:border-primary-300 hover:text-primary-600"
         >
           <Plus className="h-4 w-4" /> Add Link
         </button>

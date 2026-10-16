@@ -105,7 +105,7 @@ export function FeatureRouteGate({ children, ...target }: GateProps & { children
       className="m-6"
       title="This feature is switched off"
       body="Turn it on in New Features on the dashboard."
-      action={<Button variant="primary" onClick={() => router.push("/dashboard#new-features")}>Open New Features</Button>}
+      action={<Button variant="primary" onClick={() => router.push("/prototype#new-features")}>Open New Features</Button>}
     />
   );
 }

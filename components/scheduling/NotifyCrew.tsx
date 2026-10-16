@@ -15,19 +15,29 @@
   Automated Messages (JS-C3), Delivered / Not delivered per person (JS-C4),
   Email and Text chips (JS-C5), and an English / Español preview (JS-C6).
 
+  Oct 14 call (Job Scheduler email triggers):
+  - Sent automatically only when a job is first scheduled (everyone on it)
+    and when someone is taken off a shift (just that person).
+  - Every other edit (update or move a schedule, skip or restore a day, bulk
+    reschedule, cancel, update crew, create, edit or delete a shift) sends
+    nothing; a toast offers Send Emails.
+  - Send Emails on the job side panel: a checklist of the job's assigned crew
+    (one, several or all); the ticked people get the job's latest schedule.
+  The template's Automatic mode (JS-C3) no longer sends on every save.
+
   The rules are in features/lib/rules/schedule-notify.ts.
 */
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { create } from 'zustand';
 import { BellRing, ChevronDown, Eye, Mail, MessageSquare, Send } from 'lucide-react';
 import { useCollection, useCurrentUser, useLogActivity, useSingleton } from '@/lib/store';
-import type { ScheduleMessageLog, TeamMember } from '@/lib/types';
+import type { Job, ScheduleMessageLog, TeamMember } from '@/lib/types';
 import { cn, fullName, uid } from '@/lib/utils';
 import { Badge, Button, Checkbox, EmptyState, Modal, NewBadge, PillTabs, VersionBadge, FeatureGate } from '@/features/components/ui';
 import { toast } from '@/features/lib/toast';
 import { useIsOn } from '@/features/lib/feature-visibility';
 import {
-  describeView, markNotified, messageText, peopleWaiting, scheduleLogText, scheduleUpdateMessage, unsentJobIds,
+  describeView, jobCrewIds, latestForJob, markNotified, messageText, peopleWaiting, removedFromShifts, scheduleLogText, scheduleUpdateMessage, unsentJobIds,
   type NotifyLang, type PersonChange, type ScheduleMessage,
 } from '@/features/lib/rules/schedule-notify';
 import { useCurrentUser as useFeatureUser } from '@/features/lib/store';
@@ -39,26 +49,35 @@ type Channel = 'email' | 'sms';
 
 /* ---------- Modal state (opened from toasts, the header, the shift panel and Bulk Reschedule) ---------- */
 
+/** A saved job, with the job as it was before the save (Oct 14 auto-send rules). */
+interface SavedJob { jobId: string; before?: Job }
+
 interface NotifyModalState {
   open: boolean;
   /** Only changes on these jobs (JS-C1 one job, JS-C2 the jobs just moved). */
   jobIds?: string[];
   title?: string;
-  /** Jobs saved while the crew template is Automatic (JS-C3): sent once the save lands. */
-  autoJobIds: string[];
+  /** Saves waiting for the store to land, then checked against the auto-send rules. */
+  pending: SavedJob[];
+  /** Send Emails is open for this job. */
+  sendFor?: string;
   show: (o?: { jobIds?: string[]; title?: string }) => void;
   hide: () => void;
-  queueAuto: (jobIds: string[]) => void;
-  clearAuto: () => void;
+  queue: (saved: SavedJob[]) => void;
+  clearPending: () => void;
+  sendEmails: (jobId: string) => void;
+  closeSendEmails: () => void;
 }
 
 export const useNotifyModal = create<NotifyModalState>((set) => ({
   open: false,
-  autoJobIds: [],
+  pending: [],
   show: (o) => set({ open: true, jobIds: o?.jobIds, title: o?.title }),
   hide: () => set({ open: false, jobIds: undefined, title: undefined }),
-  queueAuto: (jobIds) => set((s) => ({ autoJobIds: [...new Set([...s.autoJobIds, ...jobIds])] })),
-  clearAuto: () => set({ autoJobIds: [] }),
+  queue: (saved) => set((st) => ({ pending: [...st.pending, ...saved] })),
+  clearPending: () => set({ pending: [] }),
+  sendEmails: (jobId) => set({ sendFor: jobId }),
+  closeSendEmails: () => set({ sendFor: undefined }),
 }));
 
 /* ---------- Data and sending ---------- */
@@ -85,14 +104,20 @@ export function useCrewNotify() {
     scheduleUpdateMessage(m?.firstName || 'there', changes, { lang, subject: template?.subject, company: bp.companyName, addressOf: (id) => jobs.find((j) => j.id === id)?.address });
 
   /** Logs one Schedule Update per person and channel, then moves the snapshots of everyone reached. */
-  const send = (rows: { memberId: string; channels: Channel[] }[], opts: { lang?: NotifyLang; jobIds?: string[]; skipped?: string[] } = {}) => {
+  /** What one person would be sent: their waiting changes, or with `latest` the jobs' latest schedule (Send Emails). */
+  const changesFor = (memberId: string, opts: { jobIds?: string[]; latest?: boolean }) =>
+    opts.latest && opts.jobIds
+      ? opts.jobIds.flatMap((id) => { const j = jobs.find((x) => x.id === id); return j ? latestForJob(memberId, j, snapshots.items) : []; })
+      : waiting(opts.jobIds).find((p) => p.memberId === memberId)?.changes ?? [];
+
+  const send = (rows: { memberId: string; channels: Channel[] }[], opts: { lang?: NotifyLang; jobIds?: string[]; skipped?: string[]; latest?: boolean } = {}) => {
     const lang = opts.lang ?? 'en';
     const at = new Date().toISOString();
     let snaps = snapshots.items;
     const logs: ScheduleMessageLog[] = [];
     for (const row of rows) {
       const m = member(row.memberId);
-      const changes = waiting(opts.jobIds).find((p) => p.memberId === row.memberId)?.changes ?? [];
+      const changes = changesFor(row.memberId, opts);
       if (!m || !changes.length) continue;
       const msg = messageFor(m, changes, lang);
       const mine: ScheduleMessageLog[] = row.channels.flatMap((channel) => {
@@ -132,23 +157,21 @@ export function useCrewNotify() {
 
 /* ---------- After a save (JS-M1, JS-C3) ---------- */
 
-/** Call after saving, moving or cancelling a schedule. Tells the office the crew was not notified. */
+/**
+ * Call after saving, moving or cancelling a schedule, with the jobs as they were
+ * before the save. Once the save lands, NotifyCrewHost applies the Oct 14 rules:
+ * a first schedule and people taken off a shift are emailed automatically; for
+ * anything else a toast offers Send Emails.
+ */
 export function useScheduleSaved() {
-  const { items: templates } = useCollection('automatedMessages');
   const minimal = useIsOn({ featureKey: 'js' });
-  const complete = useIsOn({ featureKey: 'js', part: 'complete' });
-  return (jobIds: string[]) => {
+  return (jobIds: string[], before: Job[] = []) => {
     // Job scheduling emails switched off in New Features: a plain confirmation.
     if (!minimal) {
       toast.success('Schedule saved.');
       return;
     }
-    const t = templates.find((x) => x.id === CREW_TEMPLATE_ID);
-    if (complete && t?.isActive && t.mode === 'automatic') {
-      useNotifyModal.getState().queueAuto(jobIds);
-      return;
-    }
-    toast.info('Saved. The crew has not been notified.', undefined, { label: 'Notify now', onClick: () => useNotifyModal.getState().show() });
+    useNotifyModal.getState().queue(jobIds.map((jobId) => ({ jobId, before: before.find((b) => b.id === jobId) })));
   };
 }
 
@@ -201,19 +224,124 @@ interface Choice { ticked: boolean; channels: Channel[] }
 export function NotifyCrewHost() {
   const state = useNotifyModal();
   const n = useCrewNotify();
-  // JS-C3: Automatic mode sends once the saved schedule has landed in the store.
+  // Oct 14 rules, once the saved schedule has landed in the store.
   useEffect(() => {
-    if (!state.autoJobIds.length) return;
-    const ids = state.autoJobIds;
-    state.clearAuto();
-    const rows = n.waiting(ids).map((p) => ({ memberId: p.memberId, channels: ['email' as Channel] }));
-    const logs = n.send(rows, { jobIds: ids });
-    const people = new Set(logs.filter((x) => x.delivery === 'delivered').map((x) => x.memberId)).size;
-    toast.success('Saved. The crew was notified.', people ? `Schedule update sent by email to ${people} ${people === 1 ? 'person' : 'people'} (sandbox).` : 'Nobody on these jobs has an email on file.');
+    if (!state.pending.length) return;
+    const saved = state.pending;
+    state.clearPending();
+    let emailed = 0;
+    const manual = new Set<string>();
+    for (const { jobId, before } of saved) {
+      const after = n.jobs.find((j) => j.id === jobId);
+      const waitingHere = n.waiting([jobId]);
+      if (!waitingHere.length) continue;
+      // First schedule: everyone on the job. Taken off a shift: just them.
+      const created = !!before && !before.startDate && !!after?.startDate;
+      const removed = before ? new Set(removedFromShifts(before, after)) : new Set<string>();
+      const targets = waitingHere.filter((p) => created || removed.has(p.memberId)).map((p) => p.memberId);
+      if (targets.length) {
+        const logs = n.send(targets.map((memberId) => ({ memberId, channels: ['email' as Channel] })), { jobIds: [jobId] });
+        emailed += new Set(logs.filter((x) => x.delivery === 'delivered').map((x) => x.memberId)).size;
+      }
+      if (waitingHere.some((p) => !targets.includes(p.memberId))) manual.add(jobId);
+    }
+    if (emailed) toast.success('Saved. The crew was emailed.', `Schedule sent to ${emailed} ${emailed === 1 ? 'person' : 'people'} (sandbox).`);
+    if (manual.size) {
+      const ids = [...manual];
+      toast.info('Saved. The crew has not been emailed.', 'Use Send Emails when you are done editing.', {
+        label: 'Send Emails',
+        onClick: () => (ids.length === 1 ? useNotifyModal.getState().sendEmails(ids[0]!) : useNotifyModal.getState().show({ jobIds: ids })),
+      });
+    } else if (!emailed) toast.success('Schedule saved.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.autoJobIds, n.jobs]);
-  if (!state.open) return null;
-  return <NotifyCrewModal key={`${state.title ?? ''}${(state.jobIds ?? []).join(',')}`} jobIds={state.jobIds} title={state.title} onClose={state.hide} />;
+  }, [state.pending, n.jobs]);
+  return (
+    <>
+      {state.open && <NotifyCrewModal key={`${state.title ?? ''}${(state.jobIds ?? []).join(',')}`} jobIds={state.jobIds} title={state.title} onClose={state.hide} />}
+      {state.sendFor && <SendEmailsModal key={state.sendFor} jobId={state.sendFor} onClose={state.closeSendEmails} />}
+    </>
+  );
+}
+
+/* ---------- Send Emails (Oct 14 call): the job's crew, one, several or all ---------- */
+
+/** The Send Emails button for a job (job side panel). Only schedulers see it. */
+export function SendEmailsButton({ jobId, className }: { jobId: string; className?: string }) {
+  const scheduler = can(useFeatureUser(), 'workOrder.manageSchedule');
+  const on = useIsOn({ featureKey: 'js' });
+  if (!scheduler || !on) return null;
+  return (
+    <Button variant="secondary" className={cn('w-full justify-center', className)} onClick={() => useNotifyModal.getState().sendEmails(jobId)}>
+      <Mail className="h-4 w-4" /> Send Emails
+    </Button>
+  );
+}
+
+function SendEmailsModal({ jobId, onClose }: { jobId: string; onClose: () => void }) {
+  const n = useCrewNotify();
+  const job = n.jobs.find((j) => j.id === jobId);
+  const crew = job ? jobCrewIds(job).map((id) => n.member(id)).filter((m): m is TeamMember => !!m) : [];
+  const waitingIds = new Set(n.waiting([jobId]).map((p) => p.memberId));
+  const [ticked, setTicked] = useState<Set<string>>(() => new Set(crew.filter((m) => !!m.email).map((m) => m.id)));
+  const toggle = (id: string, on: boolean) => setTicked((t) => { const next = new Set(t); if (on) next.add(id); else next.delete(id); return next; });
+
+  const sendNow = () => {
+    const ids = [...ticked];
+    const skipped = crew.filter((m) => !ticked.has(m.id)).map((m) => m.id);
+    const logs = n.send(ids.map((memberId) => ({ memberId, channels: ['email' as Channel] })), { jobIds: [jobId], latest: true, skipped });
+    const sent = new Set(logs.filter((x) => x.delivery === 'delivered').map((x) => x.memberId)).size;
+    const failed = new Set(logs.filter((x) => x.delivery === 'not_delivered').map((x) => x.memberId)).size;
+    toast.success(`Schedule emailed to ${sent} ${sent === 1 ? 'person' : 'people'}.`, failed ? `${failed} could not be reached. Sandbox: nothing left the prototype.` : 'Sandbox: logged in the prototype, nothing was delivered.');
+    onClose();
+  };
+
+  return (
+    <Modal
+      open
+      onOpenChange={(v) => !v && onClose()}
+      title="Send Emails"
+      description={job ? `Email the latest schedule for ${job.title} (${job.jobNumber}) to the crew you tick.` : undefined}
+      size="md"
+      footer={
+        <div className="flex w-full items-center justify-end gap-2">
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" disabled={!ticked.size} onClick={sendNow}><Send className="h-4 w-4" /> Send{ticked.size ? ` (${ticked.size})` : ''}</Button>
+        </div>
+      }
+    >
+      {!crew.length ? (
+        <EmptyState title="No crew on this job" body="Assign crew to the job's shifts, then send their schedule." />
+      ) : (
+        <>
+          <div className="mb-3 flex items-center justify-between text-xs">
+            <span className="font-bold uppercase tracking-wider text-gray-500">Assigned crew ({crew.length})</span>
+            <span className="flex gap-3">
+              <button type="button" className="font-bold text-primary-700 hover:underline" onClick={() => setTicked(new Set(crew.filter((m) => !!m.email).map((m) => m.id)))}>Select all</button>
+              <button type="button" className="font-bold text-primary-700 hover:underline" onClick={() => setTicked(new Set())}>Clear all</button>
+            </span>
+          </div>
+          <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200">
+            {crew.map((m) => (
+              <li key={m.id} className={cn('flex flex-wrap items-center gap-3 px-4 py-3', !m.email && 'bg-gray-50')}>
+                <Checkbox
+                  checked={ticked.has(m.id)}
+                  disabled={!m.email}
+                  onCheckedChange={(v) => toggle(m.id, v)}
+                  label={<b className={cn('text-sm', m.email ? 'text-gray-900' : 'text-gray-400')}>{fullName(m)}</b>}
+                />
+                <span className="text-xs text-gray-500">{m.email || <i>No email on file</i>}</span>
+                {waitingIds.has(m.id) && (
+                  <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-bold text-orange-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" aria-hidden /> Changes not sent
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </Modal>
+  );
 }
 
 function NotifyCrewModal({ jobIds, title, onClose }: { jobIds?: string[]; title?: string; onClose: () => void }) {
@@ -389,6 +517,7 @@ function ChangeList({ changes }: { changes: PersonChange[] }) {
           {c.kind === 'new' && <><Badge tone="green">New</Badge><span className="text-gray-700">{describeView(c.after!)}</span></>}
           {c.kind === 'changed' && <><s className="text-gray-400">{describeView(c.before!)}</s><span className="text-gray-400">→</span><span className="font-semibold text-gray-900">{describeView(c.after!)}</span></>}
           {c.kind === 'removed' && <><Badge tone="red">Removed</Badge><s className="text-gray-400">{describeView(c.before!)}</s></>}
+          {c.kind === 'current' && <><Badge tone="gray">Current</Badge><span className="text-gray-700">{describeView(c.after!)}</span></>}
         </li>
       ))}
     </ul>

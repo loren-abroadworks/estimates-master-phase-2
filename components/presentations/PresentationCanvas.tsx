@@ -90,7 +90,7 @@ export function PresentationCanvas({ presentation: p, edit = false, onSectionCha
             )}
           >
             {edit && !s.enabled && (
-              <span className="absolute left-4 top-4 z-40 rounded-full bg-gray-900 px-2 py-0.5 text-xxs font-bold uppercase tracking-wider text-white">Hidden</span>
+              <span className="absolute left-4 top-4 z-40 rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Hidden</span>
             )}
             {edit && toolbarFor?.(s, i)}
             <SectionBody ctx={ctx} />
@@ -240,7 +240,7 @@ function EstimatePart({ ctx }: { ctx: SectionCtx }) {
           )}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500">
+        <div className="rounded-2xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
           {ctx.edit
             ? `${SECTION_META[ctx.s.type].label}: filled from the estimate when this template is used in Client Preview.`
             : 'This part of your proposal will appear here.'}
@@ -297,11 +297,11 @@ function ImageSlot({ src, fallback, edit, onChange, className, children, label =
       {children}
       {edit && (
         <span className="absolute bottom-3 right-3 z-40 flex gap-1.5">
-          <button type="button" onClick={pick} className="flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-xs font-bold text-gray-700 shadow hover:bg-white" aria-label={`${src ? 'Swap' : 'Add'} ${label}`}>
+          <button type="button" onClick={pick} className="flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-[11px] font-bold text-gray-700 shadow hover:bg-white" aria-label={`${src ? 'Swap' : 'Add'} ${label}`}>
             <ImageIcon className="h-3.5 w-3.5" /> {src ? 'Swap image' : 'Add image'}
           </button>
           {src && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onChange(undefined); }} className="rounded-lg bg-white/90 px-2 py-1 text-xs font-bold text-red-600 shadow" aria-label={`Remove ${label}`}>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onChange(undefined); }} className="rounded-lg bg-white/90 px-2 py-1 text-[11px] font-bold text-red-600 shadow" aria-label={`Remove ${label}`}>
               Remove
             </button>
           )}
@@ -333,7 +333,7 @@ function Cover({ ctx }: { ctx: SectionCtx }) {
           <div className="mb-4 h-1 w-10 rounded-full" style={{ backgroundColor: color }} />
           <h1 className={titleCls} style={{ fontFamily: p.branding?.headingFont }}><Editable edit={edit} value={s.content} onChange={(content) => set({ content })} /></h1>
           <p className="mt-4 text-lg text-gray-500"><Editable edit={edit} value={s.subtitle ?? ''} onChange={(subtitle) => set({ subtitle })} placeholder="Subtitle" /></p>
-          {customer && <p className="mt-6 text-sm font-bold uppercase tracking-widest text-gray-500">Prepared for {fullName(customer)}</p>}
+          {customer && <p className="mt-6 text-sm font-bold uppercase tracking-widest text-gray-400">Prepared for {fullName(customer)}</p>}
         </div>
         <ImageSlot src={s.imageUrl ?? p.coverImage} fallback={p.cover} edit={edit} onChange={(imageUrl) => set({ imageUrl })} label="cover image" className="aspect-[4/3] rounded-3xl shadow-xl" />
       </section>
@@ -369,7 +369,7 @@ function EstimateBlock({ ctx }: { ctx: SectionCtx }) {
     return (
       <section className={cn(pad, shell(ctx))}>
         <Heading ctx={ctx} />
-        <div className="rounded-2xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-500">
+        <div className="rounded-2xl border border-dashed border-gray-300 p-10 text-center text-sm text-gray-400">
           {edit ? 'Link an estimate in the Settings tab to show your proposal and pricing here.' : 'Your detailed proposal will appear here.'}
         </div>
       </section>
@@ -430,7 +430,7 @@ function EstimateBlock({ ctx }: { ctx: SectionCtx }) {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-gray-50 p-4 text-gray-900">
-      <div className="text-xxs font-bold uppercase tracking-widest text-gray-500">{label}</div>
+      <div className="text-xxs font-bold uppercase tracking-widest text-gray-400">{label}</div>
       <div className="mt-1 font-semibold">{value}</div>
     </div>
   );
@@ -557,7 +557,7 @@ function About({ ctx }: { ctx: SectionCtx }) {
           {[['15+', 'Years Experience'], ['500+', 'Projects Completed']].map(([v, l]) => (
             <div key={l}>
               <div className="font-heading text-4xl font-black" style={{ color }}>{v}</div>
-              <div className="mt-1 text-xxs font-bold uppercase tracking-widest opacity-60">{l}</div>
+              <div className="mt-1 text-[10px] font-bold uppercase tracking-widest opacity-60">{l}</div>
             </div>
           ))}
         </div>

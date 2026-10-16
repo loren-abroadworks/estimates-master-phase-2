@@ -1,7 +1,7 @@
 'use client';
 
 /*
-  Settings › Pipeline Stages › Lead sources (2 Oct 2026, D6).
+  Settings › Lead Sources (2 Oct 2026, D6; own page since the Oct 14 call).
 
   The organisation's own list of lead sources. Eight are built in and can't
   be deleted or switched off (Website, Facebook, Instagram, Google, Referral,

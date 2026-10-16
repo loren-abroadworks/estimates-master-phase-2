@@ -4,22 +4,24 @@ import * as SwitchPrimitive from "@radix-ui/react-switch";
 import { Check } from "lucide-react";
 import { cn } from "@/features/lib/cn";
 
+// Production brand rules (docs/BRANDING.md): 0.63rem corners, gray-300 border, primary-100 focus ring.
+// Heights stay compact on feature screens (dense tables and side panels).
 const base =
-  "w-full rounded-lg border bg-white px-3 text-sm text-ink placeholder:text-gray-400 transition-colors " +
-  "focus:outline-none focus:ring-2 focus:ring-brand/25 focus:border-brand disabled:bg-gray-50 disabled:text-gray-400";
+  "w-full rounded-[0.63rem] border bg-white px-3 text-sm font-medium text-gray-600 placeholder:font-normal placeholder:text-gray-400 transition-all duration-200 " +
+  "focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-400 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }>(function Input(
   { className, invalid, ...rest },
   ref,
 ) {
-  return <input ref={ref} className={cn(base, "h-10", invalid ? "border-red-400" : "border-line", className)} aria-invalid={invalid || undefined} {...rest} />;
+  return <input ref={ref} className={cn(base, "h-10", invalid ? "border-red-600" : "border-gray-300", className)} aria-invalid={invalid || undefined} {...rest} />;
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean }>(function Textarea(
   { className, invalid, ...rest },
   ref,
 ) {
-  return <textarea ref={ref} className={cn(base, "min-h-20 py-2", invalid ? "border-red-400" : "border-line", className)} aria-invalid={invalid || undefined} {...rest} />;
+  return <textarea ref={ref} className={cn(base, "min-h-20 py-2", invalid ? "border-red-600" : "border-gray-300", className)} aria-invalid={invalid || undefined} {...rest} />;
 });
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean }>(function Select(
@@ -29,7 +31,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
   return (
     <select
       ref={ref}
-      className={cn(base, "h-10 appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 fill=%22none%22 stroke=%22%2364748b%22 stroke-width=%222%22><path d=%22m4 6 4 4 4-4%22/></svg>')] bg-[right_10px_center] bg-no-repeat pr-8", invalid ? "border-red-400" : "border-line", className)}
+      className={cn(base, "h-10 appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 fill=%22none%22 stroke=%22%2364748b%22 stroke-width=%222%22><path d=%22m4 6 4 4 4-4%22/></svg>')] bg-[right_10px_center] bg-no-repeat pr-8", invalid ? "border-red-600" : "border-gray-300", className)}
       aria-invalid={invalid || undefined}
       {...rest}
     >
@@ -57,8 +59,8 @@ export function Field({ label, htmlFor, required, error, hint, children, classNa
   const child = !htmlFor && Children.count(children) === 1 && isValidElement<{ id?: string }>(children) && LABELLABLE.has(children.type) ? children : null;
   const id = htmlFor ?? (child ? child.props.id ?? autoId : undefined);
   return (
-    <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={id} className="block text-xs font-semibold text-gray-700">
+    <div className={cn("space-y-2", className)}>
+      <label htmlFor={id} className="block text-xs font-bold uppercase tracking-wider text-gray-500">
         {label}
         {required && <span className="ml-0.5 text-red-500">*</span>}
       </label>
@@ -100,9 +102,9 @@ export function Switch({ checked, onCheckedChange, disabled, label }: { checked:
         checked={checked}
         disabled={disabled}
         onCheckedChange={onCheckedChange}
-        className="relative h-5 w-9 rounded-full bg-gray-200 transition-colors data-[state=checked]:bg-brand"
+        className="relative inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent bg-gray-200 shadow-xs transition-all data-[state=checked]:bg-primary-700"
       >
-        <SwitchPrimitive.Thumb className="block h-4 w-4 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[18px]" />
+        <SwitchPrimitive.Thumb className="block size-4 rounded-full bg-white transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0" />
       </SwitchPrimitive.Root>
       {label}
     </label>

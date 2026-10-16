@@ -92,7 +92,7 @@ export function InteractionPanel() {
               onClick={() => setFilter(f.key)}
               className={cn('rounded-lg px-3 py-1.5 text-xs font-bold', filter === f.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800')}
             >
-              {f.label} <span className="ml-0.5 text-gray-500">{counts[f.key]}</span>
+              {f.label} <span className="ml-0.5 text-gray-400">{counts[f.key]}</span>
             </button>
           ))}
         </div>
@@ -116,14 +116,14 @@ export function InteractionPanel() {
                   }[r.stage])}>{r.stage}</span>
                 </td>
                 <td className={cn(TD, 'text-gray-600')}>{when(r.e.sentAt)}</td>
-                <td className={cn(TD, 'text-gray-600')}>{r.views.count ? when(r.views.firstAt) : <span className="italic text-gray-500">Not opened yet</span>}</td>
+                <td className={cn(TD, 'text-gray-600')}>{r.views.count ? when(r.views.firstAt) : <span className="italic text-gray-400">Not opened yet</span>}</td>
                 <td className={cn(TD, 'font-semibold text-gray-900')}>{r.views.returns}</td>
                 <td className={cn(TD, 'text-gray-600')}>{when(r.views.lastAt)}</td>
                 <td className={cn(TD, 'text-right font-semibold')}>{money(r.total)}</td>
               </tr>
             ))}
             {shown.length === 0 && (
-              <tr><td colSpan={8} className="px-6 py-8 text-center text-sm italic text-gray-500">No estimates in this list.</td></tr>
+              <tr><td colSpan={8} className="px-6 py-8 text-center text-sm italic text-gray-400">No estimates in this list.</td></tr>
             )}
           </tbody>
         </table>

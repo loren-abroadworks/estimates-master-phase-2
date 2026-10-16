@@ -34,8 +34,8 @@ export function PaintHistoryHost({ customerId }: { customerId: string }) {
     return (
       <div className="flex min-h-[300px] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-200 bg-white py-12 text-center">
         <MapPin className="h-6 w-6 text-gray-300" />
-        <p className="italic text-gray-500">No paint history recorded for this contact yet.</p>
-        <p className="text-xs text-gray-500">Paint history is kept per service location once a job is closed out.</p>
+        <p className="italic text-gray-400">No paint history recorded for this contact yet.</p>
+        <p className="text-xs text-gray-400">Paint history is kept per service location once a job is closed out.</p>
       </div>
     );
   }
@@ -58,12 +58,12 @@ export function LocationPaintChips({ customerId, street }: { customerId: string;
       {featureOn({ feature: 25 }) && <Link
         href={contactHref(customerId, 'paint-history', { location: property.id })}
         scroll={false}
-        className="inline-flex items-center gap-1 rounded-md border border-green-200 bg-white px-1.5 py-0.5 text-xs font-semibold text-green-700 hover:bg-green-50"
+        className="inline-flex items-center gap-1 rounded-md border border-green-200 bg-white px-1.5 py-0.5 text-[11px] font-semibold text-green-700 hover:bg-green-50"
       >
         {apps} paint records <NewBadge feature={25} />
       </Link>}
       {qr && featureOn({ feature: 26 }) && (
-        <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 text-xs font-semibold text-gray-600">
+        <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 text-[11px] font-semibold text-gray-600">
           <QrCode className="h-3 w-3" /> QR link active
         </span>
       )}

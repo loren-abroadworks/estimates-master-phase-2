@@ -29,7 +29,7 @@ export function EstimateTemplateChecklist({ value, onChange }: { value: string[]
   const { items: types } = useCollection('estimateTypes');
   const { items: templates } = useCollection('estimateTemplates');
   const toggle = (id: string) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
-  if (!templates.length) return <p className="py-2 text-sm text-gray-500">No estimate templates yet. Add them in Settings › Estimate Templates.</p>;
+  if (!templates.length) return <p className="py-2 text-sm text-gray-400">No estimate templates yet. Add them in Settings › Estimate Templates.</p>;
   return (
     <div className="max-h-56 space-y-3 overflow-y-auto rounded-xl border border-gray-200 p-2">
       {[...types].sort((a, b) => a.sortOrder - b.sortOrder).map((t) => {
@@ -37,7 +37,7 @@ export function EstimateTemplateChecklist({ value, onChange }: { value: string[]
         if (!list.length) return null;
         return (
           <div key={t.id}>
-            <div className="px-2 pb-1 text-xxs font-bold uppercase tracking-wider text-gray-500">{t.name}</div>
+            <div className="px-2 pb-1 text-xxs font-bold uppercase tracking-wider text-gray-400">{t.name}</div>
             {list.map((x) => (
               <div key={x.id} className={cn('rounded-lg p-2', value.includes(x.id) ? 'bg-primary-50' : 'hover:bg-gray-50')}>
                 <Checkbox checked={value.includes(x.id)} onChange={() => toggle(x.id)} label={<span className="font-medium">{x.name}</span>} />
@@ -174,7 +174,7 @@ function ShareForm({ p }: { p: Presentation }) {
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">This presentation is a draft. Sharing it by email will publish it.</p>
       )}
       <div>
-        <div className="mb-1.5 text-xs font-bold uppercase tracking-wide text-gray-600">Presentation Link</div>
+        <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-600">Presentation Link</div>
         <div className="flex gap-2">
           <Input readOnly value={link} leftIcon={<Link2 className="h-4 w-4" />} onFocus={(e) => e.target.select()} />
           <Button variant="secondary" icon={<Copy className="h-4 w-4" />} onClick={copy}>Copy</Button>
@@ -189,18 +189,18 @@ function ShareForm({ p }: { p: Presentation }) {
         </Field>
       </div>
       <div>
-        <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-wide text-gray-600">
+        <div className="mb-2 flex items-center justify-between text-[11px] font-bold uppercase tracking-wide text-gray-600">
           <span>Shared With</span>
-          <span className="flex items-center gap-1 normal-case tracking-normal text-gray-500"><Eye className="h-3.5 w-3.5" /> {p.views} {p.views === 1 ? 'view' : 'views'}</span>
+          <span className="flex items-center gap-1 normal-case tracking-normal text-gray-400"><Eye className="h-3.5 w-3.5" /> {p.views} {p.views === 1 ? 'view' : 'views'}</span>
         </div>
         {p.sharedWith.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-200 py-4 text-center text-sm text-gray-500">Not shared with anyone yet.</p>
+          <p className="rounded-xl border border-dashed border-gray-200 py-4 text-center text-sm text-gray-400">Not shared with anyone yet.</p>
         ) : (
           <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200">
             {p.sharedWith.map((e) => (
               <li key={e} className="flex items-center justify-between px-4 py-2.5 text-sm">
                 <span className="text-gray-700">{e}</span>
-                <button onClick={() => update(p.id, { sharedWith: p.sharedWith.filter((x) => x !== e) })} className="rounded p-1 text-gray-500 hover:bg-red-50 hover:text-red-600" aria-label={`Remove ${e}`}>
+                <button onClick={() => update(p.id, { sharedWith: p.sharedWith.filter((x) => x !== e) })} className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label={`Remove ${e}`}>
                   <X className="h-4 w-4" />
                 </button>
               </li>

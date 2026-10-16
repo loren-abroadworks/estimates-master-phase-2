@@ -51,6 +51,8 @@ export interface EstimateEmailInput {
   link: string;
   /** Date the secure link stops working, already formatted for people. */
   linkExpires?: string;
+  /** Oct 14 call: the customer's Customer ID, for the website form's existing-customer box. */
+  customerCode?: string;
 }
 
 export function defaultEstimateSubject(i: Pick<EstimateEmailInput, 'estimate' | 'companyName'>): string {
@@ -69,7 +71,8 @@ export function buildEstimateEmail(i: EstimateEmailInput, custom?: { subject?: s
   const subject = (custom?.subject?.trim() || defaultEstimateSubject(i)).replace(/[\r\n]+/g, ' ');
   const message = (custom?.message?.trim() || defaultEstimateMessage(i)).trimEnd();
   const linkBlock = `View your estimate: ${i.link}${i.linkExpires ? `\n(This secure link works until ${i.linkExpires}.)` : ''}`;
-  const body = message.includes(i.link) ? message : `${message}\n\n${linkBlock}`;
+  const withLink = message.includes(i.link) ? message : `${message}\n\n${linkBlock}`;
+  const body = i.customerCode ? `${withLink}\n\nYour Customer ID: ${i.customerCode}` : withLink;
   return { subject, body };
 }
 

@@ -16,6 +16,7 @@ import {
   buildEstimateEmail, buildEstimateSms, deliveryLogText, deliveryToast, latestDeliveries, postEstimateMessage, statusAfterSend,
 } from '@/lib/estimate-email';
 import { useEstimateActions } from './useEstimateActions';
+import { customerCode } from '@/lib/lead-capture';
 
 export interface SendEstimatePayload {
   to: string[];
@@ -48,7 +49,7 @@ export function useSendEstimateEmail() {
       if (p.subject || p.message) lastWords.current[e.id] = { subject: p.subject, message: p.message };
       try {
         const customer = look.customer(e.customerId);
-        const input = { estimate: e, customerFirstName: customer?.firstName, companyName: bp.companyName, link: ctx.link, linkExpires: ctx.linkExpires };
+        const input = { estimate: e, customerFirstName: customer?.firstName, companyName: bp.companyName, link: ctx.link, linkExpires: ctx.linkExpires, customerCode: customer ? customerCode(customer) : undefined };
         const mail = buildEstimateEmail(input, { subject: p.subject, message: p.message });
         const tag = `estimate:${e.id}`.replace(/[^\w.:-]/g, '').slice(0, 64);
         const sendId = uid('snd');

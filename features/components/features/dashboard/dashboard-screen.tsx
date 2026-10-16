@@ -155,7 +155,7 @@ export function DashboardScreen() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-green-800"><Sparkles className="h-4 w-4" /> Demo journey <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs tracking-wider">Prototype only</span></div>
             <div className="flex gap-2">
-              <AppLink href="/dashboard#feature-tours"><Button size="sm" variant="primary"><Compass className="h-3.5 w-3.5" /> Feature tours</Button></AppLink>
+              <AppLink href="/prototype#feature-tours"><Button size="sm" variant="primary"><Compass className="h-3.5 w-3.5" /> Feature tours</Button></AppLink>
             </div>
           </div>
           <ol className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">

@@ -170,7 +170,7 @@ export function TemplateEditor({ id }: { id?: string }) {
             <div className="overflow-x-auto rounded-2xl border border-gray-200">
               <table className="w-full min-w-[640px]">
                 <thead>
-                  <tr className="border-b border-gray-100 text-left text-xxs font-extrabold uppercase tracking-wider text-gray-500">
+                  <tr className="border-b border-gray-100 text-left text-[10px] font-extrabold uppercase tracking-wider text-gray-500">
                     <th className="w-20 px-4 py-3 text-center">Color #</th>
                     <th className="px-4 py-3">Brand</th>
                     <th className="px-4 py-3">Product</th>
@@ -209,7 +209,7 @@ export function TemplateEditor({ id }: { id?: string }) {
                   <div className="flex items-center justify-between gap-3 border-b border-gray-100 bg-gray-50/60 px-4 py-3">
                     <div>
                       <div className="font-heading text-base font-bold text-gray-900">{a.name}</div>
-                      <div className="text-xxs font-bold uppercase tracking-wider text-gray-500">{lookups.estimateType(a.estimateTypeId)?.name ?? 'General'} · Area</div>
+                      <div className="text-xxs font-bold uppercase tracking-wider text-gray-400">{lookups.estimateType(a.estimateTypeId)?.name ?? 'General'} · Area</div>
                     </div>
                     <RowTools
                       onUp={i > 0 ? () => set('areaTemplateIds', move(draft.areaTemplateIds, i, -1)) : undefined}
@@ -219,7 +219,7 @@ export function TemplateEditor({ id }: { id?: string }) {
                   </div>
                   <table className="w-full">
                     <thead>
-                      <tr className="text-left text-xxs font-bold uppercase tracking-wider text-gray-500">
+                      <tr className="text-left text-xxs font-bold uppercase tracking-wider text-gray-400">
                         <th className="px-4 py-2">Surface</th>
                         <th className="px-4 py-2">Unit</th>
                         <th className="px-4 py-2">Coats</th>
@@ -233,14 +233,14 @@ export function TemplateEditor({ id }: { id?: string }) {
                         return (
                           <tr key={sid} className="text-sm">
                             <td className="px-4 py-2 font-semibold text-gray-800">{s.name}</td>
-                            <td className="px-4 py-2"><span className="rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-xs font-bold text-gray-600">{UNIT_LABELS[s.unit]}</span></td>
+                            <td className="px-4 py-2"><span className="rounded border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">{UNIT_LABELS[s.unit]}</span></td>
                             <td className="px-4 py-2 text-gray-600">{s.defaultCoats}</td>
                             <td className="px-4 py-2 text-right text-gray-600">{s.rateCoat1} /hr</td>
                           </tr>
                         );
                       })}
                       {a.surfaceRateIds.length === 0 && (
-                        <tr><td colSpan={4} className="px-4 py-4 text-center text-xs italic text-gray-500">No default surfaces</td></tr>
+                        <tr><td colSpan={4} className="px-4 py-4 text-center text-xs italic text-gray-400">No default surfaces</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -252,7 +252,7 @@ export function TemplateEditor({ id }: { id?: string }) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-heading text-base font-bold text-gray-900">{li.name}</span>
-                      <span className="rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xxs font-bold uppercase text-gray-500">{li.itemType === 'PRICED' ? 'Priced' : 'Descriptive'}</span>
+                      <span className="rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-gray-500">{li.itemType === 'PRICED' ? 'Priced' : 'Descriptive'}</span>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">{li.description}</p>
                   </div>
@@ -297,7 +297,7 @@ export function TemplateEditor({ id }: { id?: string }) {
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full min-w-[560px]">
                 <thead className="bg-gray-50">
-                  <tr className="text-left text-xxs font-bold uppercase tracking-wider text-gray-500">
+                  <tr className="text-left text-[9px] font-bold uppercase tracking-wider text-gray-500">
                     <th className="px-4 py-2.5">Item Name</th>
                     <th className="w-24 px-4 py-2.5 text-center">Qty</th>
                     <th className="w-28 px-4 py-2.5 text-right">Unit Price</th>
@@ -308,7 +308,7 @@ export function TemplateEditor({ id }: { id?: string }) {
                 <tbody className="divide-y divide-gray-100">
                   {mats.map((m) => (
                     <tr key={m.materialId} className="text-sm">
-                      <td className="px-4 py-2 font-semibold text-gray-800">{m.material!.name} <span className="text-xs font-normal text-gray-500">/ {m.material!.unit}</span></td>
+                      <td className="px-4 py-2 font-semibold text-gray-800">{m.material!.name} <span className="text-xs font-normal text-gray-400">/ {m.material!.unit}</span></td>
                       <td className="px-4 py-2">
                         <Input
                           type="number"
@@ -321,14 +321,14 @@ export function TemplateEditor({ id }: { id?: string }) {
                       <td className="px-4 py-2 text-right text-gray-600">{money(m.material!.unitCost)}</td>
                       <td className="px-4 py-2 text-right font-bold text-gray-900">{money(m.qty * m.material!.unitCost)}</td>
                       <td className="px-2 py-2">
-                        <button type="button" aria-label="Remove material" className="rounded p-1 text-gray-500 hover:bg-red-50 hover:text-red-600" onClick={() => { set('materials', (draft.materials ?? []).filter((x) => x.materialId !== m.materialId)); toast('Material removed'); }}>
+                        <button type="button" aria-label="Remove material" className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600" onClick={() => { set('materials', (draft.materials ?? []).filter((x) => x.materialId !== m.materialId)); toast('Material removed'); }}>
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
                     </tr>
                   ))}
                   <tr className="bg-gray-50/60">
-                    <td colSpan={3} className="px-4 py-2.5 text-right text-xxs font-bold uppercase tracking-wider text-gray-700">Total Materials</td>
+                    <td colSpan={3} className="px-4 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-gray-700">Total Materials</td>
                     <td className="px-4 py-2.5 text-right text-sm font-bold text-gray-900">{money(materialsTotal)}</td>
                     <td />
                   </tr>
@@ -343,8 +343,8 @@ export function TemplateEditor({ id }: { id?: string }) {
             <div className="mt-5 flex justify-end">
               <div className="flex items-center gap-8 rounded-xl border border-gray-200 px-5 py-4 shadow-sm">
                 <div>
-                  <div className="text-xxs font-bold uppercase tracking-wider text-gray-600">Paint &amp; Materials Combined</div>
-                  <div className="text-xs text-gray-500">Includes waste &amp; container optimization</div>
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-gray-600">Paint &amp; Materials Combined</div>
+                  <div className="text-xs text-gray-400">Includes waste &amp; container optimization</div>
                 </div>
                 <div className="font-heading text-2xl font-bold text-gray-900">{money(materialsTotal)}</div>
               </div>
@@ -356,7 +356,7 @@ export function TemplateEditor({ id }: { id?: string }) {
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full min-w-[560px]">
                 <thead className="bg-gray-50">
-                  <tr className="text-left text-xxs font-bold uppercase tracking-wider text-gray-500">
+                  <tr className="text-left text-[9px] font-bold uppercase tracking-wider text-gray-500">
                     <th className="px-4 py-2.5">Area</th>
                     <th className="px-4 py-2.5">Item</th>
                     <th className="px-4 py-2.5">Qty</th>
@@ -382,12 +382,12 @@ export function TemplateEditor({ id }: { id?: string }) {
                     }),
                   )}
                   {areas.length === 0 && (
-                    <tr><td colSpan={6} className="px-4 py-10 text-center text-xs text-gray-500">No labor items calculated yet.</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-10 text-center text-xs text-gray-400">No labor items calculated yet.</td></tr>
                   )}
                 </tbody>
               </table>
               <div className="flex items-center justify-end gap-10 border-t border-gray-100 bg-gray-50 px-6 py-3">
-                <span className="text-xxs font-bold uppercase tracking-wider text-gray-700">Total Hours</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-700">Total Hours</span>
                 <span className="text-sm font-bold text-primary-600">0.00</span>
               </div>
             </div>
@@ -401,7 +401,7 @@ export function TemplateEditor({ id }: { id?: string }) {
                 <span className="text-sm font-bold text-gray-900">Pricing Calculation Model</span>
                 <div className="flex rounded-lg border border-gray-200 bg-white p-1">
                   {([['HOURLY', 'Hourly Rate'], ['OPEX', 'OpEx Rate']] as const).map(([v, l]) => (
-                    <button key={v} type="button" onClick={() => set('pricingModel', v)} className={cn('rounded-md px-3 py-1.5 text-xs font-bold', (draft.pricingModel ?? 'HOURLY') === v ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900')}>
+                    <button key={v} type="button" onClick={() => set('pricingModel', v)} className={cn('rounded-md px-3 py-1.5 text-[11px] font-bold', (draft.pricingModel ?? 'HOURLY') === v ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900')}>
                       {l}
                     </button>
                   ))}
@@ -426,7 +426,7 @@ export function TemplateEditor({ id }: { id?: string }) {
                 <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 px-4 py-6 text-center hover:border-primary-300">
                   <span className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white"><Upload className="h-4 w-4 text-primary-600" /></span>
                   <span className="text-sm"><span className="font-semibold text-gray-900">Click to upload</span> <span className="text-gray-500">or drag and drop</span></span>
-                  <span className="mt-1 text-xs text-gray-500">PDF, DOCX, JPG, PNG (Max 10MB)</span>
+                  <span className="mt-1 text-xs text-gray-400">PDF, DOCX, JPG, PNG (Max 10MB)</span>
                   <input
                     type="file"
                     multiple
@@ -446,7 +446,7 @@ export function TemplateEditor({ id }: { id?: string }) {
                     {files.map((f, i) => (
                       <li key={`${f}-${i}`} className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-700">
                         {f}
-                        <button type="button" aria-label={`Remove ${f}`} onClick={() => setFiles((x) => x.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-600"><X className="h-3.5 w-3.5" /></button>
+                        <button type="button" aria-label={`Remove ${f}`} onClick={() => setFiles((x) => x.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-600"><X className="h-3.5 w-3.5" /></button>
                       </li>
                     ))}
                   </ul>
@@ -558,12 +558,12 @@ function Section({ icon, title, subtitle, children }: { icon: React.ReactNode; t
 }
 
 function RowTools({ onUp, onDown, onRemove }: { onUp?: () => void; onDown?: () => void; onRemove: () => void }) {
-  const btn = 'rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:hover:bg-transparent';
+  const btn = 'rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:hover:bg-transparent';
   return (
     <div className="flex items-center gap-0.5">
       <button type="button" className={btn} disabled={!onUp} onClick={onUp} aria-label="Move up"><ArrowUp className="h-4 w-4" /></button>
       <button type="button" className={btn} disabled={!onDown} onClick={onDown} aria-label="Move down"><ArrowDown className="h-4 w-4" /></button>
-      <button type="button" className="rounded p-1 text-gray-500 hover:bg-red-50 hover:text-red-600" onClick={onRemove} aria-label="Remove"><Trash2 className="h-4 w-4" /></button>
+      <button type="button" className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600" onClick={onRemove} aria-label="Remove"><Trash2 className="h-4 w-4" /></button>
     </div>
   );
 }
@@ -593,7 +593,7 @@ function PickerModal({
             {o.sub && <div className="truncate text-xs text-gray-500">{o.sub}</div>}
           </button>
         ))}
-        {shown.length === 0 && <p className="py-6 text-center text-sm text-gray-500">{options.length === 0 ? empty : 'No matches.'}</p>}
+        {shown.length === 0 && <p className="py-6 text-center text-sm text-gray-400">{options.length === 0 ? empty : 'No matches.'}</p>}
       </div>
     </Modal>
   );
