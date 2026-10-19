@@ -49,4 +49,25 @@ describe("feature visibility", () => {
     expect(gateTarget({ feature: [3, 24] })).toEqual({ keys: ["f3", "f24"], part: "minimal" });
     expect(gateTarget({ item: "RP-C2" })).toEqual({ keys: ["rp"], part: "complete" });
   });
+
+  it("CRM Part 1 (website lead capture) and Part 2 (pipelines and export) switch apart", () => {
+    expect(keyForItem("CRM-M5")).toEqual({ key: "crm1", part: "minimal" });
+    expect(keyForItem("CRM-M6")).toEqual({ key: "crm1", part: "minimal" });
+    expect(keyForItem("CRM-C1")).toEqual({ key: "crm1", part: "complete" });
+    expect(keyForItem("CRM-C6")).toEqual({ key: "crm1", part: "complete" });
+    expect(keyForItem("CRM-M1")).toEqual({ key: "crm", part: "minimal" });
+    const rows = withMinimal(defaultRows(), "crm1", false);
+    expect(isOn({ showNew: true, rows }, "crm1")).toBe(false);
+    expect(isOn({ showNew: true, rows }, "crm")).toBe(true);
+  });
+
+  it("Books has no switch of its own: all of it follows Feature 33", () => {
+    expect(Object.keys(defaultRows())).not.toContain("bk");
+    const on = withComplete(defaultRows(), "f33", false);
+    expect(isOn({ showNew: true, rows: on }, "bk")).toBe(true);
+    expect(isOn({ showNew: true, rows: on }, "bk", "complete")).toBe(true);
+    const off = withMinimal(defaultRows(), "f33", false);
+    expect(isOn({ showNew: true, rows: off }, "bk")).toBe(false);
+    expect(isOn({ showNew: false, rows: on }, "bk")).toBe(false);
+  });
 });

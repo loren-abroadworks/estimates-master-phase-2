@@ -98,7 +98,8 @@ export function AutomatedMessagesView() {
 
   return (
     <SettingsPage wide title="Automated Messages" subtitle="Customize the default email and SMS templates sent to clients.">
-      <WebsiteThanksCard />
+      {/* CRM Part 1 (New Modules). */}
+      <FeatureGate featureKey="crm1"><WebsiteThanksCard /></FeatureGate>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div className="space-y-3 lg:col-span-4 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto lg:pr-2">
           {items.length === 0 && <p className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">No email templates.</p>}

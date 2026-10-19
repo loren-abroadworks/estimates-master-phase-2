@@ -344,6 +344,7 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
 function Overview({ def, steps }: { def: FeatureDef; steps: FlatStep[] }) {
   const tour = FEATURE_TOURS[def.key];
   const core = def.group === "built";
+  if (!tour) return null;
   return (
     <>
       <div className="flex flex-wrap items-center gap-1.5">

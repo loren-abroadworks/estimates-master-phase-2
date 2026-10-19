@@ -62,15 +62,15 @@ function LeadPipeline() {
   const pathname = usePathname();
   const params = useSearchParams();
   const viewParam = params.get('view');
-  // New Features (dashboard): CRM Minimal brings the pipeline switch, Source filter and
-  // Tracked links; the Website view needs feature 34 or CRM.
+  // New Modules: CRM Part 2 brings the pipeline switch and the Production prompt;
+  // CRM Part 1 brings the Sources filter and Form links. The Website view needs
+  // feature 34 or CRM Part 1.
   const crmOn = useIsOn({ featureKey: 'crm' });
+  const captureOn = useIsOn({ featureKey: 'crm1' });
   const websiteReviewOn = useIsOn({ feature: 34 });
-  const websiteOn = websiteReviewOn || crmOn;
+  const websiteOn = websiteReviewOn || captureOn;
   const view = viewParam === 'table' ? 'table' : viewParam === 'website' && websiteOn ? 'website' : 'kanban';
   // CRM Part 1 (5): the Website tab shows how many leads wait on Lead Review.
-  // CRM Complete (New Features panel): added pipelines and Group by Source.
-  const complete = useIsOn({ featureKey: 'crm', part: 'complete' });
   // CRM-C1 Group by Source, offered at the foot of the Sources menu.
   const groupByOn = useIsOn({ item: 'CRM-C1' });
 
@@ -118,7 +118,7 @@ function LeadPipeline() {
     [sourceList, leads],
   );
   // A remembered source that no longer has leads (renamed, deleted, all moved) is ignored.
-  const sourceFilter = crmOn ? source.filter((s) => sources.includes(s)) : [];
+  const sourceFilter = captureOn ? source.filter((s) => sources.includes(s)) : [];
   const sourceKey = sourceFilter.join('|');
   const sourceOk = (l: Lead) => !sourceFilter.length || sourceFilter.includes(sourceOf(l));
   const emptyText = sourceFilter.length ? 'No leads from this source.' : undefined;
@@ -217,7 +217,7 @@ function LeadPipeline() {
               badge={<VersionBadge item="CRM-M1" />}
             />
           )}
-          {view !== 'website' && !viewArchived && crmOn && (
+          {view !== 'website' && !viewArchived && captureOn && (
             <SourceChips
               sources={sources}
               value={sourceFilter}
@@ -296,7 +296,7 @@ function LeadPipeline() {
           leads={active}
           stages={stages}
           emptyText={emptyText}
-          groupBy={complete ? groupBy : 'stage'}
+          groupBy={groupByOn ? groupBy : 'stage'}
           onMove={move}
           onMoveToStage={actions.moveToStage}
           onArchive={actions.archive}

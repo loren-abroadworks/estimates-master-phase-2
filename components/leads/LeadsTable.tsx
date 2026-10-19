@@ -29,6 +29,7 @@ import { pipelineColumns, salesColumnFor } from '@/features/lib/rules/lead-pipel
 import { LEAD_LIFECYCLE, canArchiveLeadStatus, formatPhone } from './leadHelpers';
 import { LeadSourceChip, PossibleDuplicateChip, useFollowUpLocks } from './leadFeatures';
 import { pressable } from '@/lib/a11y';
+import { useIsOn } from '@/features/lib/feature-visibility';
 
 type SortKey = 'name' | 'status' | 'source' | 'service' | 'value' | 'date';
 
@@ -111,6 +112,8 @@ export function LeadsTable({
   const SORT_LABEL: Record<SortKey, string> = { name: 'Lead Name', status: 'Status', source: 'Source', service: 'Service Type', value: 'Value', date: 'Created' };
   const sortText = `Sorted by ${SORT_LABEL[sort.key]}, ${sort.dir === 'asc' ? 'ascending' : 'descending'}`;
   const none = rows.length === 0;
+  // CRM Part 2 (New Modules) brings Export to Excel and Print.
+  const exportOn = useIsOn({ featureKey: 'crm' });
   const exportExcel = async () => {
     if (IS_HOSTED_DEMO) return toast('Excel download is not available in the hosted preview. Run the prototype locally to use it.', 'info');
     const { rows: data, capped } = exportRows(rows, exportCols);
@@ -158,14 +161,14 @@ export function LeadsTable({
             Clear filters
           </Button>
         )}
-        <div className="flex flex-wrap gap-2 sm:ml-auto">
+        {exportOn && <div className="flex flex-wrap gap-2 sm:ml-auto">
           <span title={none ? NO_LEADS : undefined}>
             <Button variant="secondary" size="sm" onClick={() => void exportExcel()} disabled={none} icon={<FileSpreadsheet className="h-4 w-4" />}>Export to Excel</Button>
           </span>
           <span title={none ? NO_LEADS : undefined}>
             <Button variant="secondary" size="sm" onClick={print} disabled={none} icon={<Printer className="h-4 w-4" />}>Print</Button>
           </span>
-        </div>
+        </div>}
       </div>
 
       {/* Print view: no menus, black text, a header with the business, pipeline, filters and today's date. */}

@@ -2,7 +2,7 @@
  * One short tour per new feature (New Features panel order).
  *
  * The fourteen patent features are core modules: built and delivered as one
- * package, with no Minimal / Complete split. The five 30 Sep call features
+ * package, with no Minimal / Complete split. The client-call features
  * tag each step with the version it belongs to. Every action step says how it
  * was done before (`before`), what you do (`body`) and where the result shows
  * (`shows`). Each stop opens a seeded record that already shows its scenario
@@ -17,7 +17,9 @@ import type { FeatureTour } from "./tour-steps";
 
 const ELENA = "/contacts/C-ELENA";
 
-export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
+const TOURS: Record<FeatureKey, FeatureTour | undefined> = {
+  addons: undefined,
+
   /* ------------------------------ Core modules ------------------------------ */
 
   f3: {
@@ -841,16 +843,56 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
     ],
   },
 
+  crm1: {
+    key: "crm1",
+    role: "owner",
+    solves: "Leads that arrive from your own form links with their source and starting stage set automatically.",
+    benefits: [
+      "Leads from forms land on the board by themselves.",
+      "You see which source brings in the leads, without asking the customer.",
+    ],
+    before: "Lead sources are picked by hand, and website requests are retyped into the app.",
+    pages: [
+      {
+        href: "/leads?view=website",
+        steps: [
+          {
+            target: "crm-links", kind: "add", version: "minimal", title: "Make a form link",
+            before: "The customer was asked where they heard about you, or the source was picked by hand.",
+            body: "Create a link per place you share the request-an-estimate form (Facebook page, Instagram bio, website), each with its source and starting stage. Copy the link or download its QR code.",
+            shows: "Leads from that link arrive on the Sales board in its starting stage, with the source already set.",
+          },
+          {
+            target: "crm-fb-ads", kind: "add", version: "complete", title: "Connect Facebook Lead Ads",
+            body: "Leads from Facebook Lead Ads and Instagram lead forms arrive directly, with the source set to Facebook or Instagram.",
+          },
+        ],
+      },
+      {
+        href: "/leads",
+        steps: [
+          {
+            target: "crm-source", kind: "view", version: "minimal", title: "Filter by source",
+            body: "Each card shows its source as a badge. Open the Sources menu and pick one or more sources, for example Instagram; every column and count follows.",
+          },
+          {
+            target: "crm-source", kind: "view", version: "complete", title: "Group by source",
+            body: "At the bottom of the Sources menu, switch on Group board by source. The Sales board then shows the Facebook leads, Website leads and so on as columns instead of stages.",
+          },
+        ],
+      },
+    ],
+  },
+
   crm: {
     key: "crm",
     role: "owner",
-    solves: "Separate Sales and Production boards with your own stages, and leads that arrive from tracked links with their source set automatically.",
+    solves: "Separate Sales and Production boards with your own stages, stage history on every lead, and the leads table exported or printed.",
     benefits: [
-      "Leads from forms land on the board by themselves.",
       "Sold work moves to its own Production board.",
-      "You see which source brings in the leads, without asking the customer.",
+      "Each lead shows where it is on every board.",
     ],
-    before: "The live app has one board with seven fixed stages: New, Contacted, Scheduled, Pending, Sold, Lost, Archived. Settings › Pipeline Stages only lets an admin rename them. Lead sources are picked by hand.",
+    before: "The live app has one board with seven fixed stages: New, Contacted, Scheduled, Pending, Sold, Lost, Archived. Settings › Pipeline Stages only lets an admin rename them.",
     pages: [
       {
         href: "/leads",
@@ -866,32 +908,9 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
             shows: "On the Production board, and in the lead's stage history.",
           },
           {
-            target: "crm-source", kind: "view", version: "minimal", title: "Filter by source",
-            body: "Each card shows its source as a badge. Open the Sources menu and pick one or more sources, for example Instagram; every column and count follows.",
-          },
-          {
-            target: "crm-source", kind: "view", version: "complete", title: "Group by source",
-            body: "At the bottom of the Sources menu, switch on Group board by source. The Sales board then shows the Facebook leads, Website leads and so on as columns instead of stages.",
-          },
-          {
             target: "crm-pipelines", kind: "add", version: "complete", title: "Add a pipeline",
             body: "With dynamic pipelines on, Add pipeline at the bottom of the Pipeline menu creates another board, for example Training. It starts with a Not Started stage and a Done stage.",
             shows: "In the Pipeline menu beside Sales and Production, and in Settings › Pipeline Stages.",
-          },
-        ],
-      },
-      {
-        href: "/leads?view=website",
-        steps: [
-          {
-            target: "crm-links", kind: "add", version: "minimal", title: "Make a form link",
-            before: "The customer was asked where they heard about you, or the source was picked by hand.",
-            body: "Create a link per place you share the request-an-estimate form (Facebook page, Instagram bio, website), each with its source and starting stage. Copy the link or download its QR code.",
-            shows: "Leads from that link arrive on the Sales board in its starting stage, with the source already set.",
-          },
-          {
-            target: "crm-fb-ads", kind: "add", version: "complete", title: "Connect Facebook Lead Ads",
-            body: "Leads from Facebook Lead Ads and Instagram lead forms arrive directly, with the source set to Facebook or Instagram.",
           },
         ],
       },
@@ -1088,4 +1107,15 @@ export const FEATURE_TOURS: Record<FeatureKey, FeatureTour> = {
       },
     ],
   },
+};
+
+/**
+ * Tours by module. Books has no module of its own (it follows Feature 33), so
+ * its pages run at the end of the Financial and Accounting Management tour.
+ */
+export const FEATURE_TOURS: Partial<Record<FeatureKey, FeatureTour>> = {
+  ...TOURS,
+  // Core module steps carry no Minimal / Complete version.
+  f33: { ...TOURS.f33!, pages: [...TOURS.f33!.pages, ...TOURS.bk!.pages.map((p) => ({ ...p, steps: p.steps.map(({ version: _v, ...s }) => s) }))] },
+  bk: undefined,
 };

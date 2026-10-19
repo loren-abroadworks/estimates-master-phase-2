@@ -106,7 +106,8 @@ export const SETTINGS_PERMISSIONS: Record<string, Permission> = {
  * My Profile, which everyone has.
  */
 export function settingsPermission(id: string): Permission | "everyone" {
-  if (!id || id === "my-profile") return "everyone";
+  // Settings › New Modules is prototype tooling: anyone presenting can use it.
+  if (!id || id === "my-profile" || id === "new-modules") return "everyone";
   if (id === "goals-profit" || id === "surface-rates") return "settings.engineCalibration";
   return SETTINGS_PERMISSIONS[id] ?? "settings.masterData";
 }

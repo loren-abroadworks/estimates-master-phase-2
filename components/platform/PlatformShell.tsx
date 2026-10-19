@@ -23,6 +23,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/form';
 import { useToast } from '@/components/ui/toast';
 import { useCollection } from '@/lib/store';
+import { useFeatureFilter } from '@/features/lib/feature-visibility';
+import type { FeatureKey } from '@/features/lib/feature-registry';
 
 export const PLATFORM_NAV = [
   { href: '/platform/dashboard', label: 'Dashboard', icon: LayoutGrid },
@@ -32,12 +34,19 @@ export const PLATFORM_NAV = [
   { href: '/platform/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/platform/calendar', label: 'Calendar', icon: Calendar },
   { href: '/platform/tier-management', label: 'Tier Management', icon: Layers },
-  { href: '/platform/add-on-plans', label: 'Add-on Plans', icon: PackagePlus },
+  // Shown while "Paid add-on modules" is on in Settings › New Modules.
+  { href: '/platform/add-on-plans', label: 'Add-on Plans', icon: PackagePlus, featureKey: 'addons' },
   { href: '/platform/fulfillment', label: 'Fulfillment', icon: PackageCheck },
   { href: '/platform/coupons', label: 'Coupons', icon: TicketPercent },
   { href: '/platform/commissions', label: 'Commissions', icon: BadgeDollarSign },
   { href: '/platform/team-access', label: 'Team Access', icon: ShieldCheck },
-] as const;
+] as const satisfies readonly { href: string; label: string; icon: React.ElementType; featureKey?: FeatureKey }[];
+
+/** Admin Portal menu items switched on in New Modules. */
+export function useVisiblePlatformNav() {
+  const featureOn = useFeatureFilter();
+  return PLATFORM_NAV.filter((n) => !('featureKey' in n) || featureOn({ featureKey: n.featureKey }));
+}
 
 /** Roles that may open the Admin Portal. */
 const PLATFORM_ROLES = ['owner'];
@@ -117,6 +126,7 @@ function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   // Close after following a link.
   useEffect(() => onClose(), [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const nav = useVisiblePlatformNav();
   const item = (href: string, label: string, Icon: React.ElementType) => {
     const active = pathname === href || pathname.startsWith(href + '/');
     return (
@@ -148,7 +158,7 @@ function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
           </button>
         </div>
         <div className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-          {PLATFORM_NAV.map((n) => item(n.href, n.label, n.icon))}
+          {nav.map((n) => item(n.href, n.label, n.icon))}
         </div>
         <div className="space-y-1 border-t border-slate-800 px-3 py-4">
           {item('/platform/settings', 'Settings', Settings)}

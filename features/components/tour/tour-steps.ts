@@ -75,7 +75,8 @@ export interface FlatStep extends TourStep {
 }
 
 /** The overview card, then every page's steps in order. */
-export function flatSteps(tour: FeatureTour): FlatStep[] {
+export function flatSteps(tour: FeatureTour | undefined): FlatStep[] {
+  if (!tour) return [];
   const first = tour.pages[0];
   const intro: FlatStep = { href: first.href, intro: true, title: "Overview", body: tour.solves, role: first.role ?? tour.role, action: tour.action };
   return [intro, ...tour.pages.flatMap((p) => p.steps.map((s) => ({ ...s, href: p.href, role: s.role ?? p.role ?? tour.role })))];

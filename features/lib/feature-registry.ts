@@ -7,13 +7,19 @@
  * the code ("Feature N — …").
  *
  * Built features (the 14 patent features) have no Minimal / Complete split:
- * their Minimal switch is "the feature as built". The 30 Sep call features
+ * their Minimal switch is "the feature as built". The client-call features
  * list their item IDs (QB-M1 …) under Minimal and Complete.
+ *
+ * Names follow the client's module list (Settings › New Modules). Estimate
+ * Master Books ("bk") has no row of its own: it shows with Feature 33,
+ * Financial and Accounting Management (BOOKS_FOLLOWS in feature-visibility).
  */
 
 export type FeatureKey =
   | "f3" | "f18" | "f19" | "f21" | "f22" | "f24" | "f25" | "f26" | "f27" | "f28" | "f29" | "f30" | "f33" | "f34"
-  | "qb" | "crm" | "js" | "rp" | "bk";
+  | "rp" | "js" | "qb" | "crm1" | "crm" | "addons"
+  /** Estimate Master Books: no row; follows f33. */
+  | "bk";
 
 export interface FeatureDef {
   key: FeatureKey;
@@ -80,13 +86,13 @@ export const FEATURES: FeatureDef[] = [
     parts: { minimal: ["QR paint record and passport", "Public paint record page"], complete: [] }, built: true,
   },
   {
-    key: "f27", group: "built", number: 27, name: "Paint Lifespan and Repaint Alerts",
+    key: "f27", group: "built", number: 27, name: "Paint Life and Automated Repainting Alerts",
     breakdown: "Flags surfaces when their paint is due for renewal, from the lifespan library.",
     where: [{ label: "Repaint Alerts", href: "/repaint-alerts" }, { label: "Settings › Repaint Intervals", href: "/settings/repaint-intervals" }],
     parts: { minimal: ["Repaint Alerts queue", "Lifespan library and run log", "Repaint Intervals settings"], complete: [] }, built: true,
   },
   {
-    key: "f28", group: "built", number: 28, name: "Future Estimating and Touch-Up Reordering",
+    key: "f28", group: "built", number: 28, name: "Future Estimating and Reordering",
     breakdown: "Builds a new estimate from past work and re-orders the same touch-up paint.",
     where: [{ label: "Estimates › From history", href: "/estimates" }, { label: "Contacts › contact › reorders", href: "/contacts" }],
     parts: { minimal: ["New estimate from history", "Touch-up reorders", "From-history filter on estimates"], complete: [] }, built: true,
@@ -105,15 +111,40 @@ export const FEATURES: FeatureDef[] = [
   },
   {
     key: "f33", group: "built", number: 33, name: "Financial and Accounting Management",
-    breakdown: "The QuickBooks sync, Sync Log and Needs Attention, bills, checkbook, feeds and finance reports.",
-    where: [{ label: "Accounting", href: "/accounting" }, { label: "Settings › Accounting", href: "/settings/accounting" }, { label: "Invoices › QuickBooks", href: "/invoices" }],
-    parts: { minimal: ["Accounting module", "Settings › Accounting", "QuickBooks column and card on invoices", "Job Margin, Income & Expense, Aged Receivables"], complete: [] }, built: true,
+    breakdown: "The QuickBooks sync, Sync Log and Needs Attention, bills, checkbook, feeds and finance reports. Includes Estimate Master Books (built-in accounting).",
+    where: [{ label: "Accounting", href: "/accounting" }, { label: "Accounting (Books mode)", href: "/accounting?mode=books" }, { label: "Settings › Accounting", href: "/settings/accounting" }, { label: "Invoices › QuickBooks", href: "/invoices" }],
+    parts: {
+      minimal: [
+        "Accounting module", "Settings › Accounting", "QuickBooks column and card on invoices", "Job Margin, Income & Expense, Aged Receivables",
+        "Books: BK-M1 Books mode, M2 Chart of accounts, M3/M9 Journal, M5 Reconcile, M6 Balance Sheet, M8 Exports, M10–M13",
+        "Books: BK-C2 Gusto import, C3 Job profit, C5 Move from QuickBooks, C6 1099 and Budget",
+      ],
+      complete: [],
+    }, built: true,
   },
   {
     key: "f34", group: "built", number: 34, name: "Social Media and Marketing Management",
     breakdown: "Social posts, campaigns, automations and website lead review.",
     where: [{ label: "Marketing", href: "/marketing" }, { label: "Settings › Social Accounts", href: "/settings/social-accounts" }, { label: "Leads › Website", href: "/leads?view=website" }],
     parts: { minimal: ["Marketing module", "Social Accounts settings", "Website lead review"], complete: [] }, built: true,
+  },
+  {
+    key: "rp", group: "sep30", prefix: "RP", name: "Sales Report Redesign",
+    breakdown: "Amended estimates in the sales reports: an amendment counts only its difference, in the month it is re-approved.",
+    where: [{ label: "Reports › Estimates Log", href: "/reports?tab=estimates" }, { label: "Reports › Jobs Sold", href: "/reports?tab=jobs_sold" }],
+    parts: {
+      minimal: ["RP-M1/M2 Sales entries", "RP-M3 One row per entry", "RP-M4 New sales / Amendments / Total", "RP-M5 Counts unchanged", "RP-M6 Migration"],
+      complete: ["RP-C1 What changed", "RP-C2 Sales by Estimator", "RP-C3 Change orders as entries", "RP-C4 Doesn't add up flag"],
+    }, built: true,
+  },
+  {
+    key: "js", group: "sep30", prefix: "JS", name: "Job Scheduler email triggers",
+    breakdown: "No email on every save; one summary email per person, sent when you choose.",
+    where: [{ label: "Job Scheduling", href: "/job-scheduling" }, { label: "Settings › Automated Messages", href: "/settings/automated-messages" }],
+    parts: {
+      minimal: ["JS-M1 Saved, not notified", "JS-M2 Changes not sent", "JS-M3 Unsent changes", "JS-M4 Schedule Update email"],
+      complete: ["JS-C1 Send Email on a job", "JS-C2 Notify after Bulk Reschedule", "JS-C3 Automatic / Manual mode", "JS-C4 Delivered / Not delivered", "JS-C5 Email and Text", "JS-C6 English / Español"],
+    }, built: true,
   },
   {
     key: "qb", group: "sep30", prefix: "QB", name: "QuickBooks integration",
@@ -125,40 +156,28 @@ export const FEATURES: FeatureDef[] = [
     }, built: true,
   },
   {
-    key: "crm", group: "sep30", prefix: "CRM", name: "CRM lead pipelines",
-    breakdown: "Sales and Production boards with your own stages, and leads from tracked links with the source set automatically.",
-    where: [{ label: "Lead Pipeline", href: "/leads" }, { label: "Settings › Pipeline Stages", href: "/settings/pipeline-stages" }, { label: "Leads › Website", href: "/leads?view=website" }],
+    key: "crm1", group: "sep30", prefix: "CRM", name: "CRM Part 1: website lead capture",
+    breakdown: "Form links with their own source and starting stage, the public form, the thank-you email, the Sources filter and Lead Review.",
+    where: [{ label: "Lead Pipeline › Website", href: "/leads?view=website" }, { label: "Lead Pipeline › Sources", href: "/leads" }],
     parts: {
-      minimal: ["CRM-M1 Sales / Production boards", "CRM-M2 Pipeline stages", "CRM-M3 Production card on Sold", "CRM-M5 Tracked links", "CRM-M6 Source badge and filter", "CRM-M7 Stage history"],
-      complete: ["CRM-C1 Group by source", "CRM-C2 Add pipeline", "CRM-C3 Template triggers and approval", "CRM-C4 Rules editor", "CRM-C5 Flow view", "Waiting for approval queue", "CRM-C6 Facebook Lead Ads", "CRM-C7 Journey bar"],
+      minimal: ["CRM-M5 Form links and the public form", "Thank-you email", "CRM-M6 Sources filter and source badge", "Lead Review and Merge"],
+      complete: ["CRM-C1 Group by source", "CRM-C6 Facebook Lead Ads"],
     }, built: true,
   },
   {
-    key: "js", group: "sep30", prefix: "JS", name: "Job scheduling emails",
-    breakdown: "No email on every save; one summary email per person, sent when you choose.",
-    where: [{ label: "Job Scheduling", href: "/job-scheduling" }, { label: "Settings › Automated Messages", href: "/settings/automated-messages" }],
+    key: "crm", group: "sep30", prefix: "CRM", name: "CRM Part 2: pipelines and export",
+    breakdown: "Sales and Production boards with your own stages, stage trackers on leads and contacts, and Export to Excel and Print.",
+    where: [{ label: "Lead Pipeline", href: "/leads" }, { label: "Settings › Pipeline Stages", href: "/settings/pipeline-stages" }, { label: "Lead Pipeline › Table", href: "/leads?view=table" }],
     parts: {
-      minimal: ["JS-M1 Saved, not notified", "JS-M2 Changes not sent", "JS-M3 Unsent changes", "JS-M4 Schedule Update email"],
-      complete: ["JS-C1 Send Email on a job", "JS-C2 Notify after Bulk Reschedule", "JS-C3 Automatic / Manual mode", "JS-C4 Delivered / Not delivered", "JS-C5 Email and Text", "JS-C6 English / Español"],
+      minimal: ["CRM-M1 Sales / Production boards", "CRM-M2 Pipeline stages", "CRM-M3 Production card on Sold", "CRM-M7 Stage history and trackers", "Export to Excel and Print"],
+      complete: ["CRM-C2 Add pipeline", "CRM-C3 Template triggers and approval", "CRM-C4 Rules editor", "CRM-C5 Flow view", "Waiting for approval queue", "CRM-C7 Journey bar"],
     }, built: true,
   },
   {
-    key: "rp", group: "sep30", prefix: "RP", name: "Amended estimates in reports",
-    breakdown: "An amendment counts only its difference, in the month it is re-approved.",
-    where: [{ label: "Reports › Estimates Log", href: "/reports?tab=estimates" }, { label: "Reports › Jobs Sold", href: "/reports?tab=jobs_sold" }],
-    parts: {
-      minimal: ["RP-M1/M2 Sales entries", "RP-M3 One row per entry", "RP-M4 New sales / Amendments / Total", "RP-M5 Counts unchanged", "RP-M6 Migration"],
-      complete: ["RP-C1 What changed", "RP-C2 Sales by Estimator", "RP-C3 Change orders as entries", "RP-C4 Doesn't add up flag"],
-    }, built: true,
-  },
-  {
-    key: "bk", group: "sep30", prefix: "BK", name: "Estimate Master Books",
-    breakdown: "Built-in accounting as a mode of Accounting: journal, chart of accounts, reconciliation, Balance Sheet.",
-    where: [{ label: "Accounting (Books mode)", href: "/accounting?mode=books" }, { label: "Accounting › Journal", href: "/accounting/journal" }, { label: "Settings › Accounting", href: "/settings/accounting" }],
-    parts: {
-      minimal: ["BK-M1 Books mode", "BK-M2 Chart of accounts", "BK-M3/M9 Journal", "BK-M5 Reconcile", "BK-M6 Balance Sheet", "BK-M8 Exports", "BK-M10 Payments to deposit", "BK-M11 Write off and payments", "BK-M12/M13 Sales tax, Cash / Accrual"],
-      complete: ["BK-C2 Gusto import", "BK-C3 Job profit", "BK-C5 Move from QuickBooks", "BK-C6 1099 and Budget"],
-    }, built: true,
+    key: "addons", group: "sep30", name: "Paid add-on modules",
+    breakdown: "Add-on Plans in the Admin Portal, where Estimate Master staff set up the paid add-ons. The page itself is not built yet.",
+    where: [{ label: "Admin Portal › Add-on Plans", href: "/platform/add-on-plans" }],
+    parts: { minimal: ["Add-on Plans in the Admin Portal menu"], complete: [] }, built: true,
   },
 ];
 

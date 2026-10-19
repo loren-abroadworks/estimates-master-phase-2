@@ -95,6 +95,11 @@ export const SETTINGS_NAV: readonly {
       { id: 'repaint-intervals', label: 'Repaint Intervals', icon: 'BellRing', isNew: true, feature: 27 },
     ],
   },
+  {
+    // Prototype only: which new modules are presented.
+    section: 'Prototype',
+    items: [{ id: 'new-modules', label: 'New Modules', icon: 'Sparkles' }],
+  },
 ];
 
 /** Header title for each settings page (used in the top bar). */
@@ -132,6 +137,7 @@ export const SETTINGS_TITLES: Record<string, string> = {
   accounting: 'Accounting',
   suppliers: 'Suppliers',
   'repaint-intervals': 'Repaint Intervals',
+  'new-modules': 'New Modules',
 };
 
 /* ---------- Leads ---------- */

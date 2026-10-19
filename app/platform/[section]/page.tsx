@@ -9,12 +9,13 @@ import React, { use } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Construction } from 'lucide-react';
-import { PLATFORM_NAV, PlatformShell } from '@/components/platform/PlatformShell';
+import { PlatformShell, useVisiblePlatformNav } from '@/components/platform/PlatformShell';
 import { EmptyState, PageHeader } from '@/components/ui/display';
 
 export default function PlatformSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = use(params);
-  const item = PLATFORM_NAV.find((n) => n.href === `/platform/${section}`);
+  // A page switched off in Settings › New Modules is not there.
+  const item = useVisiblePlatformNav().find((n) => n.href === `/platform/${section}`);
   if (!item) notFound();
   return (
     <PlatformShell title={item.label}>

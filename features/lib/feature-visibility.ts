@@ -8,6 +8,7 @@
  *   ticking Complete ticks Minimal, unticking Minimal unticks Complete.
  * - showBadges: the green NEW badges and Minimal / Complete markers on
  *   screens. Off by default.
+ * - The same switches are on Settings › New Modules, one per module.
  * - dynamicPipelines (CRM Part 2): Option B, custom pipelines (add, delete,
  *   reorder, Training). Off = Option A: Sales and Production stages only.
  *   Switched in the demo bar. Off by default.
@@ -59,18 +60,29 @@ export const allCompleteRows = (): Rows => Object.fromEntries(FEATURE_KEYS.map((
 export function isOn(state: Pick<VisibilityState, "showNew" | "rows">, keys: FeatureKey | FeatureKey[], part: Part = "minimal"): boolean {
   if (!state.showNew) return false;
   const list = Array.isArray(keys) ? keys : [keys];
-  return list.some((k) => (part === "complete" ? state.rows[k]?.minimal && state.rows[k]?.complete : state.rows[k]?.minimal));
+  return list.some((k) => {
+    // Books has no row: all of it, Minimal and Complete, shows with Feature 33.
+    if (k === "bk") return !!state.rows[BOOKS_FOLLOWS]?.minimal;
+    return part === "complete" ? state.rows[k]?.minimal && state.rows[k]?.complete : state.rows[k]?.minimal;
+  });
 }
+
+/** Estimate Master Books is folded into Financial and Accounting Management. */
+export const BOOKS_FOLLOWS: FeatureKey = "f33";
 
 /** Feature 3 → 'f3'. */
 export const keyForFeature = (n: number) => `f${n}` as FeatureKey;
 
 const PREFIX_KEY: Record<string, FeatureKey> = { QB: "qb", CRM: "crm", JS: "js", RP: "rp", BK: "bk", X: "qb" };
 
+/** CRM items that belong to Part 1 (website lead capture); the rest are Part 2. */
+const CRM_PART_1 = new Set(["CRM-M5", "CRM-M6", "CRM-C1", "CRM-C6"]);
+
 /** 'CRM-C4' → { key: 'crm', part: 'complete' }. X items follow QuickBooks. */
 export function keyForItem(id: string): { key: FeatureKey; part: Part } {
   const [prefix = "", rest = ""] = id.split("-");
-  return { key: PREFIX_KEY[prefix] ?? "qb", part: rest.startsWith("C") ? "complete" : "minimal" };
+  const key = CRM_PART_1.has(id) ? "crm1" : PREFIX_KEY[prefix] ?? "qb";
+  return { key, part: rest.startsWith("C") ? "complete" : "minimal" };
 }
 
 /**
@@ -101,6 +113,8 @@ interface Store extends VisibilityState {
   setComplete: (key: FeatureKey, on: boolean) => void;
   allMinimal: () => void;
   allComplete: () => void;
+  /** Every module on (Complete ticks kept) or off. */
+  setEvery: (on: boolean) => void;
   reset: () => void;
 }
 
@@ -115,6 +129,7 @@ export const useVisibility = create<Store>()(
       setComplete: (key, on) => set((s) => ({ rows: withComplete(s.rows, key, on) })),
       allMinimal: () => set({ rows: allMinimalRows() }),
       allComplete: () => set({ rows: allCompleteRows() }),
+      setEvery: (on) => set((s) => ({ rows: FEATURE_KEYS.reduce((rows, k) => withMinimal(rows, k, on), s.rows) })),
       reset: () => set(defaultVisibility()),
     }),
     {

@@ -14,6 +14,8 @@
   - "Show NEW badges on screens" brings the green badges and the
     Minimal / Complete markers back, for walkthroughs.
 
+  Settings › New Modules has the same switches, one per module.
+
   Rows come from features/lib/feature-registry.ts; the choices live in
   features/lib/feature-visibility.ts (this browser, reset with the demo data).
 */
@@ -30,7 +32,7 @@ import { cn } from '@/lib/utils';
 
 const GROUPS: { id: FeatureDef['group']; label: string }[] = [
   { id: 'built', label: 'Core modules (each built as one package)' },
-  { id: 'sep30', label: 'From the 30 Sep call' },
+  { id: 'sep30', label: 'From the client calls' },
 ];
 
 export function NewFeaturesPanel() {
@@ -95,7 +97,7 @@ export function NewFeaturesPanel() {
                     <tr key={f.key} className="border-b border-line align-top last:border-0">
                       <TD className="min-w-[180px] align-top">
                         <div className="font-bold text-gray-900">{f.name}</div>
-                        <div className="mt-0.5 text-xs text-gray-500">{f.number ? `Feature ${f.number} · Core module` : `${f.prefix} · Minimal + Complete`}</div>
+                        <div className="mt-0.5 text-xs text-gray-500">{f.number ? `Feature ${f.number} · Core module` : f.parts.complete.length ? `${f.prefix} · Minimal + Complete` : 'Client call module'}</div>
                         {!f.built && <Badge tone="gray" className="mt-1">Not built yet</Badge>}
                         {f.built && FEATURE_TOURS[f.key] && (
                           <button
