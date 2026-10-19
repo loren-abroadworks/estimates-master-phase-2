@@ -1,0 +1,23 @@
+{
+	// Cloudflare Workers deployment, built by OpenNext (`npm run deploy`, or
+	// Workers Builds on each push). See docs/DEPLOY_CLOUDFLARE.md.
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "emts-replica",
+	"compatibility_date": "2026-10-12",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			// Self-reference for OpenNext's caching; must match "name" above.
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "emts-replica"
+		}
+	],
+	"observability": {
+		"enabled": true
+	}
+}

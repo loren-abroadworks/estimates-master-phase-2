@@ -13,6 +13,7 @@ web
   - Estimators: build and send estimates.
   - Project managers.
   - Crew leads and painters: work orders, the crew clock and time logs, often on a phone at the job site.
+- **Estimate Master staff (Admin Portal, `/platform`):** the people who run Estimate Master itself. They manage subscriber accounts, sales leads and presentations, tasks, messages and the calendar. They also handle tiers, add-on plans, fulfillment, coupons, sales-rep commissions and team access. In this replica only the owner account opens the portal.
 - The demo switches between these roles from the Prototype bar ("Viewing as").
 
 ## Product Purpose
@@ -36,6 +37,7 @@ Estimate Master is built for painting contractors specifically, not general fiel
   - Invoices, reports, settings.
 - **Field work:** a phone. Crew clock in and out, work order checklists, crew time.
 - **Customer-facing pages:** the estimate client view and proposal, invoice payment, presentations, the public paint record and QR links, the website lead form.
+- **Admin Portal:** a desktop browser, with its own top bar and slide-in menu in place of the contractor sidebar. The dashboard numbers are computed live from the records: subscribers by tier, leads, presentations, yearly sales, monthly revenue and commission. They change when a subscriber's plan changes (Settings › Subscription) or when a contractor sends a Help & Support request. Spec: "EMTS Admin Dashboard — UI & Functionality Spec" (16 Oct 2026); the open questions it left are answered in `lib/platform.ts`.
 - **Phase 2 modules added in this prototype:** Time, Supplier Orders, Repaint Alerts, Accounting (QuickBooks and Books), Marketing, Automation. They are switched on and off in the dashboard's New Features panel, with feature tours.
 
 ## Capabilities and Constraints
@@ -67,3 +69,10 @@ Estimate Master is built for painting contractors specifically, not general fiel
 3. **The trade's language, not software jargon:** say what a painter or office manager would say.
 4. **Right screen for the role and the place:** office work is dense and scannable on desktop; crew work is simple and thumb-friendly on a phone.
 5. **Review-ready:** every Phase 2 feature can be found, demonstrated and explained (New Features panel, NEW badges, tours) by the client, the PM and QA.
+
+## Accessibility & Inclusion
+
+- **Standard:** WCAG 2.2 AA on every screen: contrast, keyboard access, visible focus, labeled controls.
+- **Older office users:** many owners are not comfortable with technology. Text stays at readable sizes and screens stay uncluttered, even where office work is dense.
+- **Outdoor phone use:** crew screens are used at the job site, often in direct sun and sometimes with gloves on. They need strong contrast and large touch targets.
+- **Spanish-speaking crews:** crew-facing text must work in Spanish as well as English. Job Scheduling already has a translation catalog (`components/scheduling/phase1/i18n`). Office and customer-facing screens stay in US English unless that changes.
